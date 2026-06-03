@@ -139,6 +139,37 @@ Simulated Trends: EUR macroeconomic acquisition shock, a multi-year USD strength
 
 ---
 
+## 9.1 FX Generation Logic
+
+The FX platform generates one record per currency per month across the simulation horizon.
+
+Generated currencies:
+
+- GBP
+- USD
+- EUR
+- SGD
+
+The generator produces both:
+
+- Monthly Average Rate
+- Month-End Spot Rate
+
+Exchange rates are calculated using:
+
+- Currency-specific annual drift assumptions
+- Monthly volatility profiles
+- Structural shock events
+- Minimum rate floor controls
+
+EUR includes a dedicated acquisition-related shock event in October 2024 representing the DataPulse acquisition.
+
+Generated output grain:
+
+One row per currency per month
+
+---
+
 ## 10. Generation Dependency Order
 To ensure absolute relational integrity, downstream transaction data must reference pre-existing reference keys and exchange values. The scripts must generate source data in this strict linear sequence:
 
@@ -157,9 +188,12 @@ To ensure absolute relational integrity, downstream transaction data must refere
 ---
 
 ## 11. Phase 3 Completion Criteria
-The source system data generation phase is finalized only when the following thresholds are successfully met:
+The source system data generation phase is finalised only when the following thresholds are successfully met:
 
-- [ ] **Code Execution:** All defined source files can be generated end-to-end via a master Python script without manual manipulation.
+- [ ] Reference Data Generation (FX, Products, Departments)
+- [ ] Core Entity Generation (Customers, Employees)
+- [ ] Commercial Data Generation (CRM, Subscriptions, Billing)
+- [ ] Finance Data Generation (ERP, Budget, Forecast)
 - [ ] **Volume Validation:** Row counts across all generated CSV and XLSX outputs fall squarely within the specified target ranges.
 - [ ] **Defect Injection:** Intentional data anomalies and audit traps are verifiable in the raw files.
 - [ ] **Business Scenario Validation:** The German M&A entity acquisition and subsequent multi-currency conversion impacts are accurately reflected.

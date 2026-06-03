@@ -1,4 +1,3 @@
-```yaml
 project:
   name: finance-intelligence-platform
   company: Nexus Technologies
@@ -449,4 +448,3 @@ target_volumes:
   mrr_ledger_rows:
     min: 400000
     max: 700000
-```

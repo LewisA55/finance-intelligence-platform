@@ -1,0 +1,452 @@
+```yaml
+project:
+  name: finance-intelligence-platform
+  company: Nexus Technologies
+  programme: Project Atlas
+  start_date: "2022-01-01"
+  end_date: "2026-12-31"
+  base_currency: GBP
+  random_seed: 42
+
+regions:
+  - region_id: UK
+    region_name: United Kingdom
+    currency_code: GBP
+    revenue_share: 0.25
+    salary_multiplier: 1.00
+
+  - region_id: US
+    region_name: United States
+    currency_code: USD
+    revenue_share: 0.45
+    salary_multiplier: 1.45
+
+  - region_id: DE
+    region_name: Germany
+    currency_code: EUR
+    revenue_share: 0.20
+    salary_multiplier: 1.05
+
+  - region_id: SG
+    region_name: Singapore
+    currency_code: SGD
+    revenue_share: 0.10
+    salary_multiplier: 1.20
+
+fx:
+  currencies:
+    - GBP
+    - USD
+    - EUR
+    - SGD
+
+  base_currency: GBP
+
+  rate_type_outputs:
+    - monthly_average_rate
+    - month_end_spot_rate
+
+  trend_assumptions:
+    GBP:
+      volatility: none
+      base_rate_to_gbp: 1.00
+
+    USD:
+      base_rate_to_gbp: 0.78
+      trend: strengthening
+      annual_drift: 0.025
+      monthly_volatility: 0.015
+
+    EUR:
+      base_rate_to_gbp: 0.86
+      trend: mild_weakening
+      annual_drift: -0.010
+      monthly_volatility: 0.012
+      shock:
+        shock_month: "2024-10"
+        shock_pct: -0.12
+        description: DataPulse acquisition FX shock
+
+    SGD:
+      base_rate_to_gbp: 0.59
+      trend: stable
+      annual_drift: 0.004
+      monthly_volatility: 0.006
+
+products:
+  - product_id: PROD_CORE
+    product_name: Nexus Core
+    product_suite: Core
+    revenue_mix_target: 0.55
+    pricing_model: recurring_subscription
+    gross_margin_target: 0.82
+    is_recurring: true
+    is_legacy_product: false
+
+  - product_id: PROD_ANALYTICS
+    product_name: Nexus Analytics
+    product_suite: Analytics
+    revenue_mix_target: 0.25
+    pricing_model: recurring_subscription
+    gross_margin_target: 0.88
+    is_recurring: true
+    is_legacy_product: false
+
+  - product_id: PROD_AI
+    product_name: Nexus AI
+    product_suite: AI
+    revenue_mix_target: 0.10
+    pricing_model: usage_based_subscription
+    gross_margin_target: 0.65
+    is_recurring: true
+    is_legacy_product: false
+    launch_date: "2024-01-01"
+
+  - product_id: PROD_SERVICES
+    product_name: Professional Services
+    product_suite: Services
+    revenue_mix_target: 0.10
+    pricing_model: one_time_services
+    gross_margin_target: 0.35
+    is_recurring: false
+    is_legacy_product: false
+
+  - product_id: PROD_PULSE
+    product_name: PulseEngine
+    product_suite: Legacy DataPulse
+    revenue_mix_target: 0.00
+    pricing_model: recurring_subscription
+    gross_margin_target: 0.78
+    is_recurring: true
+    is_legacy_product: true
+    acquisition_source: DataPulse Analytics
+
+customer_segments:
+  enterprise:
+    logo_share: 0.05
+    acv_min: 150000
+    acv_max: 750000
+    logo_churn_min: 0.02
+    logo_churn_max: 0.04
+    target_nrr: 1.15
+    product_attachment:
+      PROD_CORE: 0.95
+      PROD_ANALYTICS: 0.70
+      PROD_AI: 0.45
+
+  mid_market:
+    logo_share: 0.25
+    acv_min: 30000
+    acv_max: 70000
+    logo_churn_min: 0.06
+    logo_churn_max: 0.08
+    target_nrr: 1.02
+    product_attachment:
+      PROD_CORE: 0.85
+      PROD_ANALYTICS: 0.35
+      PROD_AI: 0.10
+
+  smb:
+    logo_share: 0.70
+    acv_min: 5000
+    acv_max: 15000
+    logo_churn_min: 0.12
+    logo_churn_max: 0.16
+    target_nrr: 0.85
+    product_attachment:
+      PROD_CORE: 0.75
+      PROD_ANALYTICS: 0.10
+      PROD_AI: 0.02
+
+customer_industries:
+  - industry: Technology / SaaS
+    share: 0.30
+
+  - industry: Financial Services
+    share: 0.20
+
+  - industry: Healthcare / Life Sciences
+    share: 0.15
+
+  - industry: Retail & E-commerce
+    share: 0.15
+
+  - industry: Manufacturing / Logistics
+    share: 0.10
+
+  - industry: Professional Services / Other
+    share: 0.10
+
+customer_cohorts:
+  pre_2022: 0.40
+  "2022": 0.20
+  "2023": 0.20
+  "2024": 0.15
+  "2025": 0.05
+
+revenue_concentration:
+  top_10_customer_arr_share: 0.15
+  top_50_customer_arr_share: 0.35
+
+arr_growth_targets:
+  "2022": baseline
+  "2023": 0.18
+  "2024": 0.22
+  "2025": 0.25
+  "2026": 0.17
+
+sales_seasonality:
+  Q1: 0.20
+  Q2: 0.23
+  Q3: 0.27
+  Q4: 0.30
+
+departments:
+  - department_id: DEPT_ENG
+    department_name: Engineering / R&D
+    function: R&D
+    headcount_share: 0.35
+    financial_treatment: opex_partial_capitalisation
+
+  - department_id: DEPT_SALES
+    department_name: Sales
+    function: Sales & Marketing
+    headcount_share: 0.20
+    financial_treatment: opex_commission_driven
+
+  - department_id: DEPT_CS
+    department_name: Customer Success
+    function: Customer Success
+    headcount_share: 0.15
+    financial_treatment: cogs_support_weight
+
+  - department_id: DEPT_PRODUCT
+    department_name: Product
+    function: Product
+    headcount_share: 0.10
+    financial_treatment: opex
+
+  - department_id: DEPT_MARKETING
+    department_name: Marketing
+    function: Sales & Marketing
+    headcount_share: 0.08
+    financial_treatment: opex
+
+  - department_id: DEPT_GA
+    department_name: General & Administrative
+    function: G&A
+    headcount_share: 0.07
+    financial_treatment: opex
+
+  - department_id: DEPT_FINHR
+    department_name: Finance & HR
+    function: Finance & HR
+    headcount_share: 0.05
+    financial_treatment: opex
+
+headcount_targets:
+  "2022": 450
+  "2023": 560
+  "2024": 700
+  "2025": 850
+  "2026": 950
+
+employee_levels:
+  analyst:
+    salary_min_gbp: 45000
+    salary_max_gbp: 65000
+
+  manager:
+    salary_min_gbp: 70000
+    salary_max_gbp: 95000
+
+  senior_manager:
+    salary_min_gbp: 100000
+    salary_max_gbp: 130000
+
+  director:
+    salary_min_gbp: 140000
+    salary_max_gbp: 180000
+
+  vp:
+    salary_min_gbp: 195000
+    salary_max_gbp: 250000
+
+sales_capacity:
+  enterprise_ae:
+    annual_arr_capacity_min: 1500000
+    annual_arr_capacity_max: 2500000
+    ramp_months: 6
+    ramp_capacity_pct: 0.50
+
+  mid_market_ae:
+    annual_arr_capacity_min: 600000
+    annual_arr_capacity_max: 1000000
+    ramp_months: 3
+    ramp_capacity_pct: 0.75
+
+  smb_ae:
+    annual_arr_capacity_min: 250000
+    annual_arr_capacity_max: 500000
+    ramp_months: 1
+    ramp_capacity_pct: 1.00
+
+quota_attainment:
+  average_attainment: 0.80
+
+  top_performers:
+    share: 0.15
+    attainment_min: 1.10
+    attainment_max: 1.30
+
+  core_performers:
+    share: 0.65
+    attainment_min: 0.70
+    attainment_max: 1.00
+
+  underperformers:
+    share: 0.20
+    attainment_min: 0.30
+    attainment_max: 0.60
+
+acquisition:
+  company_name: DataPulse Analytics
+  acquisition_date: "2024-10-01"
+  primary_region: DE
+  currency_code: EUR
+  acquired_customers: 400
+  acquired_arr_gbp: 15000000
+  legacy_product_id: PROD_PULSE
+
+  migration:
+    start_date: "2025-01-01"
+    end_date: "2026-12-31"
+    successful_migration_share: 0.65
+    friction_share: 0.35
+
+  injected_defects:
+    integer_customer_id_share: 0.20
+    duplicate_crm_account_share: 0.10
+    missing_industry_share: 0.05
+    non_standard_region_labels:
+      - DE
+      - GER
+      - Deutschland
+
+budget_rules:
+  budget_years:
+    - 2024
+    - 2025
+    - 2026
+
+  planning_bias:
+    revenue_variance_pct: 0.05
+    expense_variance_pct: 0.08
+    headcount_variance_pct: 0.10
+
+  department_bias:
+    sales_revenue_optimism_pct: 0.05
+    marketing_lead_velocity_optimism_pct: 0.10
+    engineering_cost_underestimate_pct: -0.08
+    ga_inflation_blindspot_pct: -0.05
+
+  workbook_defects:
+    include_blank_rows: true
+    include_subtotal_rows: true
+    include_grand_total_rows: true
+    include_manual_notes: true
+    include_formatting_inconsistencies: true
+
+forecast_rules:
+  forecast_year: 2026
+  forecast_versions:
+    - Q1
+    - Q2
+    - Q3
+    - Q4
+
+  convergence_error_profile:
+    Q1: high
+    Q2: medium
+    Q3: low
+    Q4: lowest
+
+  shock_events:
+    - event_id: SHOCK_2024_Q4_DATAPULSE_EARLY_CLOSE
+      period: "2024-Q4"
+      description: DataPulse acquisition closes early
+      impact_area:
+        - expenses
+        - customer_records
+        - fx
+
+    - event_id: SHOCK_2025_Q2_AI_SURGE
+      period: "2025-Q2"
+      description: Nexus AI demand exceeds forecast by 45%
+      impact_area:
+        - revenue
+        - cogs
+        - gross_margin
+
+    - event_id: SHOCK_2026_Q1_WHALE_LOSS
+      period: "2026-Q1"
+      description: Top-10 enterprise customer churn removes £650k ARR
+      arr_loss_gbp: 650000
+      customer_segment: enterprise
+      industry: Financial Services
+      region_id: DE
+
+data_quality_defects:
+  crm:
+    duplicate_account_share: 0.10
+    orphan_opportunity_share: 0.03
+    missing_industry_share: 0.05
+
+  billing:
+    provisioning_delay_min_days: 2
+    provisioning_delay_max_days: 7
+    include_unlinked_refunds: true
+    include_unmapped_credit_notes: true
+
+  erp:
+    unmapped_cost_centre_share: 0.02
+    include_duplicate_journals: true
+
+  hris:
+    null_manager_id_share: 0.05
+    include_department_name_variants: true
+    include_missing_termination_dates: true
+
+target_volumes:
+  customers:
+    min: 3500
+    max: 3900
+
+  employees:
+    min: 850
+    max: 950
+
+  subscription_events:
+    min: 8000
+    max: 10000
+
+  invoice_lines:
+    min: 250000
+    max: 350000
+
+  gl_transactions:
+    min: 120000
+    max: 180000
+
+  budget_rows:
+    min: 10000
+    max: 20000
+
+  forecast_rows:
+    min: 15000
+    max: 25000
+
+  mrr_ledger_rows:
+    min: 400000
+    max: 700000
+```

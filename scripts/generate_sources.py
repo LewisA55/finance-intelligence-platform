@@ -4,6 +4,7 @@ from scripts.generators.department_generator import DepartmentGenerator
 from scripts.generators.fx_generator import FXRateGenerator
 from scripts.generators.region_generator import RegionGenerator
 from scripts.generators.product_generator import ProductGenerator
+from scripts.generators.customer_generator import CustomerGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -39,6 +40,12 @@ def main() -> None:
         regions = region_generator.generate()
         region_generator.save(regions)
         logger.info("Region generation complete: %s rows", len(regions))
+
+        logger.info("Phase 3B.1: Generating billing customer master")
+        customer_generator = CustomerGenerator()
+        customers = customer_generator.generate()
+        customer_generator.save(customers)
+        logger.info("Customer generation complete: %s rows", len(customers))
 
         logger.info("=" * 72)
         logger.info("SOURCE GENERATION COMPLETED SUCCESSFULLY")

@@ -15,6 +15,7 @@ class BusinessRulesConfig:
         self.regions = self._raw_config.get("regions", [])
         self.fx = self._raw_config.get("fx", {})
         self.products = self._raw_config.get("products", [])
+        self.product_skus = self._raw_config.get("product_skus", [])
         self.customer_segments = self._raw_config.get("customer_segments", {})
         self.customer_industries = self._raw_config.get("customer_industries", [])
         self.customer_cohorts = self._raw_config.get("customer_cohorts", {})

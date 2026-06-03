@@ -1,6 +1,9 @@
 import sys
 
+from scripts.generators.department_generator import DepartmentGenerator
 from scripts.generators.fx_generator import FXRateGenerator
+from scripts.generators.region_generator import RegionGenerator
+from scripts.generators.product_generator import ProductGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -18,6 +21,24 @@ def main() -> None:
         fx_rates = fx_generator.generate()
         fx_generator.save(fx_rates)
         logger.info("FX generation complete: %s rows", len(fx_rates))
+
+        logger.info("Phase 3A.2: Generating product catalogue")
+        product_generator = ProductGenerator()
+        products = product_generator.generate()
+        product_generator.save(products)
+        logger.info("Product generation complete: %s rows", len(products))
+
+        logger.info("Phase 3A.3: Generating department catalogue")
+        department_generator = DepartmentGenerator()
+        departments = department_generator.generate()
+        department_generator.save(departments)
+        logger.info("Department generation complete: %s rows", len(departments))
+
+        logger.info("Phase 3A.2: Generating region catalogue")
+        region_generator = RegionGenerator()
+        regions = region_generator.generate()
+        region_generator.save(regions)
+        logger.info("Region generation complete: %s rows", len(regions))
 
         logger.info("=" * 72)
         logger.info("SOURCE GENERATION COMPLETED SUCCESSFULLY")

@@ -73,52 +73,146 @@ fx:
       monthly_volatility: 0.006
 
 products:
-  - product_id: PROD_CORE
-    product_name: Nexus Core
-    product_suite: Core
+  - product_id: "PROD_CORE"
+    product_suite: "Core"
     revenue_mix_target: 0.55
-    pricing_model: recurring_subscription
     gross_margin_target: 0.82
     is_recurring: true
     is_legacy_product: false
 
-  - product_id: PROD_ANALYTICS
-    product_name: Nexus Analytics
-    product_suite: Analytics
+  - product_id: "PROD_ANALYTICS"
+    product_suite: "Analytics"
     revenue_mix_target: 0.25
-    pricing_model: recurring_subscription
     gross_margin_target: 0.88
     is_recurring: true
     is_legacy_product: false
 
-  - product_id: PROD_AI
-    product_name: Nexus AI
-    product_suite: AI
+  - product_id: "PROD_AI"
+    product_suite: "AI"
     revenue_mix_target: 0.10
-    pricing_model: usage_based_subscription
     gross_margin_target: 0.65
     is_recurring: true
     is_legacy_product: false
-    launch_date: "2024-01-01"
 
-  - product_id: PROD_SERVICES
-    product_name: Professional Services
-    product_suite: Services
+  - product_id: "PROD_SERVICES"
+    product_suite: "Professional Services"
     revenue_mix_target: 0.10
-    pricing_model: one_time_services
     gross_margin_target: 0.35
     is_recurring: false
     is_legacy_product: false
 
-  - product_id: PROD_PULSE
-    product_name: PulseEngine
-    product_suite: Legacy DataPulse
+  - product_id: "PROD_LEGACY"
+    product_suite: "Legacy"
     revenue_mix_target: 0.00
-    pricing_model: recurring_subscription
     gross_margin_target: 0.78
     is_recurring: true
     is_legacy_product: true
-    acquisition_source: DataPulse Analytics
+    acquisition_source: "DataPulse Analytics"
+
+product_skus:
+  - sku_code: "CORE-ESS-001"
+    product_id: 100
+    product_family_code: "PROD_CORE"
+    product_name: "Core Essentials"
+    product_category: "Subscription"
+    is_usage_based: false
+    launch_date: "2021-01-01"
+
+  - sku_code: "CORE-PRO-001"
+    product_id: 101
+    product_family_code: "PROD_CORE"
+    product_name: "Core Professional"
+    product_category: "Subscription"
+    is_usage_based: false
+    launch_date: "2021-01-01"
+
+  - sku_code: "CORE-ENT-001"
+    product_id: 102
+    product_family_code: "PROD_CORE"
+    product_name: "Core Enterprise"
+    product_category: "Subscription"
+    is_usage_based: false
+    launch_date: "2021-01-01"
+
+  - sku_code: "ANA-STD-001"
+    product_id: 103
+    product_family_code: "PROD_ANALYTICS"
+    product_name: "Analytics Standard"
+    product_category: "Subscription"
+    is_usage_based: false
+    launch_date: "2022-01-01"
+
+  - sku_code: "ANA-ADV-001"
+    product_id: 104
+    product_family_code: "PROD_ANALYTICS"
+    product_name: "Analytics Advanced"
+    product_category: "Subscription"
+    is_usage_based: false
+    launch_date: "2022-01-01"
+
+  - sku_code: "ANA-ENT-001"
+    product_id: 105
+    product_family_code: "PROD_ANALYTICS"
+    product_name: "Analytics Enterprise"
+    product_category: "Subscription"
+    is_usage_based: false
+    launch_date: "2023-01-01"
+
+  - sku_code: "AI-AST-001"
+    product_id: 106
+    product_family_code: "PROD_AI"
+    product_name: "AI Assist"
+    product_category: "Usage Subscription"
+    is_usage_based: true
+    launch_date: "2024-01-01"
+
+  - sku_code: "AI-COP-001"
+    product_id: 107
+    product_family_code: "PROD_AI"
+    product_name: "AI Copilot"
+    product_category: "Usage Subscription"
+    is_usage_based: true
+    launch_date: "2024-06-01"
+
+  - sku_code: "AI-ENT-001"
+    product_id: 108
+    product_family_code: "PROD_AI"
+    product_name: "AI Enterprise"
+    product_category: "Usage Subscription"
+    is_usage_based: true
+    launch_date: "2025-01-01"
+
+  - sku_code: "PS-IMP-001"
+    product_id: 109
+    product_family_code: "PROD_SERVICES"
+    product_name: "Implementation Services"
+    product_category: "One-Time Services"
+    is_usage_based: false
+    launch_date: "2021-01-01"
+
+  - sku_code: "PS-TRN-001"
+    product_id: 110
+    product_family_code: "PROD_SERVICES"
+    product_name: "Training Services"
+    product_category: "One-Time Services"
+    is_usage_based: false
+    launch_date: "2021-01-01"
+
+  - sku_code: "PS-CON-001"
+    product_id: 111
+    product_family_code: "PROD_SERVICES"
+    product_name: "Consulting Services"
+    product_category: "One-Time Services"
+    is_usage_based: false
+    launch_date: "2022-06-01"
+
+  - sku_code: "PE-LEG-001"
+    product_id: 112
+    product_family_code: "PROD_LEGACY"
+    product_name: "PulseEngine Legacy"
+    product_category: "Subscription"
+    is_usage_based: false
+    launch_date: "2018-03-15"
 
 customer_segments:
   enterprise:

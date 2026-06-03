@@ -5,6 +5,7 @@ from scripts.generators.fx_generator import FXRateGenerator
 from scripts.generators.region_generator import RegionGenerator
 from scripts.generators.product_generator import ProductGenerator
 from scripts.generators.customer_generator import CustomerGenerator
+from scripts.generators.crm_generator import CRMGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -46,6 +47,12 @@ def main() -> None:
         customers = customer_generator.generate()
         customer_generator.save(customers)
         logger.info("Customer generation complete: %s rows", len(customers))
+
+        logger.info("Phase 3B.2: Generating CRM account export")
+        crm_generator = CRMGenerator()
+        crm_accounts = crm_generator.generate()
+        crm_generator.save(crm_accounts)
+        logger.info("CRM generation complete: %s rows", len(crm_accounts))
 
         logger.info("=" * 72)
         logger.info("SOURCE GENERATION COMPLETED SUCCESSFULLY")

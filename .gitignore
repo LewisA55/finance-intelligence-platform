@@ -1,9 +1,69 @@
-__pycache__/
+# Python
+
+**pycache**/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environments
+
+venv/
+.env/
+.venv/
+
+# Jupyter
+
 .ipynb_checkpoints/
 
+# Logs
+
+logs/
+*.log
+
+# Data Outputs
+
+data/raw/*
+data/processed/*
+data/warehouse/*
+
+# Keep Folder Structure
+
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/warehouse/.gitkeep
+
+# DuckDB
+
 *.duckdb
-*.pbix
+*.db
+
+# OS Files
+
+.DS_Store
+Thumbs.db
+
+# VS Code
+
+.vscode/
+
+# Testing
+
+.pytest_cache/
+
+# Secrets
 
 .env
+.env.*
 
-data/raw/
+# Power BI
+
+*.pbix
+
+# dbt
+
+target/
+dbt_packages/
+logs/
+
+```
+```

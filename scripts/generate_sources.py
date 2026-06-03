@@ -4,6 +4,7 @@ from scripts.generators.department_generator import DepartmentGenerator
 from scripts.generators.fx_generator import FXRateGenerator
 from scripts.generators.region_generator import RegionGenerator
 from scripts.generators.product_generator import ProductGenerator
+from scripts.generators.employee_generator import EmployeeGenerator
 from scripts.generators.customer_generator import CustomerGenerator
 from scripts.generators.crm_generator import CRMGenerator
 from scripts.utils.logger import get_logger
@@ -53,6 +54,16 @@ def main() -> None:
         crm_accounts = crm_generator.generate()
         crm_generator.save(crm_accounts)
         logger.info("CRM generation complete: %s rows", len(crm_accounts))
+
+        logger.info("Phase 3C.1: Generating HRIS employee master and headcount snapshot")
+        employee_generator = EmployeeGenerator()
+        employees, headcount_snapshot = employee_generator.generate()
+        employee_generator.save(employees, headcount_snapshot)
+        logger.info(
+           "HRIS generation complete: %s employee rows, %s snapshot rows",
+           len(employees),
+           len(headcount_snapshot),
+        )
 
         logger.info("=" * 72)
         logger.info("SOURCE GENERATION COMPLETED SUCCESSFULLY")

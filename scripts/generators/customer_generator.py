@@ -52,6 +52,31 @@ class CustomerGenerator:
         }
 
         return mapping.get(segment_key, segment_key)
+    
+    def _get_customer_lifecycle_status(self, is_acquired_customer: bool) -> tuple[str, int]:
+        """
+        Assign realistic customer lifecycle status.
+
+        Most customers remain active, but a controlled minority are churned or paused.
+        This creates realistic inputs for churn, retention, NRR and GRR analytics.
+        """
+
+        if is_acquired_customer:
+            # Migrated DataPulse customers carry slightly higher churn/paused risk.
+            status = np.random.choice(
+                ["Active", "Churned", "Paused"],
+                p=[0.93, 0.05, 0.02],
+            )
+        else:
+            # Organic Nexus customers are slightly more stable.
+            status = np.random.choice(
+                ["Active", "Churned", "Paused"],
+                p=[0.95, 0.04, 0.01],
+            )
+
+        active_flag = 1 if status == "Active" else 0
+
+        return str(status), active_flag
 
     def _get_region_choices(self) -> tuple[list[dict], list[float]]:
         """Extracts region choices and validates revenue-share weighting."""
@@ -174,6 +199,10 @@ class CustomerGenerator:
 
             cohort_year, created_date = self._cohort_to_created_date(cohort_key)
 
+            customer_status, active_flag = self._get_customer_lifecycle_status(
+                is_acquired_customer=False,
+            )
+
             records.append(
                 {
                     "customer_pk": self._generate_customer_pk(customer_id),
@@ -195,8 +224,8 @@ class CustomerGenerator:
                     "is_acquired_customer": 0,
                     "acquisition_source": "Nexus Organic",
                     "created_date": created_date,
-                    "customer_status": "Active",
-                    "active_flag": 1,
+                    "customer_status": customer_status,
+                    "active_flag": active_flag,
                 }
             )
 
@@ -224,6 +253,10 @@ class CustomerGenerator:
             legacy_id = str(800000 + index)
 
             industry = np.random.choice(industry_labels, p=industry_weights)
+
+            customer_status, active_flag = self._get_customer_lifecycle_status(
+                is_acquired_customer=True,
+            )
 
             records.append(
                 {
@@ -255,8 +288,8 @@ class CustomerGenerator:
                         start_date=date(2024, 10, 1),
                         end_date=date(2024, 10, 31),
                     ),
-                    "customer_status": "Active",
-                    "active_flag": 1,
+                    "customer_status": customer_status,
+                    "active_flag": active_flag,
                 }
             )
 

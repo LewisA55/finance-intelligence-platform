@@ -1,12 +1,18 @@
 import sys
 
+import sys
+
 from scripts.generators.department_generator import DepartmentGenerator
 from scripts.generators.fx_generator import FXRateGenerator
 from scripts.generators.region_generator import RegionGenerator
 from scripts.generators.product_generator import ProductGenerator
+from scripts.generators.product_price_book_generator import ProductPriceBookGenerator
 from scripts.generators.employee_generator import EmployeeGenerator
 from scripts.generators.customer_generator import CustomerGenerator
 from scripts.generators.crm_generator import CRMGenerator
+from scripts.generators.billing_subscriptions_generator import SubscriptionGenerator
+from scripts.generators.subscription_events_generator import SubscriptionEventsGenerator
+from scripts.generators.billing_invoices_generator import BillingInvoicesGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -30,6 +36,12 @@ def main() -> None:
         products = product_generator.generate()
         product_generator.save(products)
         logger.info("Product generation complete: %s rows", len(products))
+
+        logger.info("Phase 3A.2b: Generating product price book")
+        price_book_generator = ProductPriceBookGenerator()
+        price_book = price_book_generator.generate()
+        price_book_generator.save(price_book)
+        logger.info("Product price book generation complete: %s rows", len(price_book))
 
         logger.info("Phase 3A.3: Generating department catalogue")
         department_generator = DepartmentGenerator()
@@ -63,6 +75,31 @@ def main() -> None:
            "HRIS generation complete: %s employee rows, %s snapshot rows",
            len(employees),
            len(headcount_snapshot),
+        )
+
+        logger.info("Phase 3D: Generating billing subscription master")
+        subscription_generator = SubscriptionGenerator()
+        subscriptions = subscription_generator.generate()
+        subscription_generator.save(subscriptions)
+        logger.info("Subscription generation complete: %s rows", len(subscriptions))
+
+        logger.info("Phase 3D.2: Generating billing subscription events")
+        subscription_events_generator = SubscriptionEventsGenerator()
+        subscription_events = subscription_events_generator.generate()
+        subscription_events_generator.save(subscription_events)
+        logger.info(
+            "Subscription events generation complete: %s rows",
+            len(subscription_events),
+        )
+
+        logger.info("Phase 3E: Generating billing invoices and invoice lines")
+        billing_invoices_generator = BillingInvoicesGenerator()
+        invoice_headers, invoice_lines = billing_invoices_generator.generate()
+        billing_invoices_generator.save(invoice_headers, invoice_lines)
+        logger.info(
+            "Billing invoice generation complete: %s headers, %s lines",
+            len(invoice_headers),
+            len(invoice_lines),
         )
 
         logger.info("=" * 72)

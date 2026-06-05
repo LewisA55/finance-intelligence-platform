@@ -13,6 +13,7 @@ from scripts.generators.crm_generator import CRMGenerator
 from scripts.generators.billing_subscriptions_generator import SubscriptionGenerator
 from scripts.generators.subscription_events_generator import SubscriptionEventsGenerator
 from scripts.generators.billing_invoices_generator import BillingInvoicesGenerator
+from scripts.generators.billing_payments_generator import BillingPaymentsGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -100,6 +101,23 @@ def main() -> None:
             "Billing invoice generation complete: %s headers, %s lines",
             len(invoice_headers),
             len(invoice_lines),
+        )
+
+        logger.info("Phase 3F: Generating payments, cash receipts and AR ageing")
+        billing_payments_generator = BillingPaymentsGenerator()
+        payments, payment_allocations, ar_ageing_snapshot = (
+            billing_payments_generator.generate()
+        )
+        billing_payments_generator.save(
+            payments_df=payments,
+            allocations_df=payment_allocations,
+            ageing_df=ar_ageing_snapshot,
+        )
+        logger.info(
+            "Payments and AR ageing generation complete: %s payments, %s allocations, %s ageing rows",
+            len(payments),
+            len(payment_allocations),
+            len(ar_ageing_snapshot),
         )
 
         logger.info("=" * 72)

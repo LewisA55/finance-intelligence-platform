@@ -19,6 +19,7 @@ from scripts.generators.chart_of_accounts_generator import ChartOfAccountsGenera
 from scripts.generators.erp_gl_journal_lines_generator import ERPGLJournalLinesGenerator
 from scripts.generators.vendors_generator import VendorsGenerator
 from scripts.generators.vendor_invoices_generator import VendorInvoicesGenerator
+from scripts.generators.vendor_payments_generator import VendorPaymentsGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -188,6 +189,17 @@ def main() -> None:
             "Vendor invoice generation complete: %s headers, %s lines",
             f"{len(vendor_invoice_headers):,}",
             f"{len(vendor_invoice_lines):,}",
+        )
+
+        logger.info("Phase 3I.3: Generating vendor payments and AP settlement")
+
+        vendor_payments_generator = VendorPaymentsGenerator()
+        vendor_payments = vendor_payments_generator.generate()
+        vendor_payments_generator.save(vendor_payments)
+
+        logger.info(
+            "Vendor payments generation complete: %s payments",
+            f"{len(vendor_payments):,}",
         )
 
         logger.info("=" * 72)

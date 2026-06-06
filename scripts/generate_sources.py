@@ -14,6 +14,7 @@ from scripts.generators.billing_subscriptions_generator import SubscriptionGener
 from scripts.generators.subscription_events_generator import SubscriptionEventsGenerator
 from scripts.generators.billing_invoices_generator import BillingInvoicesGenerator
 from scripts.generators.billing_payments_generator import BillingPaymentsGenerator
+from scripts.generators.revenue_recognition_generator import RevenueRecognitionGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -118,6 +119,23 @@ def main() -> None:
             len(payments),
             len(payment_allocations),
             len(ar_ageing_snapshot),
+        )
+        logger.info("Phase 3G: Generating revenue recognition and deferred revenue")
+
+        revenue_recognition_generator = RevenueRecognitionGenerator()
+        revenue_recognition_schedule, deferred_revenue_rollforward = (
+            revenue_recognition_generator.generate()
+        )
+
+        revenue_recognition_generator.save(
+            schedule_df=revenue_recognition_schedule,
+            rollforward_df=deferred_revenue_rollforward,
+        )
+
+        logger.info(
+            "Revenue recognition generation complete: %s schedule rows, %s deferred revenue roll-forward rows",
+            f"{len(revenue_recognition_schedule):,}",
+            f"{len(deferred_revenue_rollforward):,}",
         )
 
         logger.info("=" * 72)

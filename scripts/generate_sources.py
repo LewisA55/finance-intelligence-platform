@@ -24,6 +24,7 @@ from scripts.generators.financial_statement_extract_generator import FinancialSt
 from scripts.generators.financial_statement_control_summary_generator import FinancialStatementControlSummaryGenerator
 from scripts.generators.control_findings_register_generator import ControlFindingsRegisterGenerator
 from scripts.generators.workforce_cost_generator import WorkforceCostGenerator
+from scripts.generators.budget_generator import BudgetGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -278,6 +279,18 @@ def main() -> None:
             f"{len(employee_compensation):,}",
             f"{len(payroll_expense_lines):,}",
             f"{len(headcount_plan):,}",
+        )
+
+        logger.info("Phase 3L.1: Generating Budget / Annual Operating Plan source extracts")
+
+        budget_generator = BudgetGenerator()
+        budget_versions, budget_lines = budget_generator.generate()
+        budget_generator.save(budget_versions, budget_lines)
+
+        logger.info(
+            "Budget generation complete: %s versions, %s lines",
+            f"{len(budget_versions):,}",
+            f"{len(budget_lines):,}",
         )
 
         logger.info("=" * 72)

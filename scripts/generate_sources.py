@@ -20,6 +20,7 @@ from scripts.generators.vendor_invoices_generator import VendorInvoicesGenerator
 from scripts.generators.vendor_payments_generator import VendorPaymentsGenerator
 from scripts.generators.ap_ageing_snapshot_generator import APAgeingSnapshotGenerator
 from scripts.generators.trial_balance_generator import TrialBalanceGenerator
+from scripts.generators.financial_statement_extract_generator import FinancialStatementExtractGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -222,6 +223,17 @@ def main() -> None:
         logger.info(
             "Trial Balance generation complete: %s rows",
             f"{len(trial_balance):,}",
+        )
+
+        logger.info("Phase 3J.2: Generating Financial Statement extract")
+
+        financial_statement_generator = FinancialStatementExtractGenerator()
+        financial_statement_extract = financial_statement_generator.generate()
+        financial_statement_generator.save(financial_statement_extract)
+
+        logger.info(
+            "Financial Statement extract generation complete: %s rows",
+            f"{len(financial_statement_extract):,}",
         )
 
         logger.info("=" * 72)

@@ -17,6 +17,7 @@ from scripts.generators.billing_payments_generator import BillingPaymentsGenerat
 from scripts.generators.revenue_recognition_generator import RevenueRecognitionGenerator
 from scripts.generators.chart_of_accounts_generator import ChartOfAccountsGenerator
 from scripts.generators.erp_gl_journal_lines_generator import ERPGLJournalLinesGenerator
+from scripts.generators.vendors_generator import VendorsGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -160,6 +161,17 @@ def main() -> None:
         logger.info(
             "ERP GL journal lines generation complete: %s journal lines",
             f"{len(erp_gl_journal_lines):,}",
+        )
+
+        logger.info("Phase 3I.1: Generating procurement vendor master")
+
+        vendors_generator = VendorsGenerator()
+        vendors = vendors_generator.generate()
+        vendors_generator.save(vendors)
+
+        logger.info(
+            "Vendor master generation complete: %s vendors",
+            f"{len(vendors):,}",
         )
 
         logger.info("=" * 72)

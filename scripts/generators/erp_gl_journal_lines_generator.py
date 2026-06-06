@@ -14,14 +14,14 @@ general ledger using balanced double-entry journal lines.
 
 Scope
 -----
-Quote-to-cash only:
+Quote-to-cash plus procure-to-pay:
 
-1. Invoice posting
+1. Customer invoice posting
    Dr Accounts Receivable
    Cr Deferred Revenue - Current
    Cr Sales Tax / VAT Payable
 
-2. Cash receipt posting
+2. Customer cash receipt posting
    Dr Cash at Bank
    Cr Accounts Receivable for applied cash
    Cr Unapplied Cash / Customer Credits for unapplied cash
@@ -30,14 +30,23 @@ Quote-to-cash only:
    Dr Deferred Revenue - Current
    Cr SaaS Subscription Revenue / Legacy Subscription Revenue
 
+4. Vendor invoice posting
+   Dr Expense / COGS account from vendor_invoice_lines.account_code
+   Cr Accounts Payable
+
+5. Vendor payment posting
+   Dr Accounts Payable
+   Cr Cash at Bank by payment currency
+
 Design principle
 ----------------
 Every journal_id must balance:
     total debits = total credits
 
-This starter version excludes labelled defective source rows from normal GL
-posting so the GL remains structurally valid. Source-layer defects remain
-available for dbt/audit testing in the subledgers.
+Q2C still excludes labelled defective source rows from normal GL posting where
+those defects are intended to live in the subledger control layer. P2P deliberately
+includes structurally valid AP defects because AP_CUTOFF_FAILURE and
+DUPLICATE_VENDOR_INVOICE are real posted business events.
 """
 
 from __future__ import annotations
@@ -92,6 +101,7 @@ class ERPGLJournalLinesGenerator:
     ACCOUNT_AR = "1100"
     ACCOUNT_DEFERRED_REVENUE_CURRENT = "2100"
     ACCOUNT_UNAPPLIED_CASH = "2200"
+    ACCOUNT_AP = "2300"
     ACCOUNT_VAT_PAYABLE = "2500"
 
     ACCOUNT_SAAS_REVENUE = "4100"
@@ -120,6 +130,9 @@ class ERPGLJournalLinesGenerator:
         "subscription_id",
         "invoice_id",
         "payment_id",
+        "vendor_id",
+        "vendor_invoice_id",
+        "vendor_payment_id",
         "allocation_id",
         "revenue_schedule_id",
         "account_code",
@@ -246,6 +259,7 @@ class ERPGLJournalLinesGenerator:
         accounting_dir = get_raw_data_path("accounting")
         billing_dir = get_raw_data_path("billing")
         revenue_dir = get_raw_data_path("revenue")
+        procurement_dir = get_raw_data_path("procurement")
 
         coa_df = self._load_csv(
             accounting_dir / "chart_of_accounts.csv",
@@ -277,12 +291,30 @@ class ERPGLJournalLinesGenerator:
             "revenue_recognition_schedule.csv",
         )
 
+        vendor_invoices_df = self._load_csv(
+            procurement_dir / "vendor_invoices.csv",
+            "vendor_invoices.csv",
+        )
+
+        vendor_invoice_lines_df = self._load_csv(
+            procurement_dir / "vendor_invoice_lines.csv",
+            "vendor_invoice_lines.csv",
+        )
+
+        vendor_payments_df = self._load_csv(
+            procurement_dir / "vendor_payments.csv",
+            "vendor_payments.csv",
+        )
+
         coa_df = self._prepare_chart_of_accounts(coa_df)
         invoices_df = self._prepare_invoices(invoices_df)
         invoice_lines_df = self._prepare_invoice_lines(invoice_lines_df)
         payments_df = self._prepare_payments(payments_df)
         allocations_df = self._prepare_payment_allocations(allocations_df)
         revrec_df = self._prepare_revenue_recognition_schedule(revrec_df)
+        vendor_invoices_df = self._prepare_vendor_invoices(vendor_invoices_df)
+        vendor_invoice_lines_df = self._prepare_vendor_invoice_lines(vendor_invoice_lines_df)
+        vendor_payments_df = self._prepare_vendor_payments(vendor_payments_df)
 
         invoices_df = self._filter_supported_gl_currencies(
             invoices_df,
@@ -309,6 +341,19 @@ class ERPGLJournalLinesGenerator:
             dataset_name="revenue_recognition_schedule.csv",
         )
 
+        vendor_invoices_df = self._filter_supported_gl_currencies(
+            vendor_invoices_df,
+            dataset_name="vendor_invoices.csv",
+        )
+
+        # vendor_invoice_lines.csv inherits currency from vendor_invoices.csv.
+        # Currency filtering is therefore applied at the vendor invoice header level.
+
+        vendor_payments_df = self._filter_supported_gl_currencies(
+            vendor_payments_df,
+            dataset_name="vendor_payments.csv",
+        )
+
         retained_invoice_ids = set(invoices_df["invoice_id"].astype(str))
 
         invoice_lines_df = invoice_lines_df[
@@ -321,19 +366,32 @@ class ERPGLJournalLinesGenerator:
 
         retained_payment_ids = set(payments_df["payment_id"].astype(str))
 
+        retained_vendor_invoice_ids = set(vendor_invoices_df["vendor_invoice_id"].astype(str))
+        vendor_invoice_lines_df = vendor_invoice_lines_df[
+            vendor_invoice_lines_df["vendor_invoice_id"].astype(str).isin(retained_vendor_invoice_ids)
+        ].copy()
+
+        vendor_payments_df = vendor_payments_df[
+            vendor_payments_df["vendor_invoice_id"].astype(str).isin(retained_vendor_invoice_ids)
+        ].copy()
+
         allocations_df = allocations_df[
             allocations_df["payment_id"].astype(str).isin(retained_payment_ids)
         ].copy()
 
         logger.info(
             "Loaded GL dependencies: %s accounts, %s invoices, %s invoice lines, "
-            "%s payments, %s allocations, %s recognition rows.",
+            "%s payments, %s allocations, %s recognition rows, "
+            "%s vendor invoices, %s vendor invoice lines, %s vendor payments.",
             f"{len(coa_df):,}",
             f"{len(invoices_df):,}",
             f"{len(invoice_lines_df):,}",
             f"{len(payments_df):,}",
             f"{len(allocations_df):,}",
             f"{len(revrec_df):,}",
+            f"{len(vendor_invoices_df):,}",
+            f"{len(vendor_invoice_lines_df):,}",
+            f"{len(vendor_payments_df):,}",
         )
 
         logger.info(
@@ -350,6 +408,9 @@ class ERPGLJournalLinesGenerator:
             payments_df,
             allocations_df,
             revrec_df,
+            vendor_invoices_df,
+            vendor_invoice_lines_df,
+            vendor_payments_df,
         )
 
     # ------------------------------------------------------------------
@@ -393,6 +454,7 @@ class ERPGLJournalLinesGenerator:
             self.ACCOUNT_AR,
             self.ACCOUNT_DEFERRED_REVENUE_CURRENT,
             self.ACCOUNT_UNAPPLIED_CASH,
+            self.ACCOUNT_AP,
             self.ACCOUNT_VAT_PAYABLE,
             self.ACCOUNT_SAAS_REVENUE,
             self.ACCOUNT_LEGACY_REVENUE,
@@ -774,6 +836,148 @@ class ERPGLJournalLinesGenerator:
 
         return df
 
+
+    def _prepare_vendor_invoices(self, vendor_invoices_df: pd.DataFrame) -> pd.DataFrame:
+        df = vendor_invoices_df.copy()
+
+        self._require_columns(
+            df,
+            {
+                "vendor_invoice_id",
+                "vendor_id",
+                "vendor_name",
+                "invoice_number",
+                "invoice_date",
+                "posting_date",
+                "currency",
+                "subtotal_local",
+                "tax_amount_local",
+                "total_local",
+                "subtotal_gbp",
+                "tax_amount_gbp",
+                "total_gbp",
+                "source_system",
+                "is_defect_flag",
+                "defect_type",
+            },
+            "vendor_invoices.csv",
+        )
+
+        for column in ["vendor_invoice_id", "vendor_id", "vendor_name", "invoice_number"]:
+            df[column] = df[column].fillna("").astype(str)
+
+        df["invoice_date"] = pd.to_datetime(df["invoice_date"], errors="coerce")
+        df["posting_date"] = pd.to_datetime(df["posting_date"], errors="coerce")
+        df["currency"] = df["currency"].astype(str).str.upper()
+        df["source_system"] = df["source_system"].fillna("nexus_ap_platform").astype(str)
+        df["is_defect_flag"] = df["is_defect_flag"].apply(
+            lambda x: self._normalise_bool_int(x, default=0)
+        )
+        df["defect_type"] = df["defect_type"].fillna("").astype(str)
+
+        if df["posting_date"].isna().any():
+            bad_count = int(df["posting_date"].isna().sum())
+            raise ValueError(
+                f"vendor_invoices.csv contains invalid posting_date values: {bad_count:,}"
+            )
+
+        for column in [
+            "subtotal_local",
+            "tax_amount_local",
+            "total_local",
+            "subtotal_gbp",
+            "tax_amount_gbp",
+            "total_gbp",
+        ]:
+            df[column] = pd.to_numeric(df[column], errors="coerce").fillna(0.00)
+
+        return df
+
+    def _prepare_vendor_invoice_lines(self, vendor_invoice_lines_df: pd.DataFrame) -> pd.DataFrame:
+        df = vendor_invoice_lines_df.copy()
+
+        self._require_columns(
+            df,
+            {
+                "vendor_invoice_line_id",
+                "vendor_invoice_id",
+                "vendor_id",
+                "vendor_name",
+                "account_code",
+                "expense_category",
+                "line_amount_local",
+                "line_amount_gbp",
+                "source_system",
+                "is_defect_flag",
+                "defect_type",
+            },
+            "vendor_invoice_lines.csv",
+        )
+
+        for column in [
+            "vendor_invoice_line_id",
+            "vendor_invoice_id",
+            "vendor_id",
+            "vendor_name",
+            "expense_category",
+        ]:
+            df[column] = df[column].fillna("").astype(str)
+
+        df["account_code"] = df["account_code"].apply(self._normalise_account_code)
+        df["source_system"] = df["source_system"].fillna("nexus_ap_platform").astype(str)
+        df["is_defect_flag"] = df["is_defect_flag"].apply(
+            lambda x: self._normalise_bool_int(x, default=0)
+        )
+        df["defect_type"] = df["defect_type"].fillna("").astype(str)
+
+        for column in ["line_amount_local", "line_amount_gbp"]:
+            df[column] = pd.to_numeric(df[column], errors="coerce").fillna(0.00)
+
+        return df
+
+    def _prepare_vendor_payments(self, vendor_payments_df: pd.DataFrame) -> pd.DataFrame:
+        df = vendor_payments_df.copy()
+
+        self._require_columns(
+            df,
+            {
+                "vendor_payment_id",
+                "vendor_invoice_id",
+                "vendor_id",
+                "vendor_name",
+                "payment_date",
+                "currency",
+                "payment_amount_local",
+                "payment_amount_gbp",
+                "source_system",
+                "is_defect_flag",
+                "defect_type",
+            },
+            "vendor_payments.csv",
+        )
+
+        for column in ["vendor_payment_id", "vendor_invoice_id", "vendor_id", "vendor_name"]:
+            df[column] = df[column].fillna("").astype(str)
+
+        df["payment_date"] = pd.to_datetime(df["payment_date"], errors="coerce")
+        df["currency"] = df["currency"].astype(str).str.upper()
+        df["source_system"] = df["source_system"].fillna("NEXUS_ERP_AP").astype(str)
+        df["is_defect_flag"] = df["is_defect_flag"].apply(
+            lambda x: self._normalise_bool_int(x, default=0)
+        )
+        df["defect_type"] = df["defect_type"].fillna("").astype(str)
+
+        if df["payment_date"].isna().any():
+            bad_count = int(df["payment_date"].isna().sum())
+            raise ValueError(
+                f"vendor_payments.csv contains invalid payment_date values: {bad_count:,}"
+            )
+
+        for column in ["payment_amount_local", "payment_amount_gbp"]:
+            df[column] = pd.to_numeric(df[column], errors="coerce").fillna(0.00)
+
+        return df
+
     # ------------------------------------------------------------------
     # Account helpers and line construction
     # ------------------------------------------------------------------
@@ -826,6 +1030,11 @@ class ERPGLJournalLinesGenerator:
         payment_id: str | None = None,
         allocation_id: str | None = None,
         revenue_schedule_id: str | None = None,
+        vendor_id: str | None = None,
+        vendor_invoice_id: str | None = None,
+        vendor_payment_id: str | None = None,
+        is_defect_flag: int = 0,
+        defect_type: str = "",
     ) -> dict:
         if dc_indicator not in {"D", "C"}:
             raise ValueError(f"Invalid dc_indicator: {dc_indicator}")
@@ -877,6 +1086,9 @@ class ERPGLJournalLinesGenerator:
             "subscription_id": subscription_id,
             "invoice_id": invoice_id,
             "payment_id": payment_id,
+            "vendor_id": vendor_id,
+            "vendor_invoice_id": vendor_invoice_id,
+            "vendor_payment_id": vendor_payment_id,
             "allocation_id": allocation_id,
             "revenue_schedule_id": revenue_schedule_id,
             "account_code": account_code,
@@ -892,8 +1104,8 @@ class ERPGLJournalLinesGenerator:
             "description": description,
             "is_system_generated": 1,
             "is_reversal": 0,
-            "is_defect_flag": 0,
-            "defect_type": "",
+            "is_defect_flag": self._normalise_bool_int(is_defect_flag, default=0),
+            "defect_type": "" if pd.isna(defect_type) else str(defect_type),
             "created_at": self.rules.created_at,
             "updated_at": self.rules.updated_at,
         }
@@ -1343,6 +1555,205 @@ class ERPGLJournalLinesGenerator:
 
         return records
 
+
+    def _generate_vendor_invoice_postings(
+        self,
+        coa_lookup: dict[str, dict],
+        vendor_invoices_df: pd.DataFrame,
+        vendor_invoice_lines_df: pd.DataFrame,
+    ) -> list[dict]:
+        """
+        Generate AP invoice postings.
+
+        Design stance for Phase 3I.5:
+        - Include structurally valid AP defects in the GL.
+        - Post gross expense in v1 by absorbing tax/residual into the final expense line.
+        - Credit Accounts Payable to the vendor invoice header total.
+        """
+        records: list[dict] = []
+
+        if vendor_invoices_df.empty or vendor_invoice_lines_df.empty:
+            logger.warning("No vendor invoice data available for P2P GL posting.")
+            return records
+
+        line_groups = vendor_invoice_lines_df.groupby("vendor_invoice_id")
+
+        for _, invoice in vendor_invoices_df.iterrows():
+            vendor_invoice_id = str(invoice["vendor_invoice_id"])
+
+            if vendor_invoice_id not in line_groups.groups:
+                continue
+
+            journal_id = f"GL-VINV-{vendor_invoice_id}"
+            journal_date = invoice["posting_date"]
+            currency = str(invoice["currency"]).upper()
+            vendor_id = str(invoice["vendor_id"])
+            source_system = str(invoice.get("source_system", "nexus_ap_platform"))
+
+            total_local = self._round_money(invoice["total_local"])
+            total_gbp = self._round_money(invoice["total_gbp"])
+
+            if total_local <= 0 and total_gbp <= 0:
+                continue
+
+            is_defect_flag = int(invoice.get("is_defect_flag", 0))
+            defect_type = str(invoice.get("defect_type", ""))
+
+            invoice_line_rows = line_groups.get_group(vendor_invoice_id).copy()
+            line_local_total = self._round_money(invoice_line_rows["line_amount_local"].sum())
+            line_gbp_total = self._round_money(invoice_line_rows["line_amount_gbp"].sum())
+
+            local_adjustment = self._round_money(total_local - line_local_total)
+            gbp_adjustment = self._round_money(total_gbp - line_gbp_total)
+            last_index = invoice_line_rows.index[-1]
+
+            # Dr expense / COGS by vendor invoice line.
+            for line_index, line in invoice_line_rows.iterrows():
+                account_code = self._normalise_account_code(line["account_code"])
+
+                expense_local = self._round_money(line["line_amount_local"])
+                expense_gbp = self._round_money(line["line_amount_gbp"])
+
+                if line_index == last_index:
+                    expense_local = self._round_money(expense_local + local_adjustment)
+                    expense_gbp = self._round_money(expense_gbp + gbp_adjustment)
+
+                if expense_local <= 0 and expense_gbp <= 0:
+                    continue
+
+                line_defect_flag = max(
+                    is_defect_flag,
+                    int(line.get("is_defect_flag", 0)),
+                )
+                line_defect_type = defect_type or str(line.get("defect_type", ""))
+
+                records.append(
+                    self._build_line(
+                        coa_lookup=coa_lookup,
+                        journal_id=journal_id,
+                        journal_date=journal_date,
+                        source_system=source_system,
+                        source_document_type="VendorInvoiceLine",
+                        source_document_id=vendor_invoice_id,
+                        source_line_id=str(line["vendor_invoice_line_id"]),
+                        account_code=account_code,
+                        dc_indicator="D",
+                        amount_local=expense_local,
+                        amount_gbp=expense_gbp,
+                        currency=currency,
+                        description=f"Vendor invoice expense debit for {vendor_invoice_id}",
+                        vendor_id=vendor_id,
+                        vendor_invoice_id=vendor_invoice_id,
+                        is_defect_flag=line_defect_flag,
+                        defect_type=line_defect_type,
+                    )
+                )
+
+            # Cr AP to gross vendor invoice total.
+            records.append(
+                self._build_line(
+                    coa_lookup=coa_lookup,
+                    journal_id=journal_id,
+                    journal_date=journal_date,
+                    source_system=source_system,
+                    source_document_type="VendorInvoice",
+                    source_document_id=vendor_invoice_id,
+                    account_code=self.ACCOUNT_AP,
+                    dc_indicator="C",
+                    amount_local=total_local,
+                    amount_gbp=total_gbp,
+                    currency=currency,
+                    description=f"Vendor invoice AP credit for {vendor_invoice_id}",
+                    vendor_id=vendor_id,
+                    vendor_invoice_id=vendor_invoice_id,
+                    is_defect_flag=is_defect_flag,
+                    defect_type=defect_type,
+                )
+            )
+
+        logger.info("Generated vendor invoice GL posting lines: %s", f"{len(records):,}")
+        return records
+
+    def _generate_vendor_payment_postings(
+        self,
+        coa_lookup: dict[str, dict],
+        vendor_payments_df: pd.DataFrame,
+    ) -> list[dict]:
+        """Generate AP settlement postings: Dr AP / Cr Cash."""
+        records: list[dict] = []
+
+        for _, payment in vendor_payments_df.iterrows():
+            vendor_payment_id = str(payment["vendor_payment_id"])
+            vendor_invoice_id = str(payment["vendor_invoice_id"])
+            journal_id = f"GL-VPMT-{vendor_payment_id}"
+            journal_date = payment["payment_date"]
+            currency = str(payment["currency"]).upper()
+            vendor_id = str(payment["vendor_id"])
+            source_system = str(payment.get("source_system", "NEXUS_ERP_AP"))
+
+            payment_local = self._round_money(payment["payment_amount_local"])
+            payment_gbp = self._round_money(payment["payment_amount_gbp"])
+
+            if payment_local <= 0 and payment_gbp <= 0:
+                continue
+
+            cash_account_code = self._get_cash_account_code(
+                currency=currency,
+                coa_lookup=coa_lookup,
+            )
+
+            is_defect_flag = int(payment.get("is_defect_flag", 0))
+            defect_type = str(payment.get("defect_type", ""))
+
+            # Dr AP
+            records.append(
+                self._build_line(
+                    coa_lookup=coa_lookup,
+                    journal_id=journal_id,
+                    journal_date=journal_date,
+                    source_system=source_system,
+                    source_document_type="VendorPayment",
+                    source_document_id=vendor_payment_id,
+                    account_code=self.ACCOUNT_AP,
+                    dc_indicator="D",
+                    amount_local=payment_local,
+                    amount_gbp=payment_gbp,
+                    currency=currency,
+                    description=f"Vendor payment AP debit for {vendor_payment_id}",
+                    vendor_id=vendor_id,
+                    vendor_invoice_id=vendor_invoice_id,
+                    vendor_payment_id=vendor_payment_id,
+                    is_defect_flag=is_defect_flag,
+                    defect_type=defect_type,
+                )
+            )
+
+            # Cr Cash
+            records.append(
+                self._build_line(
+                    coa_lookup=coa_lookup,
+                    journal_id=journal_id,
+                    journal_date=journal_date,
+                    source_system=source_system,
+                    source_document_type="VendorPayment",
+                    source_document_id=vendor_payment_id,
+                    account_code=cash_account_code,
+                    dc_indicator="C",
+                    amount_local=payment_local,
+                    amount_gbp=payment_gbp,
+                    currency=currency,
+                    description=f"Vendor payment cash credit for {vendor_payment_id}",
+                    vendor_id=vendor_id,
+                    vendor_invoice_id=vendor_invoice_id,
+                    vendor_payment_id=vendor_payment_id,
+                    is_defect_flag=is_defect_flag,
+                    defect_type=defect_type,
+                )
+            )
+
+        logger.info("Generated vendor payment GL posting lines: %s", f"{len(records):,}")
+        return records
+
     # ------------------------------------------------------------------
     # Finalisation / validation
     # ------------------------------------------------------------------
@@ -1503,6 +1914,9 @@ class ERPGLJournalLinesGenerator:
             payments_df,
             allocations_df,
             revrec_df,
+            vendor_invoices_df,
+            vendor_invoice_lines_df,
+            vendor_payments_df,
         ) = self._load_dependencies()
 
         coa_lookup = self._account_lookup(coa_df)
@@ -1530,6 +1944,21 @@ class ERPGLJournalLinesGenerator:
                 coa_lookup=coa_lookup,
                 revrec_df=revrec_df,
                 invoice_lines_df=invoice_lines_df,
+            )
+        )
+
+        records.extend(
+            self._generate_vendor_invoice_postings(
+                coa_lookup=coa_lookup,
+                vendor_invoices_df=vendor_invoices_df,
+                vendor_invoice_lines_df=vendor_invoice_lines_df,
+            )
+        )
+
+        records.extend(
+            self._generate_vendor_payment_postings(
+                coa_lookup=coa_lookup,
+                vendor_payments_df=vendor_payments_df,
             )
         )
 

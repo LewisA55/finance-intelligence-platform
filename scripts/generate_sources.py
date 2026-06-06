@@ -1,7 +1,5 @@
 import sys
 
-import sys
-
 from scripts.generators.department_generator import DepartmentGenerator
 from scripts.generators.fx_generator import FXRateGenerator
 from scripts.generators.region_generator import RegionGenerator
@@ -155,17 +153,6 @@ def main() -> None:
             f"{len(chart_of_accounts):,}",
         )
 
-        logger.info("Phase 3H.2: Generating ERP GL journal lines")
-
-        erp_gl_journal_lines_generator = ERPGLJournalLinesGenerator()
-        erp_gl_journal_lines = erp_gl_journal_lines_generator.generate()
-        erp_gl_journal_lines_generator.save(erp_gl_journal_lines)
-
-        logger.info(
-            "ERP GL journal lines generation complete: %s journal lines",
-            f"{len(erp_gl_journal_lines):,}",
-        )
-
         logger.info("Phase 3I.1: Generating procurement vendor master")
 
         vendors_generator = VendorsGenerator()
@@ -212,6 +199,17 @@ def main() -> None:
         logger.info(
             "AP ageing snapshot generation complete: %s rows",
             f"{len(ap_ageing_snapshot):,}",
+        )
+
+        logger.info("Phase 3I.5: Generating ERP GL journal lines including Q2C and P2P")
+
+        erp_gl_journal_lines_generator = ERPGLJournalLinesGenerator()
+        erp_gl_journal_lines = erp_gl_journal_lines_generator.generate()
+        erp_gl_journal_lines_generator.save(erp_gl_journal_lines)
+
+        logger.info(
+            "ERP GL journal lines generation complete: %s journal lines",
+            f"{len(erp_gl_journal_lines):,}",
         )
 
         logger.info("=" * 72)

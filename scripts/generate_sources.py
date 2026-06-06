@@ -18,6 +18,7 @@ from scripts.generators.revenue_recognition_generator import RevenueRecognitionG
 from scripts.generators.chart_of_accounts_generator import ChartOfAccountsGenerator
 from scripts.generators.erp_gl_journal_lines_generator import ERPGLJournalLinesGenerator
 from scripts.generators.vendors_generator import VendorsGenerator
+from scripts.generators.vendor_invoices_generator import VendorInvoicesGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -172,6 +173,21 @@ def main() -> None:
         logger.info(
             "Vendor master generation complete: %s vendors",
             f"{len(vendors):,}",
+        )
+
+        logger.info("Phase 3I.2: Generating vendor invoices and invoice lines")
+
+        vendor_invoices_generator = VendorInvoicesGenerator()
+        vendor_invoice_headers, vendor_invoice_lines = vendor_invoices_generator.generate()
+        vendor_invoices_generator.save(
+            headers_df=vendor_invoice_headers,
+            lines_df=vendor_invoice_lines,
+        )
+
+        logger.info(
+            "Vendor invoice generation complete: %s headers, %s lines",
+            f"{len(vendor_invoice_headers):,}",
+            f"{len(vendor_invoice_lines):,}",
         )
 
         logger.info("=" * 72)

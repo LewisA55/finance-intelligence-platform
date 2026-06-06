@@ -23,6 +23,7 @@ from scripts.generators.trial_balance_generator import TrialBalanceGenerator
 from scripts.generators.financial_statement_extract_generator import FinancialStatementExtractGenerator
 from scripts.generators.financial_statement_control_summary_generator import FinancialStatementControlSummaryGenerator
 from scripts.generators.control_findings_register_generator import ControlFindingsRegisterGenerator
+from scripts.generators.workforce_cost_generator import WorkforceCostGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -258,6 +259,25 @@ def main() -> None:
         logger.info(
             "Control Findings Register generation complete: %s findings",
             f"{len(control_findings_register):,}",
+        )
+
+        logger.info("Phase 3K.1: Generating workforce cost source extracts")
+
+        workforce_cost_generator = WorkforceCostGenerator()
+        employee_compensation, payroll_expense_lines, headcount_plan = (
+            workforce_cost_generator.generate()
+        )
+        workforce_cost_generator.save(
+            compensation_df=employee_compensation,
+            payroll_df=payroll_expense_lines,
+            headcount_plan_df=headcount_plan,
+        )
+
+        logger.info(
+            "Workforce cost generation complete: %s compensation rows, %s payroll rows, %s headcount plan rows",
+            f"{len(employee_compensation):,}",
+            f"{len(payroll_expense_lines):,}",
+            f"{len(headcount_plan):,}",
         )
 
         logger.info("=" * 72)

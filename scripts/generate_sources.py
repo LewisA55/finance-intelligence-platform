@@ -19,6 +19,7 @@ from scripts.generators.vendors_generator import VendorsGenerator
 from scripts.generators.vendor_invoices_generator import VendorInvoicesGenerator
 from scripts.generators.vendor_payments_generator import VendorPaymentsGenerator
 from scripts.generators.ap_ageing_snapshot_generator import APAgeingSnapshotGenerator
+from scripts.generators.trial_balance_generator import TrialBalanceGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -210,6 +211,17 @@ def main() -> None:
         logger.info(
             "ERP GL journal lines generation complete: %s journal lines",
             f"{len(erp_gl_journal_lines):,}",
+        )
+
+        logger.info("Phase 3J.1: Generating Trial Balance extract")
+
+        trial_balance_generator = TrialBalanceGenerator()
+        trial_balance = trial_balance_generator.generate()
+        trial_balance_generator.save(trial_balance)
+
+        logger.info(
+            "Trial Balance generation complete: %s rows",
+            f"{len(trial_balance):,}",
         )
 
         logger.info("=" * 72)

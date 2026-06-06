@@ -15,6 +15,8 @@ from scripts.generators.subscription_events_generator import SubscriptionEventsG
 from scripts.generators.billing_invoices_generator import BillingInvoicesGenerator
 from scripts.generators.billing_payments_generator import BillingPaymentsGenerator
 from scripts.generators.revenue_recognition_generator import RevenueRecognitionGenerator
+from scripts.generators.chart_of_accounts_generator import ChartOfAccountsGenerator
+from scripts.generators.erp_gl_journal_lines_generator import ERPGLJournalLinesGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -136,6 +138,28 @@ def main() -> None:
             "Revenue recognition generation complete: %s schedule rows, %s deferred revenue roll-forward rows",
             f"{len(revenue_recognition_schedule):,}",
             f"{len(deferred_revenue_rollforward):,}",
+        )
+
+        logger.info("Phase 3H.1: Generating chart of accounts")
+
+        chart_of_accounts_generator = ChartOfAccountsGenerator()
+        chart_of_accounts = chart_of_accounts_generator.generate()
+        chart_of_accounts_generator.save(chart_of_accounts)
+
+        logger.info(
+            "Chart of Accounts generation complete: %s accounts",
+            f"{len(chart_of_accounts):,}",
+        )
+
+        logger.info("Phase 3H.2: Generating ERP GL journal lines")
+
+        erp_gl_journal_lines_generator = ERPGLJournalLinesGenerator()
+        erp_gl_journal_lines = erp_gl_journal_lines_generator.generate()
+        erp_gl_journal_lines_generator.save(erp_gl_journal_lines)
+
+        logger.info(
+            "ERP GL journal lines generation complete: %s journal lines",
+            f"{len(erp_gl_journal_lines):,}",
         )
 
         logger.info("=" * 72)

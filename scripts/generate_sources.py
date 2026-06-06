@@ -20,6 +20,7 @@ from scripts.generators.erp_gl_journal_lines_generator import ERPGLJournalLinesG
 from scripts.generators.vendors_generator import VendorsGenerator
 from scripts.generators.vendor_invoices_generator import VendorInvoicesGenerator
 from scripts.generators.vendor_payments_generator import VendorPaymentsGenerator
+from scripts.generators.ap_ageing_snapshot_generator import APAgeingSnapshotGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -200,6 +201,17 @@ def main() -> None:
         logger.info(
             "Vendor payments generation complete: %s payments",
             f"{len(vendor_payments):,}",
+        )
+
+        logger.info("Phase 3I.4: Generating AP ageing snapshot")
+
+        ap_ageing_snapshot_generator = APAgeingSnapshotGenerator()
+        ap_ageing_snapshot = ap_ageing_snapshot_generator.generate()
+        ap_ageing_snapshot_generator.save(ap_ageing_snapshot)
+
+        logger.info(
+            "AP ageing snapshot generation complete: %s rows",
+            f"{len(ap_ageing_snapshot):,}",
         )
 
         logger.info("=" * 72)

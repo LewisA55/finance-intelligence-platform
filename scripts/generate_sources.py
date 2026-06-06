@@ -22,6 +22,7 @@ from scripts.generators.ap_ageing_snapshot_generator import APAgeingSnapshotGene
 from scripts.generators.trial_balance_generator import TrialBalanceGenerator
 from scripts.generators.financial_statement_extract_generator import FinancialStatementExtractGenerator
 from scripts.generators.financial_statement_control_summary_generator import FinancialStatementControlSummaryGenerator
+from scripts.generators.control_findings_register_generator import ControlFindingsRegisterGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -246,6 +247,17 @@ def main() -> None:
         logger.info(
             "Financial Statement control summary generation complete: %s rows",
             f"{len(financial_statement_controls):,}",
+        )
+
+        logger.info("Phase 3J.4: Generating Control Findings Register")
+
+        control_findings_register_generator = ControlFindingsRegisterGenerator()
+        control_findings_register = control_findings_register_generator.generate()
+        control_findings_register_generator.save(control_findings_register)
+
+        logger.info(
+            "Control Findings Register generation complete: %s findings",
+            f"{len(control_findings_register):,}",
         )
 
         logger.info("=" * 72)

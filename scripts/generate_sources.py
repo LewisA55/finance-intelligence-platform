@@ -25,6 +25,7 @@ from scripts.generators.financial_statement_control_summary_generator import Fin
 from scripts.generators.control_findings_register_generator import ControlFindingsRegisterGenerator
 from scripts.generators.workforce_cost_generator import WorkforceCostGenerator
 from scripts.generators.budget_generator import BudgetGenerator
+from scripts.generators.forecast_generator import ForecastGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -291,6 +292,19 @@ def main() -> None:
             "Budget generation complete: %s versions, %s lines",
             f"{len(budget_versions):,}",
             f"{len(budget_lines):,}",
+        )
+
+
+        logger.info("Phase 3M.1: Generating Forecast / Reforecast scenario source extracts")
+
+        forecast_generator = ForecastGenerator()
+        forecast_versions, forecast_lines = forecast_generator.generate()
+        forecast_generator.save(forecast_versions, forecast_lines)
+
+        logger.info(
+            "Forecast generation complete: %s versions, %s lines",
+            f"{len(forecast_versions):,}",
+            f"{len(forecast_lines):,}",
         )
 
         logger.info("=" * 72)

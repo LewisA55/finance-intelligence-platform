@@ -236,13 +236,18 @@ class VarianceSourceExtractGenerator:
         return round(float(value), 2)
 
     @staticmethod
-    def _safe_pct(numerator: object, denominator: object) -> float | np.nan:
-        if pd.isna(numerator) or pd.isna(denominator):
+    def _safe_pct(numerator: object, denominator: object) -> float:
+        """Return safe percentage variance, using np.nan where denominator is zero/missing."""
+        numerator_value = pd.to_numeric(numerator, errors="coerce")
+        denominator_value = pd.to_numeric(denominator, errors="coerce")
+
+        if pd.isna(denominator_value) or abs(float(denominator_value)) < 0.005:
             return np.nan
-        denominator = float(denominator)
-        if abs(denominator) < 0.005:
+
+        if pd.isna(numerator_value):
             return np.nan
-        return round(float(numerator) / denominator, 6)
+
+        return round(float(numerator_value) / float(denominator_value), 6)
 
     @staticmethod
     def _require_columns(df: pd.DataFrame, required_columns: set[str], dataset_name: str) -> None:

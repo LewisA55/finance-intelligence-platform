@@ -26,6 +26,7 @@ from scripts.generators.control_findings_register_generator import ControlFindin
 from scripts.generators.workforce_cost_generator import WorkforceCostGenerator
 from scripts.generators.budget_generator import BudgetGenerator
 from scripts.generators.forecast_generator import ForecastGenerator
+from scripts.generators.variance_source_extract_generator import VarianceSourceExtractGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -305,6 +306,17 @@ def main() -> None:
             "Forecast generation complete: %s versions, %s lines",
             f"{len(forecast_versions):,}",
             f"{len(forecast_lines):,}",
+        )
+
+        logger.info("Phase 3N.1: Generating Variance Source Extract")
+
+        variance_source_extract_generator = VarianceSourceExtractGenerator()
+        variance_source_extract = variance_source_extract_generator.generate()
+        variance_source_extract_generator.save(variance_source_extract)
+
+        logger.info(
+            "Variance source extract generation complete: %s rows",
+            f"{len(variance_source_extract):,}",
         )
 
         logger.info("=" * 72)

@@ -64,6 +64,3 @@ Thumbs.db
 target/
 dbt_packages/
 logs/
-
-```
-```

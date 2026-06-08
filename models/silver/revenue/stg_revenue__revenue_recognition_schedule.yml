@@ -1,0 +1,213 @@
+version: 2
+
+models:
+  - name: stg_revenue__revenue_recognition_schedule
+    description: >
+      Silver staging model for the revenue recognition schedule. This model reads
+      the raw Bronze revenue__revenue_recognition_schedule source, applies
+      defensive casting to recognition months, service period dates, recognition
+      date ranges, service-day counts, recognised revenue amounts, deferred
+      revenue balances after each month, recognition classifications, defect
+      flags, and operational dates while preserving Atlas Bronze lineage
+      metadata. The grain is one row per invoice line per recognition month.
+
+    config:
+      materialized: view
+      schema: silver
+      tags:
+        - silver
+        - staging
+        - revenue
+        - revenue_recognition
+
+    columns:
+      - name: revenue_recognition_pk
+        description: Stable primary key for the revenue recognition schedule row.
+        tests:
+          - not_null
+          - unique
+
+      - name: recognition_id
+        description: Business identifier for the recognition schedule row.
+        tests:
+          - not_null
+          - unique
+
+      - name: invoice_id
+        description: Billing invoice identifier linked to the invoice header.
+        tests:
+          - not_null
+
+      - name: invoice_line_id
+        description: Billing invoice line identifier linked to the invoice line source.
+        tests:
+          - not_null
+
+      - name: customer_id
+        description: Customer identifier linked to the billing customer registry.
+        tests:
+          - not_null
+
+      - name: subscription_id
+        description: Subscription identifier linked to the subscription master.
+        tests:
+          - not_null
+
+      - name: product_id
+        description: Product identifier linked to the product catalogue.
+        tests:
+          - not_null
+
+      - name: recognition_month
+        description: Month in which revenue is recognised, parsed as a date.
+        tests:
+          - not_null
+
+      - name: service_period_start_date
+        description: Start date of the service period being recognised.
+        tests:
+          - not_null
+
+      - name: service_period_end_date
+        description: End date of the service period being recognised.
+        tests:
+          - not_null
+
+      - name: recognition_start_date
+        description: First service date recognised within the recognition month.
+        tests:
+          - not_null
+
+      - name: recognition_end_date
+        description: Final service date recognised within the recognition month.
+        tests:
+          - not_null
+
+      - name: days_in_service_period
+        description: Total number of days in the invoice line service period.
+        tests:
+          - not_null
+
+      - name: days_recognised_in_month
+        description: Number of service days recognised in the recognition month.
+        tests:
+          - not_null
+
+      - name: currency
+        description: Revenue recognition transaction currency after uppercase normalisation.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+                  - AUD
+                  - CAD
+
+      - name: invoice_line_amount_local
+        description: Invoice line amount in local currency.
+        tests:
+          - not_null
+
+      - name: invoice_line_amount_gbp
+        description: Invoice line amount translated into GBP.
+        tests:
+          - not_null
+
+      - name: recognised_revenue_local
+        description: Revenue recognised in the month in local currency.
+        tests:
+          - not_null
+
+      - name: recognised_revenue_gbp
+        description: Revenue recognised in the month translated into GBP.
+        tests:
+          - not_null
+
+      - name: deferred_revenue_local_after_month
+        description: Deferred revenue balance remaining after the recognition month in local currency.
+        tests:
+          - not_null
+
+      - name: deferred_revenue_gbp_after_month
+        description: Deferred revenue balance remaining after the recognition month translated into GBP.
+        tests:
+          - not_null
+
+      - name: revenue_category
+        description: Revenue category represented by the schedule row.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Subscription Revenue
+                  - Recurring SaaS
+                  - Legacy Subscription
+
+      - name: recognition_method
+        description: Revenue recognition method applied to the schedule row.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Daily Pro-Rata Straight Line
+                  - Point in Time
+
+      - name: recognition_status
+        description: Status of the recognition schedule row.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Recognised
+                  - Scheduled
+                  - Actual
+                  - Forecast
+
+      - name: source_system
+        description: Source system responsible for the revenue recognition schedule.
+        tests:
+          - not_null
+
+      - name: is_defect
+        description: Boolean flag indicating whether the recognition row contains an intentional source defect.
+        tests:
+          - not_null
+
+      - name: defect_type
+        description: Optional defect classification carried from the source layer.
+
+      - name: created_date
+        description: Source-system creation date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: updated_date
+        description: Source-system update date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze deterministic source-row fingerprint carried into Silver for lineage and drift analysis.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: UTC timestamp when the source row was loaded into Bronze.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Origin CSV filename from the Bronze ingestion process.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - revenue_recognition_schedule.csv

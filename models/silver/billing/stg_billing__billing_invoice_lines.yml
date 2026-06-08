@@ -1,0 +1,167 @@
+version: 2
+
+models:
+  - name: stg_billing__billing_invoice_lines
+    description: >
+      Silver staging model for billing invoice lines. This model reads the raw
+      Bronze billing__billing_invoice_lines source, applies defensive casting to
+      service period dates, quantities, local and GBP line amounts, defect flags,
+      and operational dates while preserving Atlas Bronze lineage metadata. The
+      grain is one row per billing invoice line.
+
+    config:
+      materialized: view
+      schema: silver
+      tags:
+        - silver
+        - staging
+        - billing
+        - invoice_lines
+
+    columns:
+      - name: invoice_line_pk
+        description: Stable primary key for the invoice line record.
+        tests:
+          - not_null
+          - unique
+
+      - name: invoice_line_id
+        description: Business invoice line identifier.
+        tests:
+          - not_null
+          - unique
+
+      - name: invoice_id
+        description: Business invoice identifier linked to the invoice header.
+        tests:
+          - not_null
+
+      - name: subscription_id
+        description: Subscription identifier linked to the subscription master.
+        tests:
+          - not_null
+
+      - name: customer_id
+        description: Customer identifier linked to the billing customer registry.
+        tests:
+          - not_null
+
+      - name: product_id
+        description: Product identifier linked to the product catalogue.
+        tests:
+          - not_null
+
+      - name: line_type
+        description: Invoice line commercial revenue type.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Recurring SaaS
+                  - Legacy Subscription
+
+      - name: service_period_start_date
+        description: Start date of the service period covered by the invoice line.
+        tests:
+          - not_null
+
+      - name: service_period_end_date
+        description: End date of the service period covered by the invoice line.
+        tests:
+          - not_null
+
+      - name: billing_frequency
+        description: Billing frequency for the invoice line.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Monthly
+                  - Annual
+
+      - name: quantity
+        description: Quantity billed on the invoice line.
+        tests:
+          - not_null
+
+      - name: unit_price_local
+        description: Unit price in local currency.
+        tests:
+          - not_null
+
+      - name: line_amount_local
+        description: Invoice line amount in local currency.
+        tests:
+          - not_null
+
+      - name: unit_price_gbp
+        description: Unit price translated into GBP.
+        tests:
+          - not_null
+
+      - name: line_amount_gbp
+        description: Invoice line amount translated into GBP.
+        tests:
+          - not_null
+
+      - name: currency
+        description: Invoice line transaction currency after uppercase normalisation.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+                  - AUD
+                  - CAD
+
+      - name: revenue_category
+        description: Revenue category used for downstream revenue analysis and recognition logic.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Subscription Revenue
+
+      - name: is_defect
+        description: Boolean flag indicating whether the invoice line contains an intentional source defect.
+        tests:
+          - not_null
+
+      - name: defect_type
+        description: Optional defect classification carried from the source layer.
+
+      - name: created_date
+        description: Source-system creation date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: updated_date
+        description: Source-system update date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze deterministic source-row fingerprint carried into Silver for lineage and drift analysis.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: UTC timestamp when the source row was loaded into Bronze.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Origin CSV filename from the Bronze ingestion process.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - billing_invoice_lines.csv

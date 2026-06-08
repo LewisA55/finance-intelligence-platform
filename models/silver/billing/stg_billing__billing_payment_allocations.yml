@@ -1,0 +1,132 @@
+version: 2
+
+models:
+  - name: stg_billing__billing_payment_allocations
+    description: >
+      Silver staging model for billing payment allocations. This model reads the
+      raw Bronze billing__billing_payment_allocations source, applies defensive
+      casting to allocation dates, allocated amounts, currencies, allocation
+      statuses, defect flags, and operational dates while preserving Atlas
+      Bronze lineage metadata. The grain is one row per payment-to-invoice
+      allocation record.
+
+    config:
+      materialized: view
+      schema: silver
+      tags:
+        - silver
+        - staging
+        - billing
+        - payment_allocations
+
+    columns:
+      - name: allocation_pk
+        description: Stable primary key for the payment allocation record.
+        tests:
+          - not_null
+          - unique
+
+      - name: allocation_id
+        description: Business allocation identifier.
+        tests:
+          - not_null
+          - unique
+
+      - name: payment_id
+        description: Business payment identifier linked to the payment transaction.
+        tests:
+          - not_null
+
+      - name: invoice_id
+        description: Business invoice identifier linked to the invoice header.
+        tests:
+          - not_null
+
+      - name: customer_id
+        description: Customer identifier linked to the billing customer registry.
+        tests:
+          - not_null
+
+      - name: allocation_date
+        description: Date the payment amount was allocated to the invoice.
+        tests:
+          - not_null
+
+      - name: currency
+        description: Allocation transaction currency after uppercase normalisation.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+                  - AUD
+                  - CAD
+
+      - name: allocated_amount_local
+        description: Amount allocated to the invoice in local transaction currency.
+        tests:
+          - not_null
+
+      - name: allocated_amount_gbp
+        description: Amount allocated to the invoice translated into GBP.
+        tests:
+          - not_null
+
+      - name: allocation_status
+        description: Payment allocation lifecycle status.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Applied
+                  - Partially Applied
+                  - Unapplied
+                  - Over Applied
+                  - Not Applicable
+
+      - name: source_system
+        description: Source system responsible for the payment allocation record.
+        tests:
+          - not_null
+
+      - name: is_defect
+        description: Boolean flag indicating whether the allocation contains an intentional source defect.
+        tests:
+          - not_null
+
+      - name: defect_type
+        description: Optional defect classification carried from the source layer.
+
+      - name: created_date
+        description: Source-system creation date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: updated_date
+        description: Source-system update date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze deterministic source-row fingerprint carried into Silver for lineage and drift analysis.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: UTC timestamp when the source row was loaded into Bronze.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Origin CSV filename from the Bronze ingestion process.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - billing_payment_allocations.csv

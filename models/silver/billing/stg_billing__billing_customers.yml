@@ -1,0 +1,129 @@
+version: 2
+
+models:
+  - name: stg_billing__billing_customers
+    description: >
+      Silver staging model for the billing customer registry. This model reads
+      the raw Bronze billing__billing_customers source, applies defensive type
+      casting to customer lifecycle fields, acquisition flags, cohort year, and
+      created date, while preserving Atlas Bronze lineage metadata. The grain is
+      one row per billing customer.
+
+    config:
+      materialized: view
+      schema: silver
+      tags:
+        - silver
+        - staging
+        - billing
+        - customers
+
+    columns:
+      - name: customer_pk
+        description: Stable primary key for the billing customer record.
+        tests:
+          - not_null
+          - unique
+
+      - name: customer_id
+        description: Business customer identifier used across billing and subscription sources.
+        tests:
+          - not_null
+          - unique
+
+      - name: legacy_id
+        description: Optional legacy system identifier for migrated or acquired customer records.
+
+      - name: customer_name
+        description: Customer display name.
+        tests:
+          - not_null
+
+      - name: customer_segment
+        description: Commercial customer segment.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - SMB
+                  - Mid-Market
+                  - Enterprise
+                  - Strategic
+
+      - name: industry
+        description: Customer industry classification.
+        tests:
+          - not_null
+
+      - name: region_id
+        description: Region identifier linking the customer to the regional reference dataset.
+        tests:
+          - not_null
+
+      - name: currency_code
+        description: Customer billing currency code after uppercase normalisation.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+                  - AUD
+                  - CAD
+
+      - name: cohort_year
+        description: Customer acquisition cohort year.
+        tests:
+          - not_null
+
+      - name: is_acquired_customer
+        description: Boolean flag indicating whether the customer came from the DataPulse acquisition.
+        tests:
+          - not_null
+
+      - name: acquisition_source
+        description: Acquisition source label for acquired customers. Organic customers may be NULL.
+
+      - name: created_date
+        description: Customer creation date parsed from the Bronze source.
+        tests:
+          - not_null
+
+      - name: customer_status
+        description: Billing customer lifecycle status.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Active
+                  - Churned
+                  - Paused
+
+      - name: is_active
+        description: Boolean flag indicating whether the customer is currently active.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze deterministic source-row fingerprint carried into Silver for lineage and drift analysis.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: UTC timestamp when the source row was loaded into Bronze.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Origin CSV filename from the Bronze ingestion process.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - billing_customers.csv

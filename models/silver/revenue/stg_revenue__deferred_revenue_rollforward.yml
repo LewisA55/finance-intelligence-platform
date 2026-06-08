@@ -1,0 +1,151 @@
+version: 2
+
+models:
+  - name: stg_revenue__deferred_revenue_rollforward
+    description: >
+      Silver staging model for the deferred revenue rollforward. This model reads
+      the raw Bronze revenue__deferred_revenue_rollforward source, applies
+      defensive casting to period month, deferred revenue movement amounts,
+      period status, currency, defect flags, and operational dates while
+      preserving Atlas Bronze lineage metadata. The grain is one row per
+      period, currency, and revenue category rollforward balance.
+
+    config:
+      materialized: view
+      schema: silver
+      tags:
+        - silver
+        - staging
+        - revenue
+        - deferred_revenue
+
+    columns:
+      - name: rollforward_pk
+        description: Stable primary key for the deferred revenue rollforward row.
+        tests:
+          - not_null
+          - unique
+
+      - name: period_month
+        description: Month represented by the deferred revenue rollforward row, parsed as a date.
+        tests:
+          - not_null
+
+      - name: period_status
+        description: Status of the period represented by the rollforward row.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Actual
+                  - Forecast
+                  - Scheduled
+                  - Closed
+
+      - name: currency
+        description: Rollforward currency after uppercase normalisation.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+                  - AUD
+                  - CAD
+
+      - name: revenue_category
+        description: Revenue category represented in the deferred revenue rollforward.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Subscription Revenue
+                  - Recurring SaaS
+                  - Legacy Subscription
+
+      - name: opening_deferred_revenue_local
+        description: Opening deferred revenue balance in local currency.
+        tests:
+          - not_null
+
+      - name: new_billings_deferred_local
+        description: New billings deferred during the period in local currency.
+        tests:
+          - not_null
+
+      - name: recognised_revenue_local
+        description: Revenue recognised during the period in local currency.
+        tests:
+          - not_null
+
+      - name: closing_deferred_revenue_local
+        description: Closing deferred revenue balance in local currency.
+        tests:
+          - not_null
+
+      - name: opening_deferred_revenue_gbp
+        description: Opening deferred revenue balance translated into GBP.
+        tests:
+          - not_null
+
+      - name: new_billings_deferred_gbp
+        description: New billings deferred during the period translated into GBP.
+        tests:
+          - not_null
+
+      - name: recognised_revenue_gbp
+        description: Revenue recognised during the period translated into GBP.
+        tests:
+          - not_null
+
+      - name: closing_deferred_revenue_gbp
+        description: Closing deferred revenue balance translated into GBP.
+        tests:
+          - not_null
+
+      - name: source_system
+        description: Source system responsible for the deferred revenue rollforward.
+        tests:
+          - not_null
+
+      - name: is_defect
+        description: Boolean flag indicating whether the rollforward row contains an intentional source defect.
+        tests:
+          - not_null
+
+      - name: defect_type
+        description: Optional defect classification carried from the source layer.
+
+      - name: created_date
+        description: Source-system creation date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: updated_date
+        description: Source-system update date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze deterministic source-row fingerprint carried into Silver for lineage and drift analysis.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: UTC timestamp when the source row was loaded into Bronze.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Origin CSV filename from the Bronze ingestion process.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - deferred_revenue_rollforward.csv

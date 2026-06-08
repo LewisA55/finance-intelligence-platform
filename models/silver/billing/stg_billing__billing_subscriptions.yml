@@ -1,0 +1,207 @@
+version: 2
+
+models:
+  - name: stg_billing__billing_subscriptions
+    description: >
+      Silver staging model for the billing subscription master. This model reads
+      the raw Bronze billing__billing_subscriptions source, applies defensive
+      casting to contract dates, contract terms, ARR/MRR values, discounts,
+      renewal flags, defect flags, and operational dates while preserving Atlas
+      Bronze lineage metadata. The grain is one row per subscription.
+
+    config:
+      materialized: view
+      schema: silver
+      tags:
+        - silver
+        - staging
+        - billing
+        - subscriptions
+
+    columns:
+      - name: subscription_pk
+        description: Stable primary key for the subscription master record.
+        tests:
+          - not_null
+          - unique
+
+      - name: subscription_id
+        description: Business subscription identifier used across billing, events, invoices, and revenue recognition.
+        tests:
+          - not_null
+          - unique
+
+      - name: customer_id
+        description: Customer identifier linking the subscription to the billing customer registry.
+        tests:
+          - not_null
+
+      - name: product_id
+        description: Product identifier linked to the product catalog.
+        tests:
+          - not_null
+
+      - name: customer_segment
+        description: Customer segment inherited onto the subscription record.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - SMB
+                  - Mid-Market
+                  - Enterprise
+                  - Strategic
+
+      - name: plan_tier
+        description: Commercial plan tier for the subscribed product.
+        tests:
+          - not_null
+
+      - name: contract_start_date
+        description: Contract start date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: contract_end_date
+        description: >
+          Contract end date parsed from Bronze VARCHAR. This may be NULL for
+          active or paused subscriptions where no fixed end date is currently
+          recorded. Churned subscriptions must have a populated contract end date.
+        tests:
+          - not_null:
+              config:
+                where: "contract_status = 'Churned'"
+
+      - name: contract_term_months
+        description: Contract term length in months.
+        tests:
+          - not_null
+
+      - name: billing_frequency
+        description: Billing cadence for the subscription.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Monthly
+                  - Quarterly
+                  - Annual
+
+      - name: billing_anchor_day
+        description: Day of month used as the billing anchor.
+        tests:
+          - not_null
+
+      - name: contract_status
+        description: Current subscription lifecycle status.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Active
+                  - Churned
+                  - Paused
+                  - Expired
+                  - Pending
+
+      - name: mrr_local
+        description: Monthly recurring revenue in local currency.
+        tests:
+          - not_null
+
+      - name: mrr_gbp
+        description: Monthly recurring revenue translated into GBP.
+        tests:
+          - not_null
+
+      - name: arr_local
+        description: Annual recurring revenue in local currency.
+        tests:
+          - not_null
+
+      - name: arr_gbp
+        description: Annual recurring revenue translated into GBP.
+        tests:
+          - not_null
+
+      - name: currency
+        description: Subscription billing currency after uppercase normalisation.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+                  - AUD
+                  - CAD
+
+      - name: payment_terms
+        description: Contractual payment terms.
+        tests:
+          - not_null
+
+      - name: is_auto_renew
+        description: Boolean flag indicating whether the subscription auto-renews.
+        tests:
+          - not_null
+
+      - name: discount_pct
+        description: Discount percentage applied to the subscription pricing.
+        tests:
+          - not_null
+
+      - name: price_source
+        description: Pricing source or commercial basis used for the subscription.
+        tests:
+          - not_null
+
+      - name: acquisition_source
+        description: Acquisition source label for acquired or migrated subscriptions. Organic subscriptions may be NULL.
+
+      - name: source_system
+        description: Source system responsible for the subscription master record.
+        tests:
+          - not_null
+
+      - name: created_date
+        description: Source-system creation date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: updated_date
+        description: Source-system update date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: is_defect
+        description: Boolean flag indicating whether the subscription row contains an intentional source defect.
+        tests:
+          - not_null
+
+      - name: defect_type
+        description: Optional defect classification carried from the source layer.
+
+      - name: _atlas_row_hash
+        description: Bronze deterministic source-row fingerprint carried into Silver for lineage and drift analysis.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: UTC timestamp when the source row was loaded into Bronze.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Origin CSV filename from the Bronze ingestion process.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - billing_subscriptions.csv

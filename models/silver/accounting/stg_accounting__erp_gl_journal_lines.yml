@@ -1,0 +1,217 @@
+version: 2
+
+models:
+  - name: stg_accounting__erp_gl_journal_lines
+    description: >
+      Silver staging model for ERP-style general ledger journal lines. This model
+      reads the raw Bronze accounting__erp_gl_journal_lines source, applies
+      defensive casting to dates, booleans, and debit/credit amounts, normalises
+      blank optional subledger references to NULL, and preserves Atlas Bronze
+      lineage metadata.
+
+    config:
+      materialized: view
+      schema: silver
+      tags:
+        - silver
+        - staging
+        - accounting
+        - general_ledger
+
+    columns:
+      - name: journal_line_pk
+        description: Stable primary key for the journal line.
+        tests:
+          - not_null
+          - unique
+
+      - name: journal_id
+        description: Journal header identifier grouping debit and credit journal lines.
+        tests:
+          - not_null
+
+      - name: journal_line_id
+        description: Human-readable journal line identifier.
+        tests:
+          - not_null
+          - unique
+
+      - name: journal_date
+        description: Accounting journal date parsed from the Bronze source.
+        tests:
+          - not_null
+
+      - name: posting_period
+        description: Accounting posting period in YYYY-MM format.
+        tests:
+          - not_null
+
+      - name: source_system
+        description: Upstream source system responsible for generating the journal line.
+        tests:
+          - not_null
+
+      - name: source_document_type
+        description: Source document type used to generate the accounting entry.
+        tests:
+          - not_null
+
+      - name: source_document_id
+        description: Source document identifier used to trace the journal line back to the originating subledger record.
+        tests:
+          - not_null
+
+      - name: source_line_id
+        description: Optional source line identifier where the journal line originates from a line-level source record.
+
+      - name: customer_id
+        description: Optional customer identifier for quote-to-cash journal lines.
+
+      - name: subscription_id
+        description: Optional subscription identifier for revenue and subscription-linked journal lines.
+
+      - name: invoice_id
+        description: Optional customer invoice identifier.
+
+      - name: payment_id
+        description: Optional customer payment identifier.
+
+      - name: vendor_id
+        description: Optional vendor identifier for procure-to-pay journal lines.
+
+      - name: vendor_invoice_id
+        description: Optional vendor invoice identifier.
+
+      - name: vendor_payment_id
+        description: Optional vendor payment identifier.
+
+      - name: allocation_id
+        description: Optional cash allocation identifier.
+
+      - name: revenue_schedule_id
+        description: Optional revenue recognition schedule identifier.
+
+      - name: account_code
+        description: General ledger account code.
+        tests:
+          - not_null
+
+      - name: account_name
+        description: General ledger account name.
+        tests:
+          - not_null
+
+      - name: account_class
+        description: High-level accounting class used for reporting and sign logic.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Asset
+                  - Liability
+                  - Equity
+                  - Revenue
+                  - Expense
+
+      - name: financial_statement
+        description: Financial statement where the account is reported.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Balance Sheet
+                  - Income Statement
+
+      - name: dc_indicator
+        description: Debit or credit indicator for the journal line.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - D
+                  - C
+
+      - name: debit_local
+        description: Debit amount in local transaction currency.
+        tests:
+          - not_null
+
+      - name: credit_local
+        description: Credit amount in local transaction currency.
+        tests:
+          - not_null
+
+      - name: debit_gbp
+        description: Debit amount translated into GBP.
+        tests:
+          - not_null
+
+      - name: credit_gbp
+        description: Credit amount translated into GBP.
+        tests:
+          - not_null
+
+      - name: currency
+        description: Transaction currency after normalisation to uppercase.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+
+      - name: description
+        description: Journal line narrative.
+
+      - name: is_system_generated
+        description: Boolean flag indicating whether the journal line was generated by the Atlas source pipeline.
+        tests:
+          - not_null
+
+      - name: is_reversal
+        description: Boolean flag indicating whether the journal line is a reversal.
+        tests:
+          - not_null
+
+      - name: is_defect
+        description: Boolean flag indicating whether the journal line is associated with an intentional source defect.
+        tests:
+          - not_null
+
+      - name: defect_type
+        description: Optional defect classification carried from the source layer.
+
+      - name: created_date
+        description: Source-system creation date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: updated_date
+        description: Source-system update date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze deterministic source-row fingerprint carried into Silver for lineage and drift analysis.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: UTC timestamp when the source row was loaded into Bronze.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Origin CSV filename from the Bronze ingestion process.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - erp_gl_journal_lines.csv

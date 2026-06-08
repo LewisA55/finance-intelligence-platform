@@ -1,0 +1,138 @@
+version: 2
+
+models:
+  - name: stg_accounting__chart_of_accounts
+    description: >
+      Silver staging model for the Project Atlas chart of accounts. This model
+      reads the raw Bronze accounting__chart_of_accounts source, applies
+      defensive type casting, standardises boolean naming, and preserves Atlas
+      ingestion lineage metadata for downstream auditability.
+
+    config:
+      materialized: view
+      schema: silver
+      tags:
+        - silver
+        - staging
+        - accounting
+        - chart_of_accounts
+
+    columns:
+      - name: account_pk
+        description: Stable surrogate primary key for the general ledger account.
+        tests:
+          - not_null
+          - unique
+
+      - name: account_code
+        description: Natural chart of accounts code used by the ERP-style general ledger.
+        tests:
+          - not_null
+          - unique
+
+      - name: account_name
+        description: Human-readable account name.
+        tests:
+          - not_null
+
+      - name: account_class
+        description: High-level accounting class used for statement logic.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Asset
+                  - Liability
+                  - Equity
+                  - Revenue
+                  - Expense
+
+      - name: account_type
+        description: More detailed account classification used for financial statement mapping.
+        tests:
+          - not_null
+
+      - name: financial_statement
+        description: Financial statement where the account is reported.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Balance Sheet
+                  - Income Statement
+
+      - name: report_group
+        description: Management reporting group for financial statement presentation.
+        tests:
+          - not_null
+
+      - name: report_subgroup
+        description: Management reporting subgroup for financial statement presentation.
+        tests:
+          - not_null
+
+      - name: normal_balance
+        description: Expected debit or credit orientation for the account.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Debit
+                  - Credit
+
+      - name: is_pnl
+        description: Boolean flag indicating whether the account belongs to the profit and loss statement.
+        tests:
+          - not_null
+
+      - name: is_balance_sheet
+        description: Boolean flag indicating whether the account belongs to the balance sheet.
+        tests:
+          - not_null
+
+      - name: is_cash_account
+        description: Boolean flag indicating whether the account is a cash or bank account.
+        tests:
+          - not_null
+
+      - name: is_control_account
+        description: Boolean flag indicating whether the account is a subledger control account.
+        tests:
+          - not_null
+
+      - name: is_active
+        description: Boolean flag indicating whether the account is active in the chart of accounts.
+        tests:
+          - not_null
+
+      - name: created_date
+        description: Source-system creation date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: updated_date
+        description: Source-system update date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze deterministic source-row fingerprint carried into Silver for lineage and drift analysis.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: UTC timestamp when the source row was loaded into Bronze.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Origin CSV filename from the Bronze ingestion process.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - chart_of_accounts.csv

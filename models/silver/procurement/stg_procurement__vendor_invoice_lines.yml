@@ -1,0 +1,130 @@
+version: 2
+
+models:
+  - name: stg_procurement__vendor_invoice_lines
+    description: >
+      Silver staging model for Procurement vendor invoice lines. This model reads
+      the raw Bronze procurement__vendor_invoice_lines source and applies
+      defensive casting to line numbers, service period dates, expense amounts,
+      AP expense coding, defect flags, and Atlas lineage metadata. The grain is
+      one row per vendor invoice line.
+
+    config:
+      materialized: view
+      schema: silver
+      tags:
+        - silver
+        - staging
+        - procurement
+        - ap
+        - vendor_invoice_lines
+
+    columns:
+      - name: vendor_invoice_line_pk
+        description: Stable primary key for the vendor invoice line row.
+        tests:
+          - not_null
+          - unique
+
+      - name: vendor_invoice_line_id
+        description: Business identifier for the vendor invoice line.
+        tests:
+          - not_null
+          - unique
+
+      - name: vendor_invoice_id
+        description: Vendor invoice header identifier linked to the AP invoice header table.
+        tests:
+          - not_null
+
+      - name: vendor_id
+        description: Vendor identifier carried on the vendor invoice line.
+        tests:
+          - not_null
+
+      - name: vendor_name
+        description: Vendor name carried on the vendor invoice line.
+        tests:
+          - not_null
+
+      - name: line_number
+        description: Line sequence number within the vendor invoice.
+        tests:
+          - not_null
+
+      - name: account_code
+        description: GL account code used for expense or COGS coding on the invoice line.
+        tests:
+          - not_null
+
+      - name: expense_category
+        description: Expense category assigned to the vendor invoice line.
+        tests:
+          - not_null
+
+      - name: service_period_start_date
+        description: Start date of the service or expense period covered by the line.
+        tests:
+          - not_null
+
+      - name: service_period_end_date
+        description: End date of the service or expense period covered by the line.
+        tests:
+          - not_null
+
+      - name: line_description
+        description: Description of goods or services on the invoice line.
+        tests:
+          - not_null
+
+      - name: line_amount_local
+        description: Vendor invoice line amount in local currency.
+        tests:
+          - not_null
+
+      - name: line_amount_gbp
+        description: Vendor invoice line amount translated into GBP.
+        tests:
+          - not_null
+
+      - name: source_system
+        description: Source system responsible for the vendor invoice line.
+        tests:
+          - not_null
+
+      - name: is_defect
+        description: Boolean flag indicating whether the invoice line row contains an intentional source defect.
+        tests:
+          - not_null
+
+      - name: defect_type
+        description: Optional defect classification carried from the source layer.
+
+      - name: created_date
+        description: Source-system creation date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: updated_date
+        description: Source-system update date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze deterministic source-row fingerprint carried into Silver for lineage and drift analysis.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: UTC timestamp when the source row was loaded into Bronze.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Origin CSV filename from the Bronze ingestion process.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - vendor_invoice_lines.csv

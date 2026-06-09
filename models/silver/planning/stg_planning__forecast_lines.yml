@@ -1,0 +1,269 @@
+version: 2
+
+models:
+  - name: stg_planning__forecast_lines
+    description: >
+      Silver staging model for rolling forecast lines. This model reads the raw
+      Bronze planning__forecast_lines source and applies defensive casting to
+      forecast version identity, scenario type, fiscal year, accounting period,
+      department and GL account attribution, financial statement classification,
+      transaction currency, local and GBP forecast values, source budget
+      comparatives, forecast basis, planning driver metadata, scenario
+      multiplier, source budget linkage, locked-version flags, system-generated
+      flags, defect flags, and Atlas lineage metadata. The grain is one forecast
+      line per forecast version, scenario, accounting period, department,
+      account, currency, and planning driver.
+
+    config:
+      materialized: view
+      schema: silver
+      tags:
+        - silver
+        - staging
+        - planning
+        - forecast_lines
+
+    columns:
+      - name: forecast_line_pk
+        description: Stable primary key for the forecast line row.
+        tests:
+          - not_null
+          - unique
+
+      - name: forecast_line_id
+        description: Business identifier for the forecast line.
+        tests:
+          - not_null
+          - unique
+
+      - name: forecast_version_code
+        description: Immutable forecast version code used to partition rolling forecast cycles and scenarios.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - FC_BASE_CASE
+                  - FC_UPSIDE_CASE
+                  - FC_DOWNSIDE_CASE
+
+      - name: scenario_type
+        description: Forecast scenario type represented by the line.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Base Case
+                  - Upside Case
+                  - Downside Case
+
+      - name: fiscal_year
+        description: Fiscal year represented by the forecast line.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 2026
+
+      - name: posting_period
+        description: Accounting month for the forecast line, parsed as month-start date.
+        tests:
+          - not_null
+
+      - name: period_start_date
+        description: Start date of the forecast line accounting period.
+        tests:
+          - not_null
+
+      - name: period_end_date
+        description: End date of the forecast line accounting period.
+        tests:
+          - not_null
+
+      - name: department_id
+        description: Department identifier used for forecast cost-centre attribution.
+        tests:
+          - not_null
+
+      - name: account_code
+        description: GL account code used for forecast attribution.
+        tests:
+          - not_null
+
+      - name: account_name
+        description: GL account name used for forecast attribution.
+        tests:
+          - not_null
+
+      - name: account_class
+        description: Account class used for planning and financial statement grouping.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Revenue
+                  - Expense
+
+      - name: financial_statement
+        description: Financial statement to which the forecast line belongs.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Income Statement
+
+      - name: currency
+        description: Forecast transaction currency after uppercase normalisation.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+
+      - name: forecast_amount_local
+        description: Forecast amount in local transaction currency.
+        tests:
+          - not_null
+
+      - name: forecast_amount_gbp
+        description: Forecast amount translated into GBP reporting currency.
+        tests:
+          - not_null
+
+      - name: source_budget_amount_local
+        description: Source budget amount in local transaction currency used as the forecast baseline.
+        tests:
+          - not_null
+
+      - name: source_budget_amount_gbp
+        description: Source budget amount in GBP reporting currency used as the forecast baseline.
+        tests:
+          - not_null
+
+      - name: forecast_basis
+        description: Basis used to determine the forecast line value.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - SCENARIO_DRIVER_FORECAST
+                  - ACTUAL_WORKFORCE_SUBLEDGER
+                  - ACTUAL_FS_ALLOCATED_TO_AOP_GRAIN
+
+      - name: planning_driver
+        description: Planning driver used to derive or allocate the forecast line.
+        tests:
+          - not_null
+
+      - name: driver_quantity
+        description: Quantity input used by the forecast planning driver.
+        tests:
+          - not_null
+
+      - name: driver_rate
+        description: Rate input used by the forecast planning driver.
+        tests:
+          - not_null
+
+      - name: scenario_multiplier
+        description: Scenario multiplier applied to the source budget or planning driver.
+        tests:
+          - not_null
+
+      - name: forecast_method
+        description: Methodology used to calculate or allocate the forecast line.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Future month scenario driver applied to locked AOP baseline
+                  - Completed month payroll actual from workforce payroll expense extract
+                  - Completed month financial statement actual allocated to AOP department/driver grain
+
+      - name: source_budget_version_code
+        description: Budget version code used as the source baseline for the forecast line.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - AOP_FY2026_BOARD_APPROVED
+
+      - name: source_budget_line_id
+        description: Source budget line identifier used as the forecast baseline.
+        tests:
+          - not_null
+
+      - name: is_locked
+        description: Boolean flag indicating whether the forecast line is locked for the forecast cycle.
+        tests:
+          - not_null
+
+      - name: source_system
+        description: Source system responsible for the forecast line row.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - planning_forecast_engine
+
+      - name: is_system_generated
+        description: Boolean flag indicating whether the forecast line was generated by the planning forecast engine.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+
+      - name: is_defect
+        description: Boolean flag indicating whether the forecast line contains an intentional source defect.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - false
+
+      - name: defect_type
+        description: Optional defect classification carried from the source layer.
+
+      - name: created_date
+        description: Source-system creation date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: updated_date
+        description: Source-system update date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze deterministic source-row fingerprint carried into Silver for lineage and drift analysis.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: UTC timestamp when the source row was loaded into Bronze.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Origin CSV filename from the Bronze ingestion process.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - forecast_lines.csv

@@ -1,0 +1,376 @@
+version: 2
+
+models:
+  - name: stg_planning__variance_source_extract
+    description: >
+      Silver staging model for the FP&A variance source extract. This model reads
+      the raw Bronze planning__variance_source_extract source and applies
+      defensive casting to forecast and budget version identity, fiscal year,
+      accounting period, period status, department and GL account attribution,
+      financial statement classification, currency, planning driver metadata,
+      actual, budget and forecast amounts, actual-versus-budget variance,
+      actual-versus-forecast variance, forecast-versus-budget variance,
+      favourability classifications, variance category, variance driver group,
+      actual/forecast period flags, source line links, source basis metadata,
+      defect flags, and Atlas lineage. The grain is one variance source line per
+      forecast version, scenario, budget version, accounting period, department,
+      account, currency, and planning driver.
+
+    config:
+      materialized: view
+      schema: silver
+      tags:
+        - silver
+        - staging
+        - planning
+        - variance_source
+
+    columns:
+      - name: variance_extract_pk
+        description: Stable primary key for the variance source extract row.
+        tests:
+          - not_null
+          - unique
+
+      - name: variance_extract_line_id
+        description: Business identifier for the variance source extract line.
+        tests:
+          - not_null
+          - unique
+
+      - name: forecast_version_code
+        description: Forecast version code for the variance line.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - FC_BASE_CASE
+                  - FC_UPSIDE_CASE
+                  - FC_DOWNSIDE_CASE
+
+      - name: forecast_scenario
+        description: Forecast scenario for the variance line.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Base Case
+                  - Upside Case
+                  - Downside Case
+
+      - name: budget_version_code
+        description: Budget version code used as the comparison baseline.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - AOP_FY2026_BOARD_APPROVED
+
+      - name: fiscal_year
+        description: Fiscal year represented by the variance source line.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 2026
+
+      - name: posting_period
+        description: Accounting month for the variance source line, parsed as month-start date.
+        tests:
+          - not_null
+
+      - name: period_start_date
+        description: Start date of the variance source accounting period.
+        tests:
+          - not_null
+
+      - name: period_end_date
+        description: End date of the variance source accounting period.
+        tests:
+          - not_null
+
+      - name: period_status
+        description: Indicates whether the row is an actualised completed period or a future forecast period.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Actual
+                  - Forecast
+
+      - name: department_id
+        description: Department identifier used for variance attribution.
+        tests:
+          - not_null
+
+      - name: account_code
+        description: GL account code used for variance attribution.
+        tests:
+          - not_null
+
+      - name: account_name
+        description: GL account name used for variance attribution.
+        tests:
+          - not_null
+
+      - name: account_class
+        description: Account class used for variance and financial statement grouping.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Revenue
+                  - Expense
+
+      - name: financial_statement
+        description: Financial statement to which the variance source line belongs.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Income Statement
+
+      - name: currency
+        description: Transaction currency after uppercase normalisation.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+
+      - name: planning_driver
+        description: Planning driver used for variance attribution.
+        tests:
+          - not_null
+
+      - name: forecast_basis
+        description: Basis used to determine the forecast value.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - SCENARIO_DRIVER_FORECAST
+                  - ACTUAL_WORKFORCE_SUBLEDGER
+                  - ACTUAL_FS_ALLOCATED_TO_AOP_GRAIN
+
+      - name: actual_amount_local
+        description: Actual amount in local transaction currency. Null for future forecast periods.
+        tests:
+          - not_null:
+              config:
+                where: "period_status = 'Actual'"
+
+      - name: actual_amount_gbp
+        description: Actual amount in GBP reporting currency. Null for future forecast periods.
+        tests:
+          - not_null:
+              config:
+                where: "period_status = 'Actual'"
+
+      - name: budget_amount_local
+        description: Budget amount in local transaction currency.
+        tests:
+          - not_null
+
+      - name: budget_amount_gbp
+        description: Budget amount in GBP reporting currency.
+        tests:
+          - not_null
+
+      - name: forecast_amount_local
+        description: Forecast amount in local transaction currency.
+        tests:
+          - not_null
+
+      - name: forecast_amount_gbp
+        description: Forecast amount in GBP reporting currency.
+        tests:
+          - not_null
+
+      - name: actual_vs_budget_variance_gbp
+        description: Actual versus budget variance in GBP. Required for actual periods only.
+        tests:
+          - not_null:
+              config:
+                where: "period_status = 'Actual'"
+
+      - name: actual_vs_forecast_variance_pct
+        description: Actual versus forecast variance percentage. Required for actual periods only where the forecast amount is non-zero.
+        tests:
+          - not_null:
+              config:
+                where: "period_status = 'Actual' and forecast_amount_gbp != 0"
+
+      - name: actual_vs_budget_favourability
+        description: Favourability classification for actual versus budget variance.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Favourable
+                  - Adverse
+                  - Not Applicable
+
+      - name: actual_vs_forecast_variance_gbp
+        description: Actual versus forecast variance in GBP. Required for actual periods only.
+        tests:
+          - not_null:
+              config:
+                where: "period_status = 'Actual'"
+
+      - name: actual_vs_forecast_favourability
+        description: Favourability classification for actual versus forecast variance.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - On Plan
+                  - Not Applicable
+
+      - name: forecast_vs_budget_variance_gbp
+        description: Forecast versus budget variance in GBP.
+        tests:
+          - not_null
+
+      - name: forecast_vs_budget_variance_pct
+        description: Forecast versus budget variance percentage.
+        tests:
+          - not_null
+
+      - name: forecast_vs_budget_favourability
+        description: Favourability classification for forecast versus budget variance.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Favourable
+                  - Adverse
+                  - On Plan
+
+      - name: variance_category
+        description: High-level variance category used for FP&A commentary.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Cost Underspend
+                  - Cost Overspend
+                  - Revenue Outperformance
+                  - Revenue Shortfall
+                  - On Plan
+
+      - name: variance_driver_group
+        description: Driver group used to segment variance commentary.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Payroll
+                  - Revenue
+
+      - name: is_actual_period
+        description: Boolean flag indicating actualised completed periods.
+        tests:
+          - not_null
+
+      - name: is_forecast_period
+        description: Boolean flag indicating future forecast periods.
+        tests:
+          - not_null
+
+      - name: source_budget_line_id
+        description: Source budget line identifier used for the budget baseline.
+        tests:
+          - not_null
+
+      - name: source_forecast_line_id
+        description: Source forecast line identifier used for the forecast value.
+        tests:
+          - not_null
+
+      - name: actual_source_basis
+        description: Source basis used to determine actual values.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - ACTUAL_WORKFORCE_SUBLEDGER
+                  - ACTUAL_FS_ALLOCATED_TO_AOP_GRAIN
+                  - NO_ACTUALS_FUTURE_PERIOD
+
+      - name: source_system
+        description: Source system responsible for the variance source extract line.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - planning_variance_engine
+
+      - name: is_system_generated
+        description: Boolean flag indicating whether the variance source line was generated by the planning variance engine.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+
+      - name: is_defect
+        description: Boolean flag indicating whether the variance source line contains an intentional source defect.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - false
+
+      - name: defect_type
+        description: Optional defect classification carried from the source layer.
+
+      - name: created_date
+        description: Source-system creation date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: updated_date
+        description: Source-system update date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze deterministic source-row fingerprint carried into Silver for lineage and drift analysis.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: UTC timestamp when the source row was loaded into Bronze.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Origin CSV filename from the Bronze ingestion process.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - variance_source_extract.csv

@@ -1,0 +1,238 @@
+version: 2
+
+models:
+  - name: stg_planning__budget_lines
+    description: >
+      Silver staging model for immutable planning budget lines. This model reads
+      the raw Bronze planning__budget_lines source and applies defensive casting
+      to budget version identity, fiscal year, accounting period, department and
+      GL account attribution, financial statement classification, transaction
+      currency, local and GBP budget amounts, planning driver metadata,
+      locked-version flags, system-generated flags, defect flags, and Atlas
+      lineage metadata. The grain is one budget line per budget version,
+      accounting period, department, account, currency, and planning driver.
+
+    config:
+      materialized: view
+      schema: silver
+      tags:
+        - silver
+        - staging
+        - planning
+        - budget_lines
+
+    columns:
+      - name: budget_line_pk
+        description: Stable primary key for the budget line row.
+        tests:
+          - not_null
+          - unique
+
+      - name: budget_line_id
+        description: Business identifier for the budget line.
+        tests:
+          - not_null
+          - unique
+
+      - name: budget_version_code
+        description: Immutable budget version code tying the line to budget version governance.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - AOP_FY2025_ORIGINAL
+                  - AOP_FY2026_BOARD_APPROVED
+
+      - name: fiscal_year
+        description: Fiscal year represented by the budget line.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 2025
+                  - 2026
+
+      - name: posting_period
+        description: Accounting month for the budget line, parsed as month-start date.
+        tests:
+          - not_null
+
+      - name: period_start_date
+        description: Start date of the budget line accounting period.
+        tests:
+          - not_null
+
+      - name: period_end_date
+        description: End date of the budget line accounting period.
+        tests:
+          - not_null
+
+      - name: department_id
+        description: Department identifier used for budget cost-centre attribution.
+        tests:
+          - not_null
+
+      - name: account_code
+        description: GL account code used for budget attribution.
+        tests:
+          - not_null
+
+      - name: account_name
+        description: GL account name used for budget attribution.
+        tests:
+          - not_null
+
+      - name: account_class
+        description: Account class used for planning and financial statement grouping.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Revenue
+                  - Expense
+
+      - name: financial_statement
+        description: Financial statement to which the budget line belongs.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Income Statement
+
+      - name: currency
+        description: Budget transaction currency after uppercase normalisation.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+
+      - name: budget_amount_local
+        description: Budget amount in local transaction currency.
+        tests:
+          - not_null
+
+      - name: budget_amount_gbp
+        description: Budget amount translated into GBP reporting currency.
+        tests:
+          - not_null
+
+      - name: planning_driver
+        description: Planning driver used to derive or allocate the budget line.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - CUSTOMER_SUPPORT_COGS_PERCENT_OF_REVENUE
+                  - PAYROLL_BASE_SALARY
+                  - PAYROLL_BENEFITS
+                  - PAYROLL_BONUS_ACCRUAL
+                  - PAYROLL_EMPLOYER_TAX
+                  - SOFTWARE_TOOLS_PERCENT_OF_PAYROLL
+                  - OFFICE_COST_PERCENT_OF_PAYROLL
+                  - PROFESSIONAL_FEES_PERCENT_OF_PAYROLL
+                  - TRAVEL_PERCENT_OF_PAYROLL
+                  - DEPRECIATION_PERCENT_OF_PAYROLL
+                  - HOSTING_COGS_PERCENT_OF_REVENUE
+                  - MARKETING_SPEND_PERCENT_OF_REVENUE
+                  - PRODUCT_CLOUD_COGS_PERCENT_OF_REVENUE
+                  - SUBSCRIPTION_REVENUE_TARGET
+
+      - name: driver_quantity
+        description: Quantity input used by the planning driver.
+        tests:
+          - not_null
+
+      - name: driver_rate
+        description: Rate input used by the planning driver.
+        tests:
+          - not_null
+
+      - name: budget_method
+        description: Methodology used to calculate or allocate the budget line.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Revenue-linked planning driver
+                  - Workforce cost run-rate from payroll expense lines with annual merit / burden uplift
+                  - Department OpEx scaled from workforce cost base
+                  - Annual revenue target phased by enterprise SaaS seasonality and DataPulse migration mix
+
+      - name: is_locked
+        description: Boolean flag indicating whether the budget line belongs to a locked immutable budget version.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+
+      - name: source_system
+        description: Source system responsible for the budget line row.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - planning_aop_engine
+
+      - name: is_system_generated
+        description: Boolean flag indicating whether the budget line was generated by the planning engine.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+
+      - name: is_defect
+        description: Boolean flag indicating whether the budget line contains an intentional source defect.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - false
+
+      - name: defect_type
+        description: Optional defect classification carried from the source layer.
+
+      - name: created_date
+        description: Source-system creation date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: updated_date
+        description: Source-system update date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze deterministic source-row fingerprint carried into Silver for lineage and drift analysis.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: UTC timestamp when the source row was loaded into Bronze.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Origin CSV filename from the Bronze ingestion process.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - budget_lines.csv

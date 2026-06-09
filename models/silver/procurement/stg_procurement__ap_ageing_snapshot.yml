@@ -1,0 +1,180 @@
+version: 2
+
+models:
+  - name: stg_procurement__ap_ageing_snapshot
+    description: >
+      Silver staging model for the Procurement/AP ageing snapshot. This model
+      reads the raw Bronze procurement__ap_ageing_snapshot source and applies
+      defensive casting to snapshot dates, invoice dates, due dates, days past
+      due, AP exposure amounts, ageing buckets, AP status, defect flags, and
+      Atlas lineage metadata. The grain is one row per vendor invoice in the AP
+      ageing snapshot.
+
+    config:
+      materialized: view
+      schema: silver
+      tags:
+        - silver
+        - staging
+        - procurement
+        - ap
+        - ap_ageing
+
+    columns:
+      - name: snapshot_pk
+        description: Stable primary key for the AP ageing snapshot row.
+        tests:
+          - not_null
+          - unique
+
+      - name: snapshot_date
+        description: Date the AP ageing snapshot was captured.
+        tests:
+          - not_null
+
+      - name: vendor_invoice_id
+        description: Vendor invoice identifier represented in the ageing snapshot.
+        tests:
+          - not_null
+
+      - name: vendor_id
+        description: Vendor identifier represented in the ageing snapshot.
+        tests:
+          - not_null
+
+      - name: vendor_name
+        description: Vendor name represented in the ageing snapshot.
+        tests:
+          - not_null
+
+      - name: invoice_number
+        description: Vendor-issued invoice number represented in the ageing snapshot.
+        tests:
+          - not_null
+
+      - name: invoice_date
+        description: Date shown on the vendor invoice.
+        tests:
+          - not_null
+
+      - name: due_date
+        description: Vendor invoice due date.
+        tests:
+          - not_null
+
+      - name: days_past_due
+        description: Number of days between the snapshot date and due date, based on AP ageing logic.
+        tests:
+          - not_null
+
+      - name: ageing_bucket
+        description: AP ageing bucket assigned to the vendor invoice.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Current
+                  - 61-90 Days
+                  - 91+ Days
+
+      - name: ap_status
+        description: AP status of the vendor invoice at snapshot date.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Open
+                  - Overdue
+                  - Paid
+                  - Closed
+                  - Partially Paid
+                  - Written Off
+                  - Overpaid
+
+      - name: currency
+        description: Vendor invoice transaction currency after uppercase normalisation.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+                  - AUD
+                  - CAD
+
+      - name: invoice_total_local
+        description: Vendor invoice gross total in local currency.
+        tests:
+          - not_null
+
+      - name: invoice_total_gbp
+        description: Vendor invoice gross total translated into GBP.
+        tests:
+          - not_null
+
+      - name: paid_amount_local
+        description: Amount paid against the vendor invoice in local currency.
+        tests:
+          - not_null
+
+      - name: paid_amount_gbp
+        description: Amount paid against the vendor invoice translated into GBP.
+        tests:
+          - not_null
+
+      - name: open_amount_local
+        description: Remaining open AP amount in local currency.
+        tests:
+          - not_null
+
+      - name: open_amount_gbp
+        description: Remaining open AP amount translated into GBP.
+        tests:
+          - not_null
+
+      - name: source_system
+        description: Source system responsible for the AP ageing snapshot.
+        tests:
+          - not_null
+
+      - name: is_defect
+        description: Boolean flag indicating whether the ageing snapshot row contains an intentional source defect.
+        tests:
+          - not_null
+
+      - name: defect_type
+        description: Optional defect classification carried from the source layer.
+
+      - name: created_date
+        description: Source-system creation date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: updated_date
+        description: Source-system update date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze deterministic source-row fingerprint carried into Silver for lineage and drift analysis.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: UTC timestamp when the source row was loaded into Bronze.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Origin CSV filename from the Bronze ingestion process.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - ap_ageing_snapshot.csv

@@ -1,0 +1,170 @@
+version: 2
+
+models:
+  - name: stg_hris__hr_employees
+    description: >
+      Silver staging model for the HRIS employee master. This model reads the raw
+      Bronze hris__hr_employees source and applies defensive casting to employee
+      identity, organisational assignment, manager relationships, employment
+      lifecycle dates, salary baseline fields, HRIS data-quality flags, active
+      status, and Atlas lineage metadata. The grain is one row per employee.
+
+    config:
+      materialized: view
+      schema: silver
+      tags:
+        - silver
+        - staging
+        - hris
+        - employees
+
+    columns:
+      - name: employee_pk
+        description: Stable primary key for the employee master row.
+        tests:
+          - not_null
+          - unique
+
+      - name: employee_id
+        description: Business identifier for the employee.
+        tests:
+          - not_null
+          - unique
+
+      - name: employee_name
+        description: Employee display name from HRIS.
+        tests:
+          - not_null
+
+      - name: department_id
+        description: Department identifier currently assigned to the employee.
+        tests:
+          - not_null
+
+      - name: department_code
+        description: Department code currently assigned to the employee.
+        tests:
+          - not_null
+
+      - name: functional_group
+        description: Functional grouping for organisational reporting.
+        tests:
+          - not_null
+
+      - name: region_id
+        description: Region identifier assigned to the employee.
+        tests:
+          - not_null
+
+      - name: currency_code
+        description: Employee compensation currency after uppercase normalisation.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+
+      - name: job_level
+        description: Job level or grade assigned to the employee.
+        tests:
+          - not_null
+
+      - name: job_title
+        description: Employee job title.
+        tests:
+          - not_null
+
+      - name: manager_employee_id
+        description: Employee identifier of the employee's manager, where available.
+
+      - name: hire_date
+        description: Employee hire date.
+        tests:
+          - not_null
+
+      - name: termination_date
+        description: Employee termination date, populated only for terminated employees.
+
+      - name: employment_status
+        description: Current employment lifecycle status in HRIS.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Active
+                  - Terminated
+                  - On Leave
+                  - Future Hire
+
+      - name: base_salary_local
+        description: Base annual salary in local compensation currency.
+        tests:
+          - not_null
+
+      - name: base_salary_gbp
+        description: Base annual salary translated into GBP.
+        tests:
+          - not_null
+
+      - name: salary_multiplier
+        description: Salary multiplier applied to the employee baseline salary.
+        tests:
+          - not_null
+
+      - name: is_sales_employee
+        description: Boolean flag indicating whether the employee is part of sales compensation populations.
+        tests:
+          - not_null
+
+      - name: is_ghost_headcount
+        description: Boolean flag indicating intentional ghost-headcount data-quality population.
+        tests:
+          - not_null
+
+      - name: has_data_quality_issue
+        description: Boolean flag indicating whether the HRIS employee row carries one or more data-quality issues.
+        tests:
+          - not_null
+
+      - name: data_quality_issue
+        description: Optional HRIS data quality issue classification.
+        tests:
+          - accepted_values:
+              arguments:
+                values:
+                  - department_drift
+                  - ghost_headcount
+                  - missing_manager_id
+                  - missing_manager_id|ghost_headcount
+                  - orphan_manager
+              config:
+                where: "data_quality_issue is not null"
+
+      - name: is_active
+        description: Boolean active employee flag derived from active_flag.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze deterministic source-row fingerprint carried into Silver for lineage and drift analysis.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: UTC timestamp when the source row was loaded into Bronze.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Origin CSV filename from the Bronze ingestion process.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - hr_employees.csv

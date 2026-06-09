@@ -1,0 +1,170 @@
+version: 2
+
+models:
+  - name: stg_procurement__vendors
+    description: >
+      Silver staging model for the Procurement vendor master. This model reads
+      the raw Bronze procurement__vendors source and applies defensive casting,
+      controlled supplier onboarding classifications, default account and
+      department mappings, vendor risk attributes, defect flags, and Atlas
+      lineage preservation. The grain is one row per vendor.
+
+    config:
+      materialized: view
+      schema: silver
+      tags:
+        - silver
+        - staging
+        - procurement
+        - vendors
+
+    columns:
+      - name: vendor_pk
+        description: Stable primary key for the vendor master row.
+        tests:
+          - not_null
+          - unique
+
+      - name: vendor_id
+        description: Business identifier for the vendor.
+        tests:
+          - not_null
+          - unique
+
+      - name: vendor_name
+        description: Vendor trading or legal name.
+        tests:
+          - not_null
+
+      - name: vendor_category
+        description: Procurement category assigned to the vendor.
+        tests:
+          - not_null
+
+      - name: default_account_code
+        description: Default GL account code used for vendor invoice coding.
+        tests:
+          - not_null
+
+      - name: default_department_id
+        description: Default department or cost centre used for vendor invoice coding.
+        tests:
+          - not_null
+
+      - name: region_id
+        description: Region identifier associated with the vendor.
+        tests:
+          - not_null
+
+      - name: currency
+        description: Default vendor transaction currency after uppercase normalisation.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+                  - AUD
+                  - CAD
+
+      - name: cash_account_code
+        description: Cash or bank GL account code used for vendor settlement.
+        tests:
+          - not_null
+
+      - name: payment_terms
+        description: Default payment terms assigned to the vendor.
+        tests:
+          - not_null
+
+      - name: vendor_status
+        description: Operational status of the vendor master record.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Active
+                  - Inactive
+                  - On Hold
+                  - Suspended
+                  - Pending
+
+      - name: approval_status
+        description: Vendor onboarding approval status.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Approved
+                  - Pending Approval
+                  - Rejected
+                  - Under Review
+
+      - name: is_strategic_vendor
+        description: Boolean flag indicating whether the vendor is strategically important.
+        tests:
+          - not_null
+
+      - name: is_recurring_vendor
+        description: Boolean flag indicating whether the vendor is expected to generate recurring spend.
+        tests:
+          - not_null
+
+      - name: risk_rating
+        description: Procurement or supplier risk rating.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Low
+                  - Medium
+                  - High
+                  - Critical
+
+      - name: source_system
+        description: Source system responsible for the vendor master record.
+        tests:
+          - not_null
+
+      - name: is_defect
+        description: Boolean flag indicating whether the vendor row contains an intentional source defect.
+        tests:
+          - not_null
+
+      - name: defect_type
+        description: Optional defect classification carried from the source layer.
+
+      - name: created_date
+        description: Source-system creation date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: updated_date
+        description: Source-system update date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze deterministic source-row fingerprint carried into Silver for lineage and drift analysis.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: UTC timestamp when the source row was loaded into Bronze.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Origin CSV filename from the Bronze ingestion process.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - vendors.csv

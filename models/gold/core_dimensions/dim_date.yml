@@ -1,0 +1,247 @@
+version: 2
+
+models:
+  - name: dim_date
+    description: >
+      Gold conformed date dimension for Project Atlas. This model provides the
+      global temporal spine used across actuals, revenue recognition, planning,
+      forecasting, working capital, workforce analytics, and executive reporting.
+      The model is generated as a stable date spine and includes calendar
+      attributes, UK fiscal calendar attributes using an April-to-March fiscal
+      year, month/quarter/year boundary flags, deterministic hash keys, and a
+      standard Unassigned row. The grain is one row per calendar date plus one
+      system Unassigned row.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - core_dimension
+        - date
+
+    columns:
+      - name: date_hk
+        description: Deterministic hash key for the date dimension row.
+        tests:
+          - not_null
+          - unique
+
+      - name: date_key
+        description: Integer date key in YYYYMMDD format, with -1 for the Unassigned row.
+        tests:
+          - not_null
+          - unique
+
+      - name: date_day
+        description: Calendar date represented by the dimension row. Null only for the Unassigned row.
+        tests:
+          - unique
+          - not_null:
+              config:
+                where: "is_unassigned = false"
+
+      - name: date_label
+        description: Human-readable date label.
+
+      - name: calendar_year
+        description: Calendar year number.
+        tests:
+          - not_null:
+              config:
+                where: "is_unassigned = false"
+
+      - name: calendar_quarter_number
+        description: Calendar quarter number from 1 to 4.
+        tests:
+          - not_null:
+              config:
+                where: "is_unassigned = false"
+          - accepted_values:
+              arguments:
+                values:
+                  - 1
+                  - 2
+                  - 3
+                  - 4
+              config:
+                where: "is_unassigned = false"
+
+      - name: calendar_quarter_label
+        description: Calendar quarter label.
+
+      - name: calendar_month_number
+        description: Calendar month number from 1 to 12.
+        tests:
+          - not_null:
+              config:
+                where: "is_unassigned = false"
+
+      - name: calendar_month_name
+        description: Full calendar month name.
+
+      - name: calendar_month_short_name
+        description: Short calendar month name.
+
+      - name: calendar_year_month
+        description: Calendar year-month label in YYYY-MM format.
+
+      - name: calendar_year_month_sort
+        description: Numeric calendar year-month sort key in YYYYMM format.
+
+      - name: month_start_date
+        description: First day of the calendar month.
+        tests:
+          - not_null:
+              config:
+                where: "is_unassigned = false"
+
+      - name: month_end_date
+        description: Last day of the calendar month.
+        tests:
+          - not_null:
+              config:
+                where: "is_unassigned = false"
+
+      - name: week_start_date
+        description: Start date of the calendar week.
+
+      - name: week_end_date
+        description: End date of the calendar week.
+
+      - name: day_of_month
+        description: Day number within the calendar month.
+
+      - name: day_of_week_number
+        description: ISO day-of-week number where Monday is 1 and Sunday is 7.
+        tests:
+          - not_null:
+              config:
+                where: "is_unassigned = false"
+          - accepted_values:
+              arguments:
+                values:
+                  - 1
+                  - 2
+                  - 3
+                  - 4
+                  - 5
+                  - 6
+                  - 7
+              config:
+                where: "is_unassigned = false"
+
+      - name: day_of_week_name
+        description: Full weekday name.
+
+      - name: day_of_week_short_name
+        description: Short weekday name.
+
+      - name: is_weekend
+        description: Boolean flag identifying Saturday and Sunday.
+        tests:
+          - not_null
+
+      - name: is_month_start
+        description: Boolean flag identifying the first day of a calendar month.
+        tests:
+          - not_null
+
+      - name: is_month_end
+        description: Boolean flag identifying the final day of a calendar month.
+        tests:
+          - not_null
+
+      - name: is_quarter_start
+        description: Boolean flag identifying the first day of a calendar quarter.
+        tests:
+          - not_null
+
+      - name: is_quarter_end
+        description: Boolean flag identifying the final day of a calendar quarter.
+        tests:
+          - not_null
+
+      - name: is_calendar_year_start
+        description: Boolean flag identifying the first day of a calendar year.
+        tests:
+          - not_null
+
+      - name: is_calendar_year_end
+        description: Boolean flag identifying the final day of a calendar year.
+        tests:
+          - not_null
+
+      - name: fiscal_year
+        description: UK-style fiscal year number, using an April-to-March fiscal calendar.
+        tests:
+          - not_null:
+              config:
+                where: "is_unassigned = false"
+
+      - name: fiscal_year_label
+        description: Fiscal year label, for example FY2026.
+
+      - name: fiscal_month_number
+        description: Fiscal month number where April is 1 and March is 12.
+        tests:
+          - not_null:
+              config:
+                where: "is_unassigned = false"
+          - accepted_values:
+              arguments:
+                values:
+                  - 1
+                  - 2
+                  - 3
+                  - 4
+                  - 5
+                  - 6
+                  - 7
+                  - 8
+                  - 9
+                  - 10
+                  - 11
+                  - 12
+              config:
+                where: "is_unassigned = false"
+
+      - name: fiscal_quarter_number
+        description: Fiscal quarter number from 1 to 4.
+        tests:
+          - not_null:
+              config:
+                where: "is_unassigned = false"
+          - accepted_values:
+              arguments:
+                values:
+                  - 1
+                  - 2
+                  - 3
+                  - 4
+              config:
+                where: "is_unassigned = false"
+
+      - name: fiscal_quarter_label
+        description: Fiscal quarter label, for example FQ1.
+
+      - name: fiscal_year_month_label
+        description: Fiscal year-month label using fiscal month numbering.
+
+      - name: fiscal_year_month_sort
+        description: Numeric fiscal year-month sort key.
+
+      - name: is_fiscal_year_start
+        description: Boolean flag identifying 1 April.
+        tests:
+          - not_null
+
+      - name: is_fiscal_year_end
+        description: Boolean flag identifying 31 March.
+        tests:
+          - not_null
+
+      - name: is_unassigned
+        description: Boolean flag identifying the standard system fallback row.
+        tests:
+          - not_null

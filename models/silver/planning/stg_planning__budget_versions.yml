@@ -1,0 +1,138 @@
+version: 2
+
+models:
+  - name: stg_planning__budget_versions
+    description: >
+      Silver staging model for planning budget version governance. This model
+      reads the raw Bronze planning__budget_versions source and applies
+      defensive casting to fiscal year, approval metadata, locked-version flags,
+      planning period boundaries, source-system metadata, and Atlas lineage.
+      The grain is one row per immutable budget version.
+
+    config:
+      materialized: view
+      schema: silver
+      tags:
+        - silver
+        - staging
+        - planning
+        - budget_versions
+
+    columns:
+      - name: budget_version_pk
+        description: Stable primary key for the budget version row.
+        tests:
+          - not_null
+          - unique
+
+      - name: budget_version_code
+        description: Immutable business code for the budget version.
+        tests:
+          - not_null
+          - unique
+          - accepted_values:
+              arguments:
+                values:
+                  - AOP_FY2025_ORIGINAL
+                  - AOP_FY2026_BOARD_APPROVED
+
+      - name: budget_name
+        description: Human-readable budget version name.
+        tests:
+          - not_null
+
+      - name: fiscal_year
+        description: Fiscal year represented by the budget version.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 2025
+                  - 2026
+
+      - name: scenario_type
+        description: Planning scenario type for the budget version.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Annual Operating Plan
+
+      - name: approval_status
+        description: Governance approval status for the budget version.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Approved
+                  - Board Approved
+
+      - name: approved_by
+        description: Person or governance body approving the budget version.
+        tests:
+          - not_null
+
+      - name: approval_date
+        description: Date the budget version was approved.
+        tests:
+          - not_null
+
+      - name: is_locked
+        description: Boolean flag indicating whether the budget version is locked for immutable reporting.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+
+      - name: planning_start_period
+        description: First planning month covered by the budget version.
+        tests:
+          - not_null
+
+      - name: planning_end_period
+        description: Final planning month covered by the budget version.
+        tests:
+          - not_null
+
+      - name: source_system
+        description: Source system responsible for the budget version row.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - planning_aop_engine
+
+      - name: created_date
+        description: Source-system creation date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: updated_date
+        description: Source-system update date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze deterministic source-row fingerprint carried into Silver for lineage and drift analysis.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: UTC timestamp when the source row was loaded into Bronze.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Origin CSV filename from the Bronze ingestion process.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - budget_versions.csv

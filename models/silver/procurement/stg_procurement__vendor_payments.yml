@@ -1,0 +1,156 @@
+version: 2
+
+models:
+  - name: stg_procurement__vendor_payments
+    description: >
+      Silver staging model for Procurement vendor payments. This model reads the
+      raw Bronze procurement__vendor_payments source and applies defensive
+      casting to payment dates, cash disbursement amounts, payment method,
+      payment status, defect flags, and Atlas lineage metadata. The grain is one
+      row per vendor cash disbursement / bank payout event. Invoice settlement
+      and allocation logic should be handled downstream in AP settlement models
+      or cross-controls, not inside this payment staging view.
+
+    config:
+      materialized: view
+      schema: silver
+      tags:
+        - silver
+        - staging
+        - procurement
+        - ap
+        - vendor_payments
+
+    columns:
+      - name: vendor_payment_pk
+        description: Stable primary key for the vendor payment row.
+        tests:
+          - not_null
+          - unique
+
+      - name: vendor_payment_id
+        description: Business identifier for the vendor payment event.
+        tests:
+          - not_null
+          - unique
+
+      - name: vendor_invoice_id
+        description: Vendor invoice identifier referenced by the payment event.
+        tests:
+          - not_null
+
+      - name: vendor_id
+        description: Vendor identifier associated with the payment event.
+        tests:
+          - not_null
+
+      - name: vendor_name
+        description: Vendor name carried on the payment event.
+        tests:
+          - not_null
+
+      - name: invoice_number
+        description: Vendor-issued invoice number associated with the payment.
+        tests:
+          - not_null
+
+      - name: payment_date
+        description: Date cash was disbursed to the vendor.
+        tests:
+          - not_null
+
+      - name: currency
+        description: Vendor payment transaction currency after uppercase normalisation.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+                  - AUD
+                  - CAD
+
+      - name: payment_amount_local
+        description: Cash disbursement amount in local currency.
+        tests:
+          - not_null
+
+      - name: payment_amount_gbp
+        description: Cash disbursement amount translated into GBP.
+        tests:
+          - not_null
+
+      - name: cash_account_code
+        description: Cash or bank GL account code used for vendor settlement.
+        tests:
+          - not_null
+
+      - name: payment_method
+        description: Payment method used for the vendor cash disbursement.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Electronic Transfer
+                  - Credit Card
+                  - Direct Debit
+
+      - name: payment_reference
+        description: Bank or payment reference for the vendor disbursement.
+        tests:
+          - not_null
+
+      - name: payment_status
+        description: Status of the vendor payment event.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Cleared
+
+      - name: source_system
+        description: Source system responsible for the vendor payment event.
+        tests:
+          - not_null
+
+      - name: is_defect
+        description: Boolean flag indicating whether the payment row contains an intentional source defect.
+        tests:
+          - not_null
+
+      - name: defect_type
+        description: Optional defect classification carried from the source layer.
+
+      - name: created_date
+        description: Source-system creation date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: updated_date
+        description: Source-system update date parsed from Bronze VARCHAR.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze deterministic source-row fingerprint carried into Silver for lineage and drift analysis.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: UTC timestamp when the source row was loaded into Bronze.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Origin CSV filename from the Bronze ingestion process.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - vendor_payments.csv

@@ -1,0 +1,191 @@
+version: 2
+
+models:
+  - name: dim_gl_account
+    description: >
+      Gold conformed GL account dimension for Project Atlas. This model provides
+      the unified chart of accounts semantic spine used by actuals, budget,
+      forecast, variance, revenue recognition, working capital, payroll, and
+      executive reporting models. The dimension consumes the Silver chart of
+      accounts staging model, preserves the natural account code, generates a
+      deterministic account hash key, flattens account hierarchy attributes, adds
+      finance reporting flags, preserves Atlas source lineage, and includes a
+      standard Unassigned fallback row. The grain is one row per GL account code
+      plus one system Unassigned row.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - core_dimension
+        - gl_account
+
+    columns:
+      - name: gl_account_hk
+        description: Deterministic hash key for the GL account dimension row.
+        tests:
+          - not_null
+          - unique
+
+      - name: account_pk
+        description: Source-system account primary key from the Silver chart of accounts, or system fallback key for the Unassigned row.
+        tests:
+          - not_null
+
+      - name: account_code
+        description: Natural GL account code, with UNASSIGNED for the system fallback row.
+        tests:
+          - not_null
+          - unique
+
+      - name: account_code_number
+        description: Numeric account code for sorting, with -1 for the Unassigned row.
+        tests:
+          - not_null
+
+      - name: account_name
+        description: GL account display name.
+        tests:
+          - not_null
+
+      - name: account_class
+        description: High-level account class.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Asset
+                  - Liability
+                  - Equity
+                  - Revenue
+                  - Expense
+                  - Unassigned
+
+      - name: account_type
+        description: Detailed account type from the source chart of accounts.
+        tests:
+          - not_null
+
+      - name: financial_statement
+        description: Financial statement classification.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Balance Sheet
+                  - Income Statement
+                  - Unassigned
+
+      - name: report_group
+        description: Reporting group used for finance statement presentation.
+        tests:
+          - not_null
+
+      - name: report_subgroup
+        description: Reporting subgroup used for finance statement presentation.
+        tests:
+          - not_null
+
+      - name: normal_balance
+        description: Normal accounting balance for the account.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Debit
+                  - Credit
+                  - Unassigned
+
+      - name: is_pnl
+        description: Boolean flag indicating profit and loss accounts.
+        tests:
+          - not_null
+
+      - name: is_balance_sheet
+        description: Boolean flag indicating balance sheet accounts.
+        tests:
+          - not_null
+
+      - name: is_cash_account
+        description: Boolean flag indicating cash and bank accounts.
+        tests:
+          - not_null
+
+      - name: is_control_account
+        description: Boolean flag indicating control accounts such as AR, AP, deferred revenue, and tax.
+        tests:
+          - not_null
+
+      - name: is_active
+        description: Boolean flag indicating whether the account is active in the chart of accounts.
+        tests:
+          - not_null
+
+      - name: is_revenue_account
+        description: Boolean flag identifying revenue accounts.
+        tests:
+          - not_null
+
+      - name: is_expense_account
+        description: Boolean flag identifying expense accounts.
+        tests:
+          - not_null
+
+      - name: is_asset_account
+        description: Boolean flag identifying asset accounts.
+        tests:
+          - not_null
+
+      - name: is_liability_account
+        description: Boolean flag identifying liability accounts.
+        tests:
+          - not_null
+
+      - name: is_equity_account
+        description: Boolean flag identifying equity accounts.
+        tests:
+          - not_null
+
+      - name: is_income_statement_account
+        description: Boolean flag identifying income statement accounts.
+        tests:
+          - not_null
+
+      - name: is_balance_sheet_account
+        description: Boolean flag identifying balance sheet accounts.
+        tests:
+          - not_null
+
+      - name: account_class_sort
+        description: Sort key for account class reporting order.
+        tests:
+          - not_null
+
+      - name: financial_statement_sort
+        description: Sort key for financial statement reporting order.
+        tests:
+          - not_null
+
+      - name: created_date
+        description: Source-system creation date from the Silver chart of accounts. Null only for the Unassigned row.
+
+      - name: updated_date
+        description: Source-system update date from the Silver chart of accounts. Null only for the Unassigned row.
+
+      - name: _atlas_row_hash
+        description: Bronze source-row fingerprint carried through Silver for source account rows. Null only for the Unassigned row.
+
+      - name: _atlas_ingested_at
+        description: Bronze ingestion timestamp carried through Silver for source account rows. Null only for the Unassigned row.
+
+      - name: _atlas_source_file
+        description: Bronze source filename carried through Silver for source account rows. Null only for the Unassigned row.
+
+      - name: is_unassigned
+        description: Boolean flag identifying the standard system fallback row.
+        tests:
+          - not_null

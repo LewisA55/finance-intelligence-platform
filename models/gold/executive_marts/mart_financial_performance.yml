@@ -1,0 +1,269 @@
+version: 2
+
+models:
+  - name: mart_financial_performance
+    description: >
+      Gold executive financial performance mart for Project Atlas. This model is
+      sourced from stg_planning__variance_source_extract and provides the
+      CFO-facing conformed reporting layer for actuals, budget, and forecast
+      comparison. It deliberately uses the curated variance source extract as
+      the planning-grain bridge rather than directly joining atomic actuals,
+      budget facts, and forecast facts. This preserves the pure grains of
+      fct_gl_actuals, fct_budget, and fct_forecast while providing a safe
+      reporting surface for Actual vs Budget, Actual vs Forecast, and Forecast
+      vs Budget analysis. The grain is one row per variance_extract_line_id.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - executive_mart
+        - financial_performance
+
+    columns:
+      - name: financial_performance_hk
+        description: Deterministic hash key for the financial performance mart row, derived from variance_extract_line_id.
+        tests:
+          - not_null
+          - unique
+
+      - name: variance_extract_pk
+        description: Source-system variance extract primary key.
+        tests:
+          - not_null
+          - unique
+
+      - name: variance_extract_line_id
+        description: Natural variance extract line identifier. This defines the mart grain.
+        tests:
+          - not_null
+          - unique
+
+      - name: performance_date_hk
+        description: Hash key linking posting_period to gold.dim_date.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: gl_account_hk
+        description: Hash key linking account_code to gold.dim_gl_account.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_gl_account')
+                field: gl_account_hk
+
+      - name: department_hk
+        description: Hash key linking department_id to gold.dim_department.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_department')
+                field: department_hk
+
+      - name: budget_version_hk
+        description: Hash key linking budget_version_code to gold.dim_budget_version.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_budget_version')
+                field: budget_version_hk
+
+      - name: forecast_scenario_hk
+        description: Hash key linking forecast version and scenario to gold.dim_forecast_scenario.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_forecast_scenario')
+                field: forecast_scenario_hk
+
+      - name: forecast_version_code
+        tests:
+          - not_null
+
+      - name: forecast_scenario
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Base Case', 'Upside Case', 'Downside Case', 'Unknown']
+
+      - name: budget_version_code
+        tests:
+          - not_null
+
+      - name: fiscal_year
+        tests:
+          - not_null
+
+      - name: posting_period
+        tests:
+          - not_null
+
+      - name: period_start_date
+        tests:
+          - not_null
+
+      - name: period_end_date
+        tests:
+          - not_null
+
+      - name: period_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Actual', 'Forecast', 'Unknown']
+
+      - name: department_id
+        tests:
+          - not_null
+
+      - name: account_code
+        tests:
+          - not_null
+
+      - name: account_name
+        tests:
+          - not_null
+
+      - name: account_class
+        tests:
+          - not_null
+
+      - name: financial_statement
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Income Statement', 'Balance Sheet']
+
+      - name: currency_code
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['GBP', 'USD', 'EUR', 'SGD', 'UNKNOWN']
+
+      - name: planning_driver
+        tests:
+          - not_null
+
+      - name: forecast_basis
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - ACTUAL_FS_ALLOCATED_TO_AOP_GRAIN
+                  - ACTUAL_WORKFORCE_SUBLEDGER
+                  - SCENARIO_DRIVER_FORECAST
+
+      - name: actual_amount_local
+      - name: actual_amount_gbp
+      - name: budget_amount_local
+        tests:
+          - not_null
+      - name: budget_amount_gbp
+        tests:
+          - not_null
+      - name: forecast_amount_local
+        tests:
+          - not_null
+      - name: forecast_amount_gbp
+        tests:
+          - not_null
+
+      - name: actual_vs_budget_variance_gbp
+      - name: actual_vs_budget_variance_pct
+      - name: actual_vs_budget_favourability
+      - name: actual_vs_forecast_variance_gbp
+      - name: actual_vs_forecast_variance_pct
+      - name: actual_vs_forecast_favourability
+      - name: forecast_vs_budget_variance_gbp
+      - name: forecast_vs_budget_variance_pct
+      - name: forecast_vs_budget_favourability
+
+      - name: variance_category
+        tests:
+          - not_null
+
+      - name: variance_driver_group
+        tests:
+          - not_null
+
+      - name: is_actual_period
+        tests:
+          - not_null
+
+      - name: is_forecast_period
+        tests:
+          - not_null
+
+      - name: is_actual_period_status
+        tests:
+          - not_null
+
+      - name: is_forecast_period_status
+        tests:
+          - not_null
+
+      - name: source_budget_line_id
+      - name: source_forecast_line_id
+      - name: actual_source_basis
+
+      - name: has_source_budget_line
+        tests:
+          - not_null
+
+      - name: has_source_forecast_line
+        tests:
+          - not_null
+
+      - name: has_actual_amount
+        tests:
+          - not_null
+
+      - name: has_budget_amount
+        tests:
+          - not_null
+
+      - name: has_forecast_amount
+        tests:
+          - not_null
+
+      - name: source_system
+        tests:
+          - not_null
+
+      - name: is_system_generated
+        tests:
+          - not_null
+
+      - name: is_defect
+        tests:
+          - not_null
+
+      - name: defect_type
+      - name: created_date
+      - name: updated_date
+
+      - name: _atlas_row_hash
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        tests:
+          - not_null

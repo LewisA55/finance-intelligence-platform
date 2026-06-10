@@ -1,0 +1,171 @@
+version: 2
+
+models:
+  - name: dim_department
+    description: >
+      Gold conformed department dimension for Project Atlas. This model provides
+      the shared organisational spine used across HRIS, Workforce, Planning,
+      Forecasting, Variance, and executive reporting models. The dimension uses
+      HRIS as the authoritative descriptive source for department code and
+      functional group, unions all participating department-bearing Silver
+      sources to establish the full conformed department universe, preserves the
+      intentionally controlled DEPT_UNKNOWN suspense department, and adds a
+      separate Unassigned fallback row for null or unmapped fact joins. The grain
+      is one row per department_id plus one system Unassigned row.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - core_dimension
+        - department
+
+    columns:
+      - name: department_hk
+        description: Deterministic hash key for the department dimension row.
+        tests:
+          - not_null
+          - unique
+
+      - name: department_id
+        description: Natural department identifier, with UNASSIGNED for the system fallback row.
+        tests:
+          - not_null
+          - unique
+
+      - name: department_code
+        description: Short department code from HRIS, with UNASSIGNED for the system fallback row.
+        tests:
+          - not_null
+
+      - name: department_name
+        description: Business-friendly department display name.
+        tests:
+          - not_null
+
+      - name: functional_group
+        description: Functional grouping from HRIS.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Customer Success
+                  - R&D
+                  - Finance & HR
+                  - G&A
+                  - Marketing
+                  - Product
+                  - Sales
+                  - Unknown
+                  - Unassigned
+
+      - name: executive_function_group
+        description: Executive-level grouping for CFO reporting.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Go-to-Market
+                  - Product & Engineering
+                  - Corporate
+                  - Unknown
+                  - Unassigned
+                  - Other
+
+      - name: is_unknown_department
+        description: Boolean flag identifying the controlled DEPT_UNKNOWN suspense department. This is distinct from the system Unassigned row.
+        tests:
+          - not_null
+
+      - name: exists_in_hris_employees
+        description: Boolean flag indicating whether the department appears in the HRIS employee master.
+        tests:
+          - not_null
+
+      - name: exists_in_hris_headcount_snapshot
+        description: Boolean flag indicating whether the department appears in HRIS monthly headcount snapshots.
+        tests:
+          - not_null
+
+      - name: exists_in_workforce_compensation
+        description: Boolean flag indicating whether the department appears in workforce compensation lines.
+        tests:
+          - not_null
+
+      - name: exists_in_workforce_headcount_plan
+        description: Boolean flag indicating whether the department appears in workforce headcount planning.
+        tests:
+          - not_null
+
+      - name: exists_in_workforce_payroll
+        description: Boolean flag indicating whether the department appears in payroll expense lines.
+        tests:
+          - not_null
+
+      - name: exists_in_planning_budget
+        description: Boolean flag indicating whether the department appears in budget lines.
+        tests:
+          - not_null
+
+      - name: exists_in_planning_forecast
+        description: Boolean flag indicating whether the department appears in forecast lines.
+        tests:
+          - not_null
+
+      - name: exists_in_planning_variance
+        description: Boolean flag indicating whether the department appears in the variance source extract.
+        tests:
+          - not_null
+
+      - name: hris_employee_rows
+        description: Number of HRIS employee master rows observed for the department.
+        tests:
+          - not_null
+
+      - name: hris_headcount_snapshot_rows
+        description: Number of HRIS headcount snapshot rows observed for the department.
+        tests:
+          - not_null
+
+      - name: workforce_compensation_rows
+        description: Number of workforce compensation rows observed for the department.
+        tests:
+          - not_null
+
+      - name: workforce_headcount_plan_rows
+        description: Number of workforce headcount plan rows observed for the department.
+        tests:
+          - not_null
+
+      - name: workforce_payroll_rows
+        description: Number of workforce payroll rows observed for the department.
+        tests:
+          - not_null
+
+      - name: planning_budget_rows
+        description: Number of planning budget rows observed for the department.
+        tests:
+          - not_null
+
+      - name: planning_forecast_rows
+        description: Number of planning forecast rows observed for the department.
+        tests:
+          - not_null
+
+      - name: planning_variance_rows
+        description: Number of planning variance rows observed for the department.
+        tests:
+          - not_null
+
+      - name: department_sort
+        description: Sort key for executive reporting order.
+        tests:
+          - not_null
+
+      - name: is_unassigned
+        description: Boolean flag identifying the standard system fallback row.
+        tests:
+          - not_null

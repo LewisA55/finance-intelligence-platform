@@ -1,0 +1,170 @@
+version: 2
+
+models:
+  - name: dim_forecast_scenario
+    description: >
+      Gold conformed forecast scenario dimension for Project Atlas. This model
+      provides the governed forecast/scenario wall for scenario planning,
+      forecast reporting, and variance analysis. It is derived from
+      stg_planning__forecast_lines and cross-checked against
+      stg_planning__variance_source_extract. The model appends explicit ACTUALS
+      and UNASSIGNED system rows so deliberately combined reporting surfaces can
+      represent actuals and fallback mappings without multiplying forecast
+      scenarios into pure actual transaction facts. The grain is one row per
+      forecast_version_code and scenario combination, plus ACTUALS and
+      UNASSIGNED rows.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - core_dimension
+        - forecast_scenario
+
+    columns:
+      - name: forecast_scenario_hk
+        description: Deterministic hash key for the forecast scenario row.
+        tests:
+          - not_null
+          - unique
+
+      - name: forecast_scenario_nk
+        description: Natural forecast scenario key, composed from forecast version and scenario name for source rows, with ACTUALS and UNASSIGNED system keys.
+        tests:
+          - not_null
+          - unique
+
+      - name: forecast_version_code
+        description: Forecast version code, including ACTUALS and UNASSIGNED system rows.
+        tests:
+          - not_null
+
+      - name: forecast_scenario
+        description: Forecast scenario display name.
+        tests:
+          - not_null
+
+      - name: scenario_type
+        description: Forecast scenario type used for reporting.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Base Case
+                  - Upside Case
+                  - Downside Case
+                  - Actuals
+                  - Unassigned
+                  - Other
+
+      - name: fiscal_year
+        description: Fiscal year for the forecast scenario. Null for ACTUALS and UNASSIGNED system rows.
+
+      - name: forecast_start_period
+        description: First forecast period covered by the scenario.
+
+      - name: forecast_end_period
+        description: Final forecast period covered by the scenario.
+
+      - name: source_budget_version_code
+        description: Budget version used as the source planning baseline for forecast rows.
+        tests:
+          - not_null
+
+      - name: source_budget_version_hk
+        description: Deterministic hash key for the source budget version.
+        tests:
+          - not_null
+
+      - name: is_actuals
+        description: Boolean flag identifying the ACTUALS system row.
+        tests:
+          - not_null
+
+      - name: is_base_case
+        description: Boolean flag identifying the Base Case forecast scenario.
+        tests:
+          - not_null
+
+      - name: is_upside_case
+        description: Boolean flag identifying the Upside Case forecast scenario.
+        tests:
+          - not_null
+
+      - name: is_downside_case
+        description: Boolean flag identifying the Downside Case forecast scenario.
+        tests:
+          - not_null
+
+      - name: is_locked
+        description: Boolean flag identifying locked forecast scenarios or system actuals rows.
+        tests:
+          - not_null
+
+      - name: exists_in_forecast_lines
+        description: Boolean flag indicating whether the scenario appears in forecast lines.
+        tests:
+          - not_null
+
+      - name: exists_in_variance_extract
+        description: Boolean flag indicating whether the scenario appears in variance source extract.
+        tests:
+          - not_null
+
+      - name: forecast_line_rows
+        description: Number of forecast line rows observed for the scenario.
+        tests:
+          - not_null
+
+      - name: variance_extract_rows
+        description: Number of variance source extract rows observed for the scenario.
+        tests:
+          - not_null
+
+      - name: actual_period_variance_rows
+        description: Number of actual-period variance rows observed for the scenario.
+        tests:
+          - not_null
+
+      - name: forecast_period_variance_rows
+        description: Number of forecast-period variance rows observed for the scenario.
+        tests:
+          - not_null
+
+      - name: actual_fs_allocated_rows
+        description: Number of forecast rows using actual financial statement allocation basis.
+        tests:
+          - not_null
+
+      - name: actual_workforce_subledger_rows
+        description: Number of forecast rows using actual workforce subledger basis.
+        tests:
+          - not_null
+
+      - name: scenario_driver_forecast_rows
+        description: Number of forecast rows using scenario-driver forecast basis.
+        tests:
+          - not_null
+
+      - name: distinct_forecast_basis_count
+        description: Number of distinct forecast basis values observed for the scenario.
+        tests:
+          - not_null
+
+      - name: scenario_sort
+        description: Sort key for forecast scenario reporting order.
+        tests:
+          - not_null
+
+      - name: created_date
+        description: Earliest source creation date observed for the forecast scenario.
+
+      - name: updated_date
+        description: Latest source update date observed for the forecast scenario.
+
+      - name: is_unassigned
+        description: Boolean flag identifying the UNASSIGNED system fallback row.
+        tests:
+          - not_null

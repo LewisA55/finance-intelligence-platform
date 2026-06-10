@@ -1,0 +1,167 @@
+version: 2
+
+models:
+  - name: dim_budget_version
+    description: >
+      Gold conformed budget version dimension for Project Atlas. This model
+      provides the governed budget/version wall for annual operating plan,
+      forecast source-budget lineage, and variance reporting. It uses
+      stg_planning__budget_versions as the authoritative descriptive source,
+      adds participation diagnostics from budget lines, forecast lines, and
+      variance source extract, preserves Atlas lineage for source budget
+      versions, and appends explicit ACTUALS and UNASSIGNED system rows. The
+      ACTUALS row is intended for deliberately combined reporting surfaces such
+      as variance marts, not as a reason to force budget context onto pure
+      actual transaction facts. The grain is one row per budget_version_code
+      plus ACTUALS and UNASSIGNED rows.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - core_dimension
+        - budget_version
+
+    columns:
+      - name: budget_version_hk
+        description: Deterministic hash key for the budget version row.
+        tests:
+          - not_null
+          - unique
+
+      - name: budget_version_pk
+        description: Source-system budget version primary key, or system fallback key for ACTUALS and UNASSIGNED rows.
+        tests:
+          - not_null
+
+      - name: budget_version_code
+        description: Natural budget version code, including ACTUALS and UNASSIGNED system rows.
+        tests:
+          - not_null
+          - unique
+
+      - name: budget_name
+        description: Budget version display name.
+        tests:
+          - not_null
+
+      - name: fiscal_year
+        description: Fiscal year for source budget versions. Null for ACTUALS and UNASSIGNED system rows.
+
+      - name: scenario_type
+        description: Budget scenario type or system-row scenario label.
+        tests:
+          - not_null
+
+      - name: approval_status
+        description: Budget approval lifecycle status.
+        tests:
+          - not_null
+
+      - name: approved_by
+        description: Approver for the budget version where applicable.
+
+      - name: approval_date
+        description: Approval date for the budget version where applicable.
+
+      - name: is_locked
+        description: Boolean flag identifying locked budget versions or system actuals rows.
+        tests:
+          - not_null
+
+      - name: is_board_approved_budget
+        description: Boolean flag identifying the locked board-approved budget version.
+        tests:
+          - not_null
+
+      - name: is_original_budget
+        description: Boolean flag identifying original AOP budget versions.
+        tests:
+          - not_null
+
+      - name: is_actuals
+        description: Boolean flag identifying the ACTUALS system row.
+        tests:
+          - not_null
+
+      - name: planning_start_period
+        description: First planning period covered by the budget version.
+
+      - name: planning_end_period
+        description: Final planning period covered by the budget version.
+
+      - name: source_system
+        description: Source system for the budget version record or Gold System Row for generated rows.
+        tests:
+          - not_null
+
+      - name: created_date
+        description: Source creation date for budget versions. Null for system rows.
+
+      - name: updated_date
+        description: Source update date for budget versions. Null for system rows.
+
+      - name: exists_in_budget_lines
+        description: Boolean flag indicating whether the budget version appears in budget lines.
+        tests:
+          - not_null
+
+      - name: exists_in_forecast_lines
+        description: Boolean flag indicating whether the budget version is referenced by forecast lines as source budget.
+        tests:
+          - not_null
+
+      - name: exists_in_variance_extract
+        description: Boolean flag indicating whether the budget version appears in the variance source extract.
+        tests:
+          - not_null
+
+      - name: budget_line_rows
+        description: Number of budget line rows observed for the budget version.
+        tests:
+          - not_null
+
+      - name: forecast_line_rows
+        description: Number of forecast line rows referencing the budget version.
+        tests:
+          - not_null
+
+      - name: variance_extract_rows
+        description: Number of variance source extract rows observed for the budget version.
+        tests:
+          - not_null
+
+      - name: actual_period_variance_rows
+        description: Number of actual-period variance rows observed for the budget version.
+        tests:
+          - not_null
+
+      - name: forecast_period_variance_rows
+        description: Number of forecast-period variance rows observed for the budget version.
+        tests:
+          - not_null
+
+      - name: budget_version_sort
+        description: Sort key for budget version reporting order.
+        tests:
+          - not_null
+
+      - name: approval_status_sort
+        description: Sort key for budget approval status reporting order.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze source-row fingerprint carried through Silver for source budget versions. Null only for system rows.
+
+      - name: _atlas_ingested_at
+        description: Bronze ingestion timestamp carried through Silver for source budget versions. Null only for system rows.
+
+      - name: _atlas_source_file
+        description: Bronze source filename carried through Silver for source budget versions. Null only for system rows.
+
+      - name: is_unassigned
+        description: Boolean flag identifying the UNASSIGNED system fallback row.
+        tests:
+          - not_null

@@ -1,0 +1,200 @@
+version: 2
+
+models:
+  - name: fct_forecast
+    description: >
+      Gold forecast planning fact for Project Atlas. This model is sourced from
+      stg_planning__forecast_lines and preserves the native forecast allocation
+      grain: one row per forecast_line_id. Each row represents a forecasted
+      financial allocation for one forecast version/scenario, one posting period,
+      one GL account, one department, and one forecast basis/driver/method
+      combination. The model includes source budget lineage through
+      source_budget_version_hk and source_budget_line_id, but remains a forecast
+      fact rather than a budget fact. It intentionally excludes actual GL journal
+      lines, budget planning lines, variance rows, customer/vendor/employee keys,
+      and region keys. Actual-vs-budget-vs-forecast comparison belongs in a
+      deliberate variance/performance mart.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - core_fact
+        - forecast
+
+    columns:
+      - name: forecast_line_hk
+        tests:
+          - not_null
+          - unique
+      - name: forecast_line_pk
+        tests:
+          - not_null
+          - unique
+      - name: forecast_line_id
+        tests:
+          - not_null
+          - unique
+      - name: forecast_date_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+      - name: gl_account_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_gl_account')
+                field: gl_account_hk
+      - name: department_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_department')
+                field: department_hk
+      - name: forecast_scenario_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_forecast_scenario')
+                field: forecast_scenario_hk
+      - name: source_budget_version_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_budget_version')
+                field: budget_version_hk
+      - name: forecast_version_code
+        tests:
+          - not_null
+      - name: forecast_scenario
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Base Case', 'Upside Case', 'Downside Case', 'Unknown']
+      - name: fiscal_year
+        tests:
+          - not_null
+      - name: posting_period
+        tests:
+          - not_null
+      - name: period_start_date
+        tests:
+          - not_null
+      - name: period_end_date
+        tests:
+          - not_null
+      - name: department_id
+        tests:
+          - not_null
+      - name: account_code
+        tests:
+          - not_null
+      - name: account_name
+        tests:
+          - not_null
+      - name: account_class
+        tests:
+          - not_null
+      - name: financial_statement
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Income Statement', 'Balance Sheet']
+      - name: currency_code
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['GBP', 'USD', 'EUR', 'SGD', 'UNKNOWN']
+      - name: forecast_amount_local
+        tests:
+          - not_null
+      - name: forecast_amount_gbp
+        tests:
+          - not_null
+      - name: source_budget_amount_local
+        tests:
+          - not_null
+      - name: source_budget_amount_gbp
+        tests:
+          - not_null
+      - name: forecast_vs_source_budget_variance_local
+        tests:
+          - not_null
+      - name: forecast_vs_source_budget_variance_gbp
+        tests:
+          - not_null
+      - name: forecast_basis
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - ACTUAL_FS_ALLOCATED_TO_AOP_GRAIN
+                  - ACTUAL_WORKFORCE_SUBLEDGER
+                  - SCENARIO_DRIVER_FORECAST
+      - name: planning_driver
+        tests:
+          - not_null
+      - name: driver_quantity
+        tests:
+          - not_null
+      - name: driver_rate
+        tests:
+          - not_null
+      - name: scenario_multiplier
+        tests:
+          - not_null
+      - name: forecast_method
+        tests:
+          - not_null
+      - name: source_budget_version_code
+        tests:
+          - not_null
+      - name: source_budget_line_id
+      - name: is_locked
+        tests:
+          - not_null
+      - name: source_system
+        tests:
+          - not_null
+      - name: is_system_generated
+        tests:
+          - not_null
+      - name: is_defect
+        tests:
+          - not_null
+      - name: defect_type
+      - name: has_source_budget_line
+        tests:
+          - not_null
+      - name: is_actual_fs_allocated_basis
+        tests:
+          - not_null
+      - name: is_actual_workforce_subledger_basis
+        tests:
+          - not_null
+      - name: is_scenario_driver_forecast_basis
+        tests:
+          - not_null
+      - name: created_date
+      - name: updated_date
+      - name: _atlas_row_hash
+        tests:
+          - not_null
+      - name: _atlas_ingested_at
+        tests:
+          - not_null
+      - name: _atlas_source_file
+        tests:
+          - not_null

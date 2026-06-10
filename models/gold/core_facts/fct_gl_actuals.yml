@@ -1,0 +1,274 @@
+version: 2
+
+models:
+  - name: fct_gl_actuals
+    description: >
+      Gold atomic General Ledger actuals fact for Project Atlas. This model is
+      sourced from stg_accounting__erp_gl_journal_lines and preserves the
+      transaction-line grain of the ERP ledger: one row per posted GL journal
+      line. If a journal contains 50 debit/credit distribution lines, this fact
+      contains exactly 50 rows. The model intentionally excludes trial balance
+      snapshots, financial statement aggregates, budget rows, forecast rows, and
+      variance rows. It also intentionally excludes department, region, employee,
+      budget version, and forecast scenario keys because those are not native to
+      the Silver GL journal-line grain. Planning/scenario comparison belongs in
+      downstream performance or variance marts, not in the pure atomic actuals
+      ledger fact.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - core_fact
+        - gl_actuals
+
+    columns:
+      - name: gl_actual_hk
+        description: Deterministic hash key for the GL actual journal line, derived from journal_line_id.
+        tests:
+          - not_null
+          - unique
+
+      - name: journal_line_pk
+        description: Source-system journal line primary key from the ERP GL extract.
+        tests:
+          - not_null
+          - unique
+
+      - name: journal_id
+        description: Journal/voucher identifier. Multiple journal lines can share one journal_id.
+        tests:
+          - not_null
+
+      - name: journal_line_id
+        description: Atomic journal line identifier. This defines the fact grain.
+        tests:
+          - not_null
+          - unique
+
+      - name: journal_date
+        description: Journal posting date from the ERP GL source.
+        tests:
+          - not_null
+
+      - name: journal_date_hk
+        description: Hash key linking journal_date to gold.dim_date.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: posting_period
+        description: Source posting period label.
+        tests:
+          - not_null
+
+      - name: gl_account_hk
+        description: Hash key linking account_code to gold.dim_gl_account.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_gl_account')
+                field: gl_account_hk
+
+      - name: customer_hk
+        description: Hash key linking populated customer_id values to gold.dim_customer, or UNASSIGNED where not applicable.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_hk
+
+      - name: vendor_hk
+        description: Hash key linking populated vendor_id values to gold.dim_vendor, or UNASSIGNED where not applicable.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_vendor')
+                field: vendor_hk
+
+      - name: source_system
+        description: Source system that generated the GL line.
+        tests:
+          - not_null
+
+      - name: source_document_type
+        description: Source document type for the GL line, such as invoice, payment, revenue schedule, or vendor invoice.
+        tests:
+          - not_null
+
+      - name: source_document_id
+        description: Source document identifier for drill-through and reconciliation.
+
+      - name: source_line_id
+        description: Source document line identifier where available.
+
+      - name: customer_id
+        description: Natural customer identifier where the GL line is linked to a customer.
+
+      - name: subscription_id
+        description: Subscription identifier where the GL line is linked to subscription activity.
+
+      - name: invoice_id
+        description: Customer invoice identifier where the GL line is linked to billing activity.
+
+      - name: payment_id
+        description: Customer payment identifier where the GL line is linked to cash receipt activity.
+
+      - name: vendor_id
+        description: Natural vendor identifier where the GL line is linked to procurement/AP activity.
+
+      - name: vendor_invoice_id
+        description: Vendor invoice identifier where the GL line is linked to AP invoice activity.
+
+      - name: vendor_payment_id
+        description: Vendor payment identifier where the GL line is linked to AP settlement activity.
+
+      - name: allocation_id
+        description: Payment allocation identifier where applicable.
+
+      - name: revenue_schedule_id
+        description: Revenue recognition schedule identifier where applicable.
+
+      - name: account_code
+        description: Natural GL account code.
+        tests:
+          - not_null
+
+      - name: account_name
+        description: GL account name from the source journal line.
+        tests:
+          - not_null
+
+      - name: account_class
+        description: GL account class from the source journal line.
+        tests:
+          - not_null
+
+      - name: financial_statement
+        description: Financial statement classification from the source journal line.
+        tests:
+          - not_null
+
+      - name: dc_indicator
+        description: Debit/credit indicator from the source journal line.
+        tests:
+          - not_null
+
+      - name: debit_amount_local
+        description: Debit amount in transaction/local currency. Always positive or zero.
+        tests:
+          - not_null
+
+      - name: credit_amount_local
+        description: Credit amount in transaction/local currency. Always positive or zero.
+        tests:
+          - not_null
+
+      - name: net_amount_local
+        description: Signed local-currency ledger impact calculated as debit_amount_local minus credit_amount_local.
+        tests:
+          - not_null
+
+      - name: debit_amount_gbp
+        description: Debit amount in GBP reporting currency. Always positive or zero.
+        tests:
+          - not_null
+
+      - name: credit_amount_gbp
+        description: Credit amount in GBP reporting currency. Always positive or zero.
+        tests:
+          - not_null
+
+      - name: net_amount_gbp
+        description: Signed GBP ledger impact calculated as debit_amount_gbp minus credit_amount_gbp.
+        tests:
+          - not_null
+
+      - name: currency_code
+        description: Transaction/local currency code.
+        tests:
+          - not_null
+
+      - name: line_description
+        description: Journal line description or narrative.
+
+      - name: is_system_generated
+        description: Boolean flag identifying system-generated GL lines.
+        tests:
+          - not_null
+
+      - name: is_reversal
+        description: Boolean flag identifying reversal journal lines.
+        tests:
+          - not_null
+
+      - name: is_defect
+        description: Boolean flag identifying controlled synthetic defects.
+        tests:
+          - not_null
+
+      - name: defect_type
+        description: Controlled defect type where applicable.
+
+      - name: has_customer
+        description: Boolean flag identifying GL lines with a populated customer_id.
+        tests:
+          - not_null
+
+      - name: has_vendor
+        description: Boolean flag identifying GL lines with a populated vendor_id.
+        tests:
+          - not_null
+
+      - name: has_customer_invoice
+        description: Boolean flag identifying GL lines with a populated customer invoice ID.
+        tests:
+          - not_null
+
+      - name: has_customer_payment
+        description: Boolean flag identifying GL lines with a populated customer payment ID.
+        tests:
+          - not_null
+
+      - name: has_vendor_invoice
+        description: Boolean flag identifying GL lines with a populated vendor invoice ID.
+        tests:
+          - not_null
+
+      - name: has_vendor_payment
+        description: Boolean flag identifying GL lines with a populated vendor payment ID.
+        tests:
+          - not_null
+
+      - name: has_revenue_schedule
+        description: Boolean flag identifying GL lines with a populated revenue recognition schedule ID.
+        tests:
+          - not_null
+
+      - name: created_date
+        description: Source creation date for the GL journal line.
+
+      - name: updated_date
+        description: Source update date for the GL journal line.
+
+      - name: _atlas_row_hash
+        description: Bronze source-row fingerprint carried through Silver.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: Bronze ingestion timestamp carried through Silver.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Bronze source filename carried through Silver.
+        tests:
+          - not_null

@@ -9,7 +9,7 @@ with date_spine as (
     select
         cast(calendar_date as date) as date_day
     from generate_series(
-        date '2024-01-01',
+        date '2023-01-01',
         date '2027-12-31',
         interval 1 day
     ) as t(calendar_date)

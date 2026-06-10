@@ -1,0 +1,147 @@
+version: 2
+
+models:
+  - name: dim_region
+    description: >
+      Gold conformed region dimension for Project Atlas. This model provides the
+      shared operating geography spine used across Billing, HRIS, Workforce, and
+      future executive reporting models. The dimension unions all region-bearing
+      Silver sources, applies explicit business mappings for the controlled Nexus
+      operating regions, preserves source participation diagnostics, and includes
+      a standard Unassigned fallback row for null or unmapped fact joins. The
+      grain is one row per region_id plus one system Unassigned row.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - core_dimension
+        - region
+
+    columns:
+      - name: region_hk
+        description: Deterministic hash key for the region dimension row. Source rows hash from region_id; the Unassigned row hashes from its exposed fallback region_id, UNASSIGNED.
+        tests:
+          - not_null
+          - unique
+
+      - name: region_id
+        description: Natural region identifier, with UNASSIGNED for the system fallback row.
+        tests:
+          - not_null
+          - unique
+
+      - name: region_name
+        description: Business-friendly region name.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - United Kingdom
+                  - United States
+                  - Germany
+                  - Singapore
+                  - Unknown Region
+                  - Unassigned Region
+
+      - name: region_group
+        description: Broad geography grouping used for high-level reporting.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Europe
+                  - North America
+                  - Asia-Pacific
+                  - Unknown
+                  - Unassigned
+
+      - name: operating_region
+        description: Executive operating region grouping.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - EMEA
+                  - Americas
+                  - APAC
+                  - Unknown
+                  - Unassigned
+
+      - name: default_currency_code
+        description: Default operating currency associated with the region.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+                  - UNKNOWN
+                  - UNASSIGNED
+
+      - name: is_emea_region
+        description: Boolean flag identifying EMEA regions.
+        tests:
+          - not_null
+
+      - name: is_americas_region
+        description: Boolean flag identifying Americas regions.
+        tests:
+          - not_null
+
+      - name: is_apac_region
+        description: Boolean flag identifying APAC regions.
+        tests:
+          - not_null
+
+      - name: is_home_market
+        description: Boolean flag identifying the UK home market.
+        tests:
+          - not_null
+
+      - name: exists_in_billing_customers
+        description: Boolean flag indicating whether the region appears in Billing customers.
+        tests:
+          - not_null
+
+      - name: exists_in_hris_employees
+        description: Boolean flag indicating whether the region appears in the HRIS employee master.
+        tests:
+          - not_null
+
+      - name: exists_in_hris_headcount_snapshot
+        description: Boolean flag indicating whether the region appears in HRIS monthly headcount snapshots.
+        tests:
+          - not_null
+
+      - name: billing_customer_rows
+        description: Number of Billing customer rows observed for the region.
+        tests:
+          - not_null
+
+      - name: hris_employee_rows
+        description: Number of HRIS employee master rows observed for the region.
+        tests:
+          - not_null
+
+      - name: hris_headcount_snapshot_rows
+        description: Number of HRIS headcount snapshot rows observed for the region.
+        tests:
+          - not_null
+
+      - name: region_sort
+        description: Sort key for executive reporting order.
+        tests:
+          - not_null
+
+      - name: is_unassigned
+        description: Boolean flag identifying the standard system fallback row.
+        tests:
+          - not_null

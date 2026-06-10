@@ -1,0 +1,222 @@
+version: 2
+
+models:
+  - name: dim_employee
+    description: >
+      Gold conformed employee dimension for Project Atlas. This model provides
+      the workforce and capacity spine for HRIS, headcount snapshots,
+      compensation, workforce planning, and future payroll/capacity facts. The
+      dimension uses HRIS employees as the authoritative descriptive source,
+      adds participation diagnostics from employee-bearing Silver models,
+      preserves controlled workforce data-quality flags, includes conformed
+      department and region hash keys, preserves Atlas lineage for source
+      employees, and appends a standard Unassigned fallback row for null or
+      unmapped fact joins. Payroll expense lines are intentionally excluded from
+      direct employee participation because the Silver payroll model has no
+      employee_id and is posted at department/account/component/period grain.
+      The grain is one row per employee_id plus one system Unassigned row.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - core_dimension
+        - employee
+
+    columns:
+      - name: employee_hk
+        description: Deterministic hash key for the employee dimension row. Source rows hash from employee_id; the Unassigned row hashes from its exposed fallback employee_id, UNASSIGNED.
+        tests:
+          - not_null
+          - unique
+
+      - name: employee_pk
+        description: Source-system employee primary key from HRIS, or system fallback key for the Unassigned row.
+        tests:
+          - not_null
+
+      - name: employee_id
+        description: Natural employee identifier, with UNASSIGNED for the system fallback row.
+        tests:
+          - not_null
+          - unique
+
+      - name: employee_name
+        description: Employee display name.
+        tests:
+          - not_null
+
+      - name: department_id
+        description: Current/default department identifier associated with the employee.
+        tests:
+          - not_null
+
+      - name: department_hk
+        description: Deterministic department hash key aligned to dim_department.
+        tests:
+          - not_null
+
+      - name: department_code
+        description: Current/default department code associated with the employee.
+        tests:
+          - not_null
+
+      - name: functional_group
+        description: Functional group associated with the employee.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Customer Success', 'R&D', 'Finance & HR', 'G&A', 'Marketing', 'Product', 'Sales', 'Unknown', 'Unassigned']
+
+      - name: region_id
+        description: Current/default region identifier associated with the employee.
+        tests:
+          - not_null
+
+      - name: region_hk
+        description: Deterministic region hash key aligned to dim_region.
+        tests:
+          - not_null
+
+      - name: currency_code
+        description: Employee compensation currency.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['GBP', 'USD', 'EUR', 'SGD', 'UNKNOWN', 'UNASSIGNED']
+
+      - name: job_level
+        description: Employee job level from HRIS.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Analyst', 'Manager', 'Senior Manager', 'Director', 'VP', 'Unknown', 'Unassigned']
+
+      - name: job_title
+        description: Employee job title from HRIS.
+        tests:
+          - not_null
+
+      - name: manager_employee_id
+        description: Manager employee identifier where supplied by HRIS. Null for missing manager records and the Unassigned row.
+
+      - name: manager_employee_hk
+        description: Deterministic manager employee hash key. Missing managers and the Unassigned row map to md5('UNASSIGNED').
+        tests:
+          - not_null
+
+      - name: hire_date
+        description: Employee hire date from HRIS. Null only for the Unassigned row.
+
+      - name: termination_date
+        description: Employee termination date where applicable.
+
+      - name: employment_status
+        description: Employee lifecycle status from HRIS.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Active', 'Terminated', 'Unknown', 'Unassigned']
+
+      - name: is_active_employee
+        description: Boolean flag identifying active employees for BI headcount measures.
+        tests:
+          - not_null
+
+      - name: is_terminated_employee
+        description: Boolean flag identifying terminated employees.
+        tests:
+          - not_null
+
+      - name: base_salary_local
+        description: Employee annual base salary in local currency where available.
+
+      - name: base_salary_gbp
+        description: Employee annual base salary in GBP where available.
+
+      - name: salary_multiplier
+        description: Salary multiplier used in the source synthetic HRIS data.
+
+      - name: is_sales_employee
+        description: Boolean flag identifying sales employees.
+        tests:
+          - not_null
+
+      - name: is_ghost_headcount
+        description: Boolean flag identifying controlled ghost-headcount records.
+        tests:
+          - not_null
+
+      - name: has_data_quality_issue
+        description: Boolean flag identifying controlled HRIS data-quality issues.
+        tests:
+          - not_null
+
+      - name: data_quality_issue
+        description: HRIS data-quality issue label, with missing values standardised to None.
+        tests:
+          - not_null
+
+      - name: is_unknown_employee
+        description: Boolean flag identifying controlled operational suspense employees where present. No such employees exist in the current clean master extract.
+        tests:
+          - not_null
+
+      - name: exists_in_headcount_snapshot
+        description: Boolean flag indicating whether the employee appears in HRIS monthly headcount snapshots.
+        tests:
+          - not_null
+
+      - name: exists_in_employee_compensation
+        description: Boolean flag indicating whether the employee appears in workforce compensation lines.
+        tests:
+          - not_null
+
+      - name: exists_in_headcount_plan
+        description: Boolean flag indicating whether the employee appears in workforce headcount planning.
+        tests:
+          - not_null
+
+      - name: headcount_snapshot_rows
+        description: Number of HRIS headcount snapshot rows observed for the employee.
+        tests:
+          - not_null
+
+      - name: employee_compensation_rows
+        description: Number of workforce compensation rows observed for the employee.
+        tests:
+          - not_null
+
+      - name: headcount_plan_rows
+        description: Number of workforce headcount plan rows observed for the employee.
+        tests:
+          - not_null
+
+      - name: job_level_sort
+        description: Sort key for employee job level reporting order.
+        tests:
+          - not_null
+
+      - name: employment_status_sort
+        description: Sort key for employee lifecycle status reporting order.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze source-row fingerprint carried through Silver for source employee rows. Null only for the Unassigned row.
+
+      - name: _atlas_ingested_at
+        description: Bronze ingestion timestamp carried through Silver for source employee rows. Null only for the Unassigned row.
+
+      - name: _atlas_source_file
+        description: Bronze source filename carried through Silver for source employee rows. Null only for the Unassigned row.
+
+      - name: is_unassigned
+        description: Boolean flag identifying the standard system fallback row.
+        tests:
+          - not_null

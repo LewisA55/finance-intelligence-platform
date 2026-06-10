@@ -1,0 +1,234 @@
+version: 2
+
+models:
+  - name: dim_customer
+    description: >
+      Gold conformed customer dimension for Project Atlas. This model provides
+      the customer spine for the Nexus revenue engine, including Billing,
+      subscriptions, invoices, payments, AR ageing, revenue recognition, and
+      future SaaS metrics. The dimension uses Billing customers as the
+      authoritative descriptive source, adds participation diagnostics from
+      customer-bearing Silver sources, preserves Atlas lineage for source
+      customers, includes hierarchy-ready standalone customer fields, and appends
+      a standard Unassigned fallback row for null or unmapped fact joins. The
+      grain is one row per customer_id plus one system Unassigned row.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - core_dimension
+        - customer
+
+    columns:
+      - name: customer_hk
+        description: Deterministic hash key for the customer dimension row. Source rows hash from customer_id; the Unassigned row hashes from its exposed fallback customer_id, UNASSIGNED.
+        tests:
+          - not_null
+          - unique
+
+      - name: customer_pk
+        description: Source-system customer primary key from Billing, or system fallback key for the Unassigned row.
+        tests:
+          - not_null
+
+      - name: customer_id
+        description: Natural customer identifier, with UNASSIGNED for the system fallback row.
+        tests:
+          - not_null
+          - unique
+
+      - name: legacy_id
+        description: Legacy or acquired-system customer identifier where available.
+
+      - name: customer_name
+        description: Customer display name.
+        tests:
+          - not_null
+
+      - name: customer_segment
+        description: Customer segment classification.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Enterprise
+                  - Mid-Market
+                  - SMB
+                  - Unassigned
+
+      - name: industry
+        description: Customer industry classification.
+        tests:
+          - not_null
+
+      - name: region_id
+        description: Region identifier associated with the customer.
+        tests:
+          - not_null
+
+      - name: region_hk
+        description: Deterministic region hash key derived from region_id, aligned to dim_region.
+        tests:
+          - not_null
+
+      - name: currency_code
+        description: Customer billing or operating currency.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+                  - UNASSIGNED
+
+      - name: cohort_year
+        description: Customer acquisition or creation cohort year. Null only for the Unassigned row.
+
+      - name: is_acquired_customer
+        description: Boolean flag identifying DataPulse-acquired customers.
+        tests:
+          - not_null
+
+      - name: acquisition_source
+        description: Acquisition source or origin of the customer.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Nexus Organic
+                  - DataPulse Analytics
+                  - Unassigned
+
+      - name: created_date
+        description: Customer creation date from Billing. Null only for the Unassigned row.
+
+      - name: customer_status
+        description: Current customer lifecycle status.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Active
+                  - Paused
+                  - Churned
+                  - Unassigned
+
+      - name: is_active
+        description: Boolean flag indicating whether the customer is active.
+        tests:
+          - not_null
+
+      - name: customer_level
+        description: Customer hierarchy level. Current source does not expose parent-child relationships, so source customers are Standalone.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Standalone
+                  - Parent
+                  - Subsidiary
+                  - Unassigned
+
+      - name: parent_customer_id
+        description: Parent customer identifier if a future hierarchy source exposes one. Null in the current source perimeter.
+
+      - name: parent_customer_name
+        description: Parent customer name if a future hierarchy source exposes one. Null in the current source perimeter.
+
+      - name: ultimate_parent_customer_id
+        description: Ultimate parent customer identifier. Equal to customer_id while no parent hierarchy exists.
+        tests:
+          - not_null
+
+      - name: ultimate_parent_customer_name
+        description: Ultimate parent customer name. Equal to customer_name while no parent hierarchy exists.
+        tests:
+          - not_null
+
+      - name: is_unknown_customer
+        description: Boolean flag identifying controlled operational suspense customers where present. No such customers exist in the current clean master extract.
+        tests:
+          - not_null
+
+      - name: exists_in_billing_subscriptions
+        description: Boolean flag indicating whether the customer appears in Billing subscriptions.
+        tests:
+          - not_null
+
+      - name: exists_in_billing_invoices
+        description: Boolean flag indicating whether the customer appears in Billing invoices.
+        tests:
+          - not_null
+
+      - name: exists_in_billing_payments
+        description: Boolean flag indicating whether the customer appears in Billing payments.
+        tests:
+          - not_null
+
+      - name: exists_in_ar_ageing
+        description: Boolean flag indicating whether the customer appears in AR ageing snapshot.
+        tests:
+          - not_null
+
+      - name: exists_in_revenue_recognition
+        description: Boolean flag indicating whether the customer appears in revenue recognition schedule.
+        tests:
+          - not_null
+
+      - name: billing_subscription_rows
+        description: Number of Billing subscription rows observed for the customer.
+        tests:
+          - not_null
+
+      - name: billing_invoice_rows
+        description: Number of Billing invoice rows observed for the customer.
+        tests:
+          - not_null
+
+      - name: billing_payment_rows
+        description: Number of Billing payment rows observed for the customer.
+        tests:
+          - not_null
+
+      - name: ar_ageing_rows
+        description: Number of AR ageing rows observed for the customer.
+        tests:
+          - not_null
+
+      - name: revenue_recognition_rows
+        description: Number of revenue recognition schedule rows observed for the customer.
+        tests:
+          - not_null
+
+      - name: customer_segment_sort
+        description: Sort key for customer segment reporting order.
+        tests:
+          - not_null
+
+      - name: customer_status_sort
+        description: Sort key for customer lifecycle status reporting order.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze source-row fingerprint carried through Silver for source customer rows. Null only for the Unassigned row.
+
+      - name: _atlas_ingested_at
+        description: Bronze ingestion timestamp carried through Silver for source customer rows. Null only for the Unassigned row.
+
+      - name: _atlas_source_file
+        description: Bronze source filename carried through Silver for source customer rows. Null only for the Unassigned row.
+
+      - name: is_unassigned
+        description: Boolean flag identifying the standard system fallback row.
+        tests:
+          - not_null

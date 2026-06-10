@@ -1,0 +1,220 @@
+version: 2
+
+models:
+  - name: fct_budget
+    description: >
+      Gold budget planning fact for Project Atlas. This model is sourced from
+      stg_planning__budget_lines and preserves the native budget planning grain:
+      one row per budget_line_id. Each row represents a planned financial
+      allocation for one budget version, one posting period, one GL account, one
+      department, and one planning driver/method combination. The model is a
+      static planning baseline and intentionally excludes actual GL journal
+      lines, forecast lines, variance rows, customer/vendor/employee keys, and
+      forecast scenario keys. Forecast scenario context belongs in fct_forecast
+      and deliberately combined variance/performance marts, not in the budget
+      fact.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - core_fact
+        - budget
+
+    columns:
+      - name: budget_line_hk
+        description: Deterministic hash key for the budget line, derived from budget_line_id.
+        tests:
+          - not_null
+          - unique
+
+      - name: budget_line_pk
+        description: Source-system budget line primary key from the planning source.
+        tests:
+          - not_null
+          - unique
+
+      - name: budget_line_id
+        description: Natural budget line identifier. This defines the fact grain.
+        tests:
+          - not_null
+          - unique
+
+      - name: budget_version_hk
+        description: Hash key linking budget_version_code to gold.dim_budget_version.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_budget_version')
+                field: budget_version_hk
+
+      - name: budget_date_hk
+        description: Hash key linking posting_period to gold.dim_date.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: gl_account_hk
+        description: Hash key linking account_code to gold.dim_gl_account.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_gl_account')
+                field: gl_account_hk
+
+      - name: department_hk
+        description: Hash key linking department_id to gold.dim_department.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_department')
+                field: department_hk
+
+      - name: budget_version_code
+        description: Natural budget version code.
+        tests:
+          - not_null
+
+      - name: fiscal_year
+        description: Fiscal year for the budget line.
+        tests:
+          - not_null
+
+      - name: posting_period
+        description: Budget posting period, usually anchored to the first day of the month.
+        tests:
+          - not_null
+
+      - name: period_start_date
+        description: Budget period start date.
+        tests:
+          - not_null
+
+      - name: period_end_date
+        description: Budget period end date.
+        tests:
+          - not_null
+
+      - name: department_id
+        description: Department identifier for the budget allocation.
+        tests:
+          - not_null
+
+      - name: account_code
+        description: Natural GL account code for the budget allocation.
+        tests:
+          - not_null
+
+      - name: account_name
+        description: GL account name carried from the budget line.
+        tests:
+          - not_null
+
+      - name: account_class
+        description: GL account class carried from the budget line.
+        tests:
+          - not_null
+
+      - name: financial_statement
+        description: Financial statement classification carried from the budget line.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Income Statement
+                  - Balance Sheet
+
+      - name: currency_code
+        description: Budget planning currency.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+                  - UNKNOWN
+
+      - name: budget_amount_local
+        description: Budget amount in local/planning currency.
+        tests:
+          - not_null
+
+      - name: budget_amount_gbp
+        description: Budget amount in GBP reporting currency.
+        tests:
+          - not_null
+
+      - name: planning_driver
+        description: Planning driver used to generate the budget line.
+        tests:
+          - not_null
+
+      - name: driver_quantity
+        description: Quantity input for the planning driver, where applicable.
+        tests:
+          - not_null
+
+      - name: driver_rate
+        description: Rate input for the planning driver, where applicable.
+        tests:
+          - not_null
+
+      - name: budget_method
+        description: Planning method narrative or methodology used for the budget line.
+        tests:
+          - not_null
+
+      - name: is_locked
+        description: Boolean flag identifying locked budget lines.
+        tests:
+          - not_null
+
+      - name: source_system
+        description: Source system for the budget line.
+        tests:
+          - not_null
+
+      - name: is_system_generated
+        description: Boolean flag identifying system-generated budget lines.
+        tests:
+          - not_null
+
+      - name: is_defect
+        description: Boolean flag identifying controlled synthetic defects.
+        tests:
+          - not_null
+
+      - name: defect_type
+        description: Controlled defect type where applicable.
+
+      - name: created_date
+        description: Source creation date for the budget line.
+
+      - name: updated_date
+        description: Source update date for the budget line.
+
+      - name: _atlas_row_hash
+        description: Bronze source-row fingerprint carried through Silver.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: Bronze ingestion timestamp carried through Silver.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Bronze source filename carried through Silver.
+        tests:
+          - not_null

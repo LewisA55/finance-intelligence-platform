@@ -1,0 +1,198 @@
+version: 2
+
+models:
+  - name: fct_billing_payments
+    description: >
+      Gold billing payments fact for Project Atlas. This model is sourced from
+      stg_billing__billing_payments and preserves the native cash receipt grain:
+      one row per payment_id. It captures customer remittance events before cash
+      is allocated to invoices. The model links to the conformed customer and date
+      spines, and maps cash_account_hk to the UNASSIGNED_GL_ACCOUNT anchor because
+      the payment source exposes bank_account_region but does not expose a governed
+      GL account_code. bank_account_region is retained as treasury context. Region
+      is intentionally excluded from this atomic cash-event fact; regional cash
+      analysis can be derived downstream through customer_hk where required.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - core_fact
+        - billing
+        - o2c
+        - payments
+
+    columns:
+      - name: billing_payment_hk
+        description: Deterministic hash key for the payment, derived from payment_id.
+        tests:
+          - not_null
+          - unique
+
+      - name: payment_pk
+        description: Source-system payment primary key.
+        tests:
+          - not_null
+          - unique
+
+      - name: payment_id
+        description: Natural payment identifier. This defines the fact grain.
+        tests:
+          - not_null
+          - unique
+
+      - name: payment_date_hk
+        description: Hash key linking payment_date to gold.dim_date.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: customer_hk
+        description: Hash key linking customer_id to gold.dim_customer.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_hk
+
+      - name: cash_account_hk
+        description: UNASSIGNED_GL_ACCOUNT hash key because the payment source does not expose a governed cash account_code.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_gl_account')
+                field: gl_account_hk
+
+      - name: customer_id
+        tests:
+          - not_null
+
+      - name: payment_date
+        tests:
+          - not_null
+
+      - name: payment_method
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Bank Transfer
+                  - Card
+                  - Direct Debit
+                  - Wire
+
+      - name: payment_reference
+        tests:
+          - not_null
+
+      - name: bank_account_region
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - APAC Operating Account
+                  - EU Operating Account
+                  - Group Treasury Account
+                  - UK Operating Account
+                  - US Operating Account
+
+      - name: payment_status
+        description: Allocation state of the received cash event.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Fully Applied
+                  - Partially Applied
+                  - Unapplied
+
+      - name: currency_code
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+                  - AUD
+                  - CAD
+                  - UNKNOWN
+
+      - name: payment_amount_local
+        tests:
+          - not_null
+
+      - name: payment_amount_gbp
+        tests:
+          - not_null
+
+      - name: is_cash_realised
+        description: Derived Gold flag. True for current payment statuses because this source contains received cash events.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: is_fully_applied_payment
+        tests:
+          - not_null
+
+      - name: is_partially_applied_payment
+        tests:
+          - not_null
+
+      - name: is_unapplied_payment
+        tests:
+          - not_null
+
+      - name: is_negative_payment
+        tests:
+          - not_null
+
+      - name: is_zero_value_payment
+        tests:
+          - not_null
+
+      - name: source_system
+        tests:
+          - not_null
+
+      - name: is_defect
+        tests:
+          - not_null
+
+      - name: defect_type
+
+      - name: created_date
+        tests:
+          - not_null
+
+      - name: updated_date
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        tests:
+          - not_null

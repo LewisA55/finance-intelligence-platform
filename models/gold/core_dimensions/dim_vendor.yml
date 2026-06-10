@@ -1,0 +1,214 @@
+version: 2
+
+models:
+  - name: dim_vendor
+    description: >
+      Gold conformed vendor dimension for Project Atlas. This model provides the
+      procurement and payables spine for the CFO cost and working-capital story,
+      including vendor invoices, vendor invoice lines, vendor payments, AP ageing,
+      and future expense/AP facts. The dimension uses the Procurement vendor
+      master as the authoritative descriptive source, adds participation
+      diagnostics from AP-facing Silver models, preserves Atlas lineage for
+      source vendors, includes default account/department/region hash keys for
+      conformance, and appends a standard Unassigned fallback row for null or
+      unmapped fact joins. The grain is one row per vendor_id plus one system
+      Unassigned row.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - core_dimension
+        - vendor
+
+    columns:
+      - name: vendor_hk
+        description: Deterministic hash key for the vendor dimension row. Source rows hash from vendor_id; the Unassigned row hashes from its exposed fallback vendor_id, UNASSIGNED.
+        tests:
+          - not_null
+          - unique
+
+      - name: vendor_pk
+        description: Source-system vendor primary key from Procurement, or system fallback key for the Unassigned row.
+        tests:
+          - not_null
+
+      - name: vendor_id
+        description: Natural vendor identifier, with UNASSIGNED for the system fallback row.
+        tests:
+          - not_null
+          - unique
+
+      - name: vendor_name
+        description: Vendor display name.
+        tests:
+          - not_null
+
+      - name: vendor_category
+        description: Vendor category from the Procurement vendor master, with missing source values standardised to Unknown.
+        tests:
+          - not_null
+
+      - name: default_account_code
+        description: Default GL account code associated with the vendor.
+        tests:
+          - not_null
+
+      - name: default_gl_account_hk
+        description: Deterministic hash key for the default GL account, aligned to dim_gl_account.
+        tests:
+          - not_null
+
+      - name: default_department_id
+        description: Default department identifier associated with the vendor.
+        tests:
+          - not_null
+
+      - name: default_department_hk
+        description: Deterministic hash key for the default department, aligned to dim_department.
+        tests:
+          - not_null
+
+      - name: region_id
+        description: Vendor region identifier.
+        tests:
+          - not_null
+
+      - name: region_hk
+        description: Deterministic hash key for the vendor region, aligned to dim_region.
+        tests:
+          - not_null
+
+      - name: currency_code
+        description: Vendor operating or invoice currency.
+        tests:
+          - not_null
+
+      - name: cash_account_code
+        description: Default cash account code associated with vendor payments.
+        tests:
+          - not_null
+
+      - name: cash_gl_account_hk
+        description: Deterministic hash key for the cash GL account, aligned to dim_gl_account.
+        tests:
+          - not_null
+
+      - name: payment_terms
+        description: Vendor payment terms.
+        tests:
+          - not_null
+
+      - name: vendor_status
+        description: Vendor lifecycle status.
+        tests:
+          - not_null
+
+      - name: approval_status
+        description: Vendor approval status.
+        tests:
+          - not_null
+
+      - name: is_strategic_vendor
+        description: Boolean flag identifying strategic vendors.
+        tests:
+          - not_null
+
+      - name: is_recurring_vendor
+        description: Boolean flag identifying recurring vendors.
+        tests:
+          - not_null
+
+      - name: risk_rating
+        description: Vendor risk rating.
+        tests:
+          - not_null
+
+      - name: source_system
+        description: Source system for the vendor record.
+        tests:
+          - not_null
+
+      - name: is_defect
+        description: Boolean flag identifying intentionally seeded vendor master defects.
+        tests:
+          - not_null
+
+      - name: defect_type
+        description: Vendor master defect type where applicable.
+
+      - name: is_unknown_vendor
+        description: Boolean flag identifying controlled operational suspense vendors where present. No such vendors exist in the current clean master extract.
+        tests:
+          - not_null
+
+      - name: exists_in_vendor_invoices
+        description: Boolean flag indicating whether the vendor appears in vendor invoices.
+        tests:
+          - not_null
+
+      - name: exists_in_vendor_invoice_lines
+        description: Boolean flag indicating whether the vendor appears in vendor invoice lines.
+        tests:
+          - not_null
+
+      - name: exists_in_vendor_payments
+        description: Boolean flag indicating whether the vendor appears in vendor payments.
+        tests:
+          - not_null
+
+      - name: exists_in_ap_ageing
+        description: Boolean flag indicating whether the vendor appears in AP ageing snapshot.
+        tests:
+          - not_null
+
+      - name: vendor_invoice_rows
+        description: Number of vendor invoice rows observed for the vendor.
+        tests:
+          - not_null
+
+      - name: vendor_invoice_line_rows
+        description: Number of vendor invoice line rows observed for the vendor.
+        tests:
+          - not_null
+
+      - name: vendor_payment_rows
+        description: Number of vendor payment rows observed for the vendor.
+        tests:
+          - not_null
+
+      - name: ap_ageing_rows
+        description: Number of AP ageing rows observed for the vendor.
+        tests:
+          - not_null
+
+      - name: vendor_importance_sort
+        description: Sort key for strategic and recurring vendor reporting order.
+        tests:
+          - not_null
+
+      - name: vendor_status_sort
+        description: Sort key for vendor lifecycle status reporting order.
+        tests:
+          - not_null
+
+      - name: created_date
+        description: Vendor creation date from Procurement. Null only for the Unassigned row.
+
+      - name: updated_date
+        description: Vendor update date from Procurement. Null only for the Unassigned row.
+
+      - name: _atlas_row_hash
+        description: Bronze source-row fingerprint carried through Silver for source vendor rows. Null only for the Unassigned row.
+
+      - name: _atlas_ingested_at
+        description: Bronze ingestion timestamp carried through Silver for source vendor rows. Null only for the Unassigned row.
+
+      - name: _atlas_source_file
+        description: Bronze source filename carried through Silver for source vendor rows. Null only for the Unassigned row.
+
+      - name: is_unassigned
+        description: Boolean flag identifying the standard system fallback row.
+        tests:
+          - not_null

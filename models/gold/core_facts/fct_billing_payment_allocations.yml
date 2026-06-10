@@ -1,0 +1,218 @@
+version: 2
+
+models:
+  - name: fct_billing_payment_allocations
+    description: >
+      Gold billing payment allocation fact for Project Atlas. This model is
+      sourced from stg_billing__billing_payment_allocations and preserves the
+      native settlement bridge grain: one row per allocation_id. It records the
+      matching event between a received customer payment and an outstanding
+      invoice. invoice_id and payment_id are preserved as degenerate bridge
+      identifiers back to fct_billing_invoices and fct_billing_payments. The
+      model inherits invoice_date_hk and payment_date_hk from the parent facts
+      to support collection-timing analysis while avoiding duplication of full
+      invoice/payment header measures. Over-applied allocations are preserved as
+      explicit business status flags rather than filtered out.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - core_fact
+        - billing
+        - o2c
+        - payment_allocations
+
+    columns:
+      - name: billing_payment_allocation_hk
+        description: Deterministic hash key for the payment allocation, derived from allocation_id.
+        tests:
+          - not_null
+          - unique
+
+      - name: allocation_pk
+        description: Source-system allocation primary key.
+        tests:
+          - not_null
+          - unique
+
+      - name: allocation_id
+        description: Natural allocation identifier. This defines the fact grain.
+        tests:
+          - not_null
+          - unique
+
+      - name: payment_id
+        description: Parent payment identifier linking the allocation to fct_billing_payments.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_billing_payments')
+                field: payment_id
+
+      - name: invoice_id
+        description: Parent invoice identifier linking the allocation to fct_billing_invoices.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_billing_invoices')
+                field: invoice_id
+
+      - name: allocation_date_hk
+        description: Hash key linking allocation_date to gold.dim_date.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: invoice_date_hk
+        description: Parent invoice date hash key inherited from fct_billing_invoices.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: payment_date_hk
+        description: Parent payment date hash key inherited from fct_billing_payments.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: customer_hk
+        description: Hash key linking customer_id to gold.dim_customer.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_hk
+
+      - name: customer_id
+        tests:
+          - not_null
+
+      - name: allocation_date
+        tests:
+          - not_null
+
+      - name: invoice_date
+        tests:
+          - not_null
+
+      - name: due_date
+        tests:
+          - not_null
+
+      - name: payment_date
+        tests:
+          - not_null
+
+      - name: currency_code
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+                  - AUD
+                  - CAD
+                  - UNKNOWN
+
+      - name: allocation_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Applied
+                  - Partially Applied
+                  - Over Applied
+
+      - name: allocated_amount_local
+        tests:
+          - not_null
+
+      - name: allocated_amount_gbp
+        tests:
+          - not_null
+
+      - name: parent_invoice_total_billed_amount_gbp
+
+      - name: parent_payment_amount_gbp
+
+      - name: days_invoice_to_allocation
+
+      - name: days_due_to_allocation
+
+      - name: days_payment_to_allocation
+
+      - name: is_applied_allocation
+        tests:
+          - not_null
+
+      - name: is_partially_applied_allocation
+        tests:
+          - not_null
+
+      - name: is_over_applied_allocation
+        tests:
+          - not_null
+
+      - name: is_orphan_invoice_allocation
+        tests:
+          - not_null
+
+      - name: is_orphan_payment_allocation
+        tests:
+          - not_null
+
+      - name: is_negative_allocation
+        tests:
+          - not_null
+
+      - name: is_zero_value_allocation
+        tests:
+          - not_null
+
+      - name: source_system
+        tests:
+          - not_null
+
+      - name: is_defect
+        tests:
+          - not_null
+
+      - name: defect_type
+
+      - name: created_date
+        tests:
+          - not_null
+
+      - name: updated_date
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        tests:
+          - not_null

@@ -1,0 +1,410 @@
+version: 2
+
+models:
+  - name: fct_revenue_recognition
+    description: >
+      Gold fact table for monthly revenue recognition in Project Atlas. This
+      model is a faithful conformed representation of the Silver revenue
+      recognition schedule. It is intentionally not forced to reconcile every
+      billing invoice line; billing-to-recognition exceptions are preserved for
+      downstream revenue control and waterfall marts. The grain is one row per
+      recognition_id.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - core_fact
+        - revenue
+        - revenue_recognition
+        - accrual
+
+    columns:
+      - name: revenue_recognition_hk
+        description: Deterministic hash key generated from recognition_id.
+        tests:
+          - not_null
+          - unique
+
+      - name: revenue_recognition_pk
+        description: Source-system primary key from the revenue recognition schedule.
+        tests:
+          - not_null
+          - unique
+
+      - name: recognition_id
+        description: Natural recognition schedule identifier. This defines the fact grain.
+        tests:
+          - not_null
+          - unique
+
+      - name: recognition_month_date_hk
+        description: Date hash key for the first day of the recognition month.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: service_period_start_date_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: service_period_end_date_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: recognition_start_date_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: recognition_end_date_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: customer_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_hk
+
+      - name: region_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_hk
+
+      - name: gl_account_hk
+        description: >
+          Revenue account hash key. Current source has revenue_category but no
+          explicit account_code, so Subscription Revenue is mapped to account
+          4100 using a documented fallback rule; otherwise UNASSIGNED_GL_ACCOUNT.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_gl_account')
+                field: gl_account_hk
+
+      - name: mapped_account_code
+        tests:
+          - not_null
+
+      - name: revenue_account_mapping_method
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Revenue category fallback
+                  - Unassigned fallback
+
+      - name: customer_id
+        tests:
+          - not_null
+
+      - name: invoice_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_billing_invoices')
+                field: invoice_id
+
+      - name: invoice_line_id
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_billing_invoice_lines')
+                field: invoice_line_id
+
+      - name: subscription_id
+
+      - name: product_id
+
+      - name: billing_invoice_hk
+        tests:
+          - not_null
+
+      - name: billing_invoice_line_hk
+        tests:
+          - not_null
+
+      - name: invoice_date_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: invoice_date
+        tests:
+          - not_null
+
+      - name: invoice_status
+        tests:
+          - not_null
+
+      - name: recognition_month
+        tests:
+          - not_null
+
+      - name: service_period_start_date
+        tests:
+          - not_null
+
+      - name: service_period_end_date
+        tests:
+          - not_null
+
+      - name: recognition_start_date
+        tests:
+          - not_null
+
+      - name: recognition_end_date
+        tests:
+          - not_null
+
+      - name: days_in_service_period
+        tests:
+          - not_null
+
+      - name: days_recognised_in_month
+        tests:
+          - not_null
+
+      - name: currency_code
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+
+      - name: revenue_category
+        tests:
+          - not_null
+
+      - name: recognition_method
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Daily Pro-Rata Straight Line
+                  - Point in Time
+
+      - name: recognition_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Actual
+                  - Scheduled
+
+      - name: line_type
+
+      - name: billing_frequency
+
+      - name: invoice_line_revenue_category
+
+      - name: schedule_invoice_line_amount_local
+        tests:
+          - not_null
+
+      - name: schedule_invoice_line_amount_gbp
+        tests:
+          - not_null
+
+      - name: invoice_line_fact_amount_local
+        tests:
+          - not_null
+
+      - name: invoice_line_fact_amount_gbp
+        tests:
+          - not_null
+
+      - name: recognised_revenue_local
+        tests:
+          - not_null
+
+      - name: recognised_revenue_gbp
+        tests:
+          - not_null
+
+      - name: deferred_revenue_local_after_month
+        tests:
+          - not_null
+
+      - name: deferred_revenue_gbp_after_month
+        tests:
+          - not_null
+
+      - name: service_period_recognition_ratio
+        tests:
+          - not_null
+
+      - name: is_actual_recognition
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: is_scheduled_recognition
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: is_daily_pro_rata_recognition
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: is_point_in_time_recognition
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: is_zero_recognised_revenue_local
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: is_zero_recognised_revenue_gbp
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: is_recognition_window_outside_service_period
+        description: >
+          Preserved exception flag showing recognition windows that extend beyond
+          the exact service period. This is not a build failure because the
+          source uses calendar-month recognition windows and daily prorated values.
+
+      - name: is_orphan_invoice_recognition
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - false
+
+      - name: is_orphan_invoice_line_recognition
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - false
+
+      - name: is_orphan_customer_recognition
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - false
+
+      - name: is_defect
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: defect_type
+
+      - name: is_parent_invoice_defect
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: invoice_defect_type
+
+      - name: is_parent_invoice_line_defect
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: invoice_line_defect_type
+
+      - name: source_system
+        tests:
+          - not_null
+
+      - name: created_date
+
+      - name: updated_date
+
+      - name: _atlas_row_hash
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        tests:
+          - not_null

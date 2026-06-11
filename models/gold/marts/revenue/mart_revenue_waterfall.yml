@@ -1,0 +1,177 @@
+version: 2
+
+models:
+  - name: mart_revenue_waterfall
+    description: >
+      Customer-month revenue waterfall mart for Project Atlas. This mart combines
+      billing invoice-line activity, revenue recognition actuals, scheduled
+      recognition backlog, and billing-to-recognition governance telemetry. The
+      declared grain is one row per customer_hk + reporting_month_date_hk +
+      currency_code. It intentionally excludes corporate deferred revenue
+      opening and closing balances because those are held at corporate
+      period/currency/category grain in fct_deferred_revenue_rollforward and
+      should not be allocated to customer rows.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - mart
+        - revenue
+        - waterfall
+        - customer_month
+        - cfo
+
+    columns:
+      - name: revenue_waterfall_hk
+        description: Deterministic hash key for the customer-month-currency mart row.
+        tests:
+          - not_null
+          - unique
+
+      - name: customer_hk
+        description: Customer hash key. Part of the mart grain.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_hk
+
+      - name: region_hk
+        description: Customer-derived region hash key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_hk
+
+      - name: reporting_month_date_hk
+        description: Date hash key for the first day of the reporting month. Part of the mart grain.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: reporting_month
+        tests:
+          - not_null
+
+      - name: currency_code
+        description: Transaction currency code. Part of the mart grain.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [GBP, USD, EUR, SGD]
+
+      - name: billed_invoice_count
+        tests: [not_null]
+      - name: billed_invoice_line_count
+        tests: [not_null]
+      - name: billed_amount_local
+        tests: [not_null]
+      - name: billed_amount_gbp
+        tests: [not_null]
+      - name: billed_defect_line_count
+        tests: [not_null]
+      - name: billed_defect_amount_gbp
+        tests: [not_null]
+      - name: recognition_row_count
+        tests: [not_null]
+      - name: actual_recognition_row_count
+        tests: [not_null]
+      - name: scheduled_recognition_row_count
+        tests: [not_null]
+      - name: recognised_revenue_actual_local
+        tests: [not_null]
+      - name: recognised_revenue_actual_gbp
+        tests: [not_null]
+      - name: recognised_revenue_scheduled_local
+        tests: [not_null]
+      - name: recognised_revenue_scheduled_gbp
+        tests: [not_null]
+      - name: recognised_revenue_total_local
+        tests: [not_null]
+      - name: recognised_revenue_total_gbp
+        tests: [not_null]
+      - name: recognition_window_exception_count
+        tests: [not_null]
+      - name: zero_recognition_row_count
+        tests: [not_null]
+      - name: recognition_defect_row_count
+        tests: [not_null]
+      - name: unscheduled_billing_lines_count
+        tests: [not_null]
+      - name: unscheduled_billing_leakage_gbp
+        tests: [not_null]
+      - name: recognition_variance_line_count
+        tests: [not_null]
+      - name: recognition_variance_gbp
+        tests: [not_null]
+      - name: governance_defect_line_count
+        tests: [not_null]
+      - name: governance_defect_amount_gbp
+        tests: [not_null]
+
+      - name: has_billing
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: has_recognition
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: has_actual_recognition
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: has_scheduled_recognition
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: is_billing_only
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: is_recognition_only
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: is_billing_and_recognition
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: is_scheduled_backlog_month
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: has_revenue_governance_exception
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: _atlas_modelled_at
+        tests: [not_null]

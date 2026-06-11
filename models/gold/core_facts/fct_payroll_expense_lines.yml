@@ -1,0 +1,242 @@
+version: 2
+
+models:
+  - name: fct_payroll_expense_lines
+    description: >
+      Gold payroll expense fact at one row per payroll_expense_line_id. The model
+      preserves the finance-facing workforce payroll expense extract grain of
+      posting period, department, GL account, currency and cost component. It
+      conforms department, GL account and date dimensions. It does not include
+      employee_hk because the source payroll expense extract is aggregated above
+      employee grain.
+
+    columns:
+      - name: payroll_expense_hk
+        description: Deterministic hash key for the payroll expense line.
+        tests:
+          - not_null
+          - unique
+
+      - name: payroll_expense_line_id
+        description: Source payroll expense line identifier.
+        tests:
+          - not_null
+          - unique
+
+      - name: department_hk
+        description: Conformed department hash key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_department')
+                field: department_hk
+
+      - name: gl_account_hk
+        description: Conformed GL account hash key for the payroll expense account.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_gl_account')
+                field: gl_account_hk
+
+      - name: payroll_expense_period_date_hk
+        description: Date key for the payroll posting period.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: period_start_date_hk
+        description: Date key for payroll period start date.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: period_end_date_hk
+        description: Date key for payroll period end date.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: department_id
+        description: Natural department identifier from the payroll expense extract.
+        tests:
+          - not_null
+
+      - name: account_code
+        description: Natural GL account code from the payroll expense extract.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['6100']
+
+      - name: account_name
+        description: Source GL account name.
+        tests:
+          - not_null
+
+      - name: currency_code
+        description: Payroll transaction currency.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['GBP', 'USD', 'EUR', 'SGD']
+
+      - name: cost_component
+        description: Payroll cost component classification.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - BASE_SALARY
+                  - EMPLOYER_TAX
+                  - BENEFITS
+                  - BONUS_ACCRUAL
+
+      - name: payroll_expense_period_date
+        description: Monthly payroll posting period date.
+        tests:
+          - not_null
+
+      - name: period_start_date
+        description: Payroll period start date.
+        tests:
+          - not_null
+
+      - name: period_end_date
+        description: Payroll period end date.
+        tests:
+          - not_null
+
+      - name: employee_count
+        description: Employee count represented by the aggregated payroll line.
+        tests:
+          - not_null
+
+      - name: debit_local
+        description: Debit amount in local currency.
+        tests:
+          - not_null
+
+      - name: credit_local
+        description: Credit amount in local currency.
+        tests:
+          - not_null
+
+      - name: debit_gbp
+        description: Debit amount translated to GBP.
+        tests:
+          - not_null
+
+      - name: credit_gbp
+        description: Credit amount translated to GBP.
+        tests:
+          - not_null
+
+      - name: net_amount_local
+        description: Net payroll expense amount in local currency.
+        tests:
+          - not_null
+
+      - name: net_amount_gbp
+        description: Net payroll expense amount translated to GBP.
+        tests:
+          - not_null
+
+      - name: absolute_net_amount_gbp
+        description: Absolute value of net payroll expense amount in GBP.
+        tests:
+          - not_null
+
+      - name: is_base_salary
+        description: True when cost component is BASE_SALARY.
+        tests:
+          - not_null
+
+      - name: is_employer_tax
+        description: True when cost component is EMPLOYER_TAX.
+        tests:
+          - not_null
+
+      - name: is_benefits
+        description: True when cost component is BENEFITS.
+        tests:
+          - not_null
+
+      - name: is_bonus_accrual
+        description: True when cost component is BONUS_ACCRUAL.
+        tests:
+          - not_null
+
+      - name: is_payroll_related_cost
+        description: True when the row represents a recognised payroll cost component.
+        tests:
+          - not_null
+
+      - name: is_payroll_expense_account
+        description: True when the source account code is the payroll expense account 6100.
+        tests:
+          - not_null
+
+      - name: is_expense_account
+        description: True when the conformed GL account is classified as Expense.
+        tests:
+          - not_null
+
+      - name: is_zero_credit_line
+        description: True when both local and GBP credit amounts are zero.
+        tests:
+          - not_null
+
+      - name: is_positive_net_expense
+        description: True when net GBP amount is positive.
+        tests:
+          - not_null
+
+      - name: is_unknown_department
+        description: True when the source department is the controlled DEPT_UNKNOWN suspense department.
+        tests:
+          - not_null
+
+      - name: is_defect
+        description: Source defect flag preserved from Silver.
+        tests:
+          - not_null
+
+      - name: source_system
+        description: Source system that generated the payroll expense line.
+        tests:
+          - not_null
+
+      - name: is_system_generated
+        description: Indicates whether the row was system-generated.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze source row fingerprint preserved for Atlas lineage.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: Bronze ingestion timestamp preserved for Atlas lineage.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Source file name preserved for Atlas lineage.
+        tests:
+          - not_null

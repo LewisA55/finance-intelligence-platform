@@ -1,0 +1,399 @@
+version: 2
+
+models:
+  - name: fct_ap_ageing_snapshot
+    description: >
+      Gold periodic snapshot fact for open Accounts Payable exposure in the
+      Project Atlas Procurement / AP pillar. The technical grain is one row per
+      snapshot_pk. The business grain is one row per vendor_invoice_id per
+      snapshot_date. The model represents open liability exposure as at the
+      source snapshot date and reconciles AP ageing open amounts to vendor
+      invoice totals less vendor payments.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - core_fact
+        - procurement
+        - ap
+        - ap_ageing
+        - working_capital
+        - p2p
+
+    columns:
+      - name: ap_ageing_snapshot_hk
+        tests:
+          - not_null
+          - unique
+
+      - name: snapshot_pk
+        tests:
+          - not_null
+          - unique
+
+      - name: snapshot_date_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: snapshot_date
+        tests:
+          - not_null
+
+      - name: vendor_invoice_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_vendor_invoices')
+                field: vendor_invoice_hk
+
+      - name: vendor_invoice_id
+        tests:
+          - not_null
+
+      - name: vendor_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_vendor')
+                field: vendor_hk
+
+      - name: vendor_id
+        tests:
+          - not_null
+
+      - name: vendor_name
+        tests:
+          - not_null
+
+      - name: invoice_date_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: due_date_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: posting_date_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: posting_period_date_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: invoice_number
+        tests:
+          - not_null
+
+      - name: header_invoice_number
+        tests:
+          - not_null
+
+      - name: invoice_date
+        tests:
+          - not_null
+
+      - name: due_date
+        tests:
+          - not_null
+
+      - name: header_invoice_date
+        tests:
+          - not_null
+
+      - name: header_due_date
+        tests:
+          - not_null
+
+      - name: days_past_due
+        tests:
+          - not_null
+
+      - name: source_ageing_bucket
+        tests:
+          - not_null
+
+      - name: ageing_bucket
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Current
+                  - 1-30 Days Overdue
+                  - 31-60 Days Overdue
+                  - 61-90 Days Overdue
+                  - 91+ Days Overdue
+                  - Unknown
+
+      - name: ageing_bucket_sort
+        tests:
+          - not_null
+
+      - name: ap_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Open
+                  - Overdue
+                  - Paid
+                  - Closed
+                  - Partially Paid
+                  - Written Off
+                  - Overpaid
+
+      - name: currency_code
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - SGD
+
+      - name: header_currency_code
+        tests:
+          - not_null
+
+      - name: invoice_total_local
+        tests:
+          - not_null
+
+      - name: invoice_total_gbp
+        tests:
+          - not_null
+
+      - name: paid_amount_local
+        tests:
+          - not_null
+
+      - name: paid_amount_gbp
+        tests:
+          - not_null
+
+      - name: open_amount_local
+        tests:
+          - not_null
+
+      - name: open_amount_gbp
+        tests:
+          - not_null
+
+      - name: header_invoice_total_local
+        tests:
+          - not_null
+
+      - name: header_invoice_total_gbp
+        tests:
+          - not_null
+
+      - name: calculated_paid_amount_local
+        tests:
+          - not_null
+
+      - name: calculated_paid_amount_gbp
+        tests:
+          - not_null
+
+      - name: calculated_open_amount_local
+        tests:
+          - not_null
+
+      - name: calculated_open_amount_gbp
+        tests:
+          - not_null
+
+      - name: payment_count
+        tests:
+          - not_null
+
+      - name: source_open_amount_arithmetic_variance_local
+        tests:
+          - not_null
+
+      - name: source_open_amount_arithmetic_variance_gbp
+        tests:
+          - not_null
+
+      - name: paid_amount_reconciliation_variance_local
+        tests:
+          - not_null
+
+      - name: paid_amount_reconciliation_variance_gbp
+        tests:
+          - not_null
+
+      - name: open_amount_reconciliation_variance_local
+        tests:
+          - not_null
+
+      - name: open_amount_reconciliation_variance_gbp
+        tests:
+          - not_null
+
+      - name: is_header_paid
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_header_open
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_header_overdue
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_open_ap_exposure
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_current
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_overdue
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_1_30_overdue
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_31_60_overdue
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_61_90_overdue
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_91_plus_overdue
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_orphan_vendor_invoice_ageing_row
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_ageing_defect
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: ageing_defect_type
+
+      - name: is_header_defect
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: header_defect_type
+
+      - name: is_header_duplicate_vendor_invoice
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_header_ap_cutoff_failure
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: has_ap_ageing_control_exception
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: source_system
+        tests:
+          - not_null
+
+      - name: created_date
+        tests:
+          - not_null
+
+      - name: updated_date
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        tests:
+          - not_null

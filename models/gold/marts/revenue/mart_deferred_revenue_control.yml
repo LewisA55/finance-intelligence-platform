@@ -1,0 +1,223 @@
+version: 2
+
+models:
+  - name: mart_deferred_revenue_control
+    description: >
+      Corporate deferred revenue control mart for Project Atlas. This mart is the
+      corporate-period Balance Sheet control surface for deferred revenue. The
+      grain is one row per period_month_date_hk + period_status + currency_code
+      + revenue_category. It intentionally excludes customer-level dimensions to
+      avoid allocating or multiplying corporate deferred revenue balances across
+      customer rows in Power BI.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - mart
+        - revenue
+        - deferred_revenue
+        - control
+        - balance_sheet
+        - cfo
+
+    columns:
+      - name: deferred_revenue_control_hk
+        description: Deterministic hash key for the corporate deferred revenue control row.
+        tests:
+          - not_null
+          - unique
+
+      - name: period_month_date_hk
+        description: Date hash key for the first day of the rollforward period.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: period_month
+        tests:
+          - not_null
+
+      - name: period_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Actual
+                  - Scheduled
+
+      - name: currency_code
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - EUR
+                  - SGD
+
+      - name: revenue_category
+        tests:
+          - not_null
+
+      - name: gl_account_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_gl_account')
+                field: gl_account_hk
+
+      - name: mapped_account_code
+        tests:
+          - not_null
+
+      - name: deferred_revenue_account_mapping_method
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Deferred revenue category fallback
+                  - Unassigned fallback
+
+      - name: rollforward_row_count
+        tests:
+          - not_null
+
+      - name: corporate_opening_deferred_revenue_local
+        tests:
+          - not_null
+
+      - name: corporate_new_billings_deferred_local
+        tests:
+          - not_null
+
+      - name: corporate_recognised_revenue_local
+        tests:
+          - not_null
+
+      - name: corporate_closing_deferred_revenue_local
+        tests:
+          - not_null
+
+      - name: corporate_opening_deferred_revenue_gbp
+        tests:
+          - not_null
+
+      - name: corporate_new_billings_deferred_gbp
+        tests:
+          - not_null
+
+      - name: corporate_recognised_revenue_gbp
+        tests:
+          - not_null
+
+      - name: corporate_closing_deferred_revenue_gbp
+        tests:
+          - not_null
+
+      - name: corporate_rollforward_variance_local
+        tests:
+          - not_null
+
+      - name: corporate_rollforward_variance_gbp
+        tests:
+          - not_null
+
+      - name: corporate_continuity_variance_local
+        tests:
+          - not_null
+
+      - name: corporate_continuity_variance_gbp
+        tests:
+          - not_null
+
+      - name: corporate_prior_closing_deferred_revenue_local
+        tests:
+          - not_null
+
+      - name: corporate_prior_closing_deferred_revenue_gbp
+        tests:
+          - not_null
+
+      - name: corporate_rollforward_exception_count
+        tests:
+          - not_null
+
+      - name: corporate_continuity_exception_count
+        tests:
+          - not_null
+
+      - name: corporate_negative_closing_deferred_revenue_count
+        tests:
+          - not_null
+
+      - name: corporate_defect_row_count
+        tests:
+          - not_null
+
+      - name: has_rollforward_arithmetic_exception
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: has_period_continuity_exception
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: has_negative_closing_deferred_revenue
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: has_source_defect
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: has_deferred_revenue_control_exception
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_actual_period
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_scheduled_period
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: defect_types
+
+      - name: source_systems
+        tests:
+          - not_null
+
+      - name: _atlas_modelled_at
+        tests:
+          - not_null

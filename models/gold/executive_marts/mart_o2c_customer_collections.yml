@@ -1,0 +1,272 @@
+version: 2
+
+models:
+  - name: mart_o2c_customer_collections
+    description: >
+      Executive O2C customer collections mart for Project Atlas. This mart is
+      intentionally anchored to invoice month, not payment month. It provides a
+      customer-month view of billed receivables exposure, allocated cash,
+      open exposure, over-applied cash, allocation quality, and collection
+      timing. The grain is one row per customer_hk and invoice_month. Atomic
+      invoice, payment, invoice-line, and allocation facts remain available for
+      drillthrough; this mart is the CFO-facing collections performance surface.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - executive_mart
+        - billing
+        - o2c
+        - collections
+
+    columns:
+      - name: o2c_customer_collections_hk
+        description: Deterministic hash key for customer_hk plus invoice_month.
+        tests:
+          - not_null
+          - unique
+
+      - name: customer_hk
+        description: Customer hash key at mart grain.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_hk
+
+      - name: customer_id
+        tests:
+          - not_null
+
+      - name: region_hk
+        description: Customer-derived region hash key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_hk
+
+      - name: invoice_month_date_hk
+        description: Date hash key for the first day of the invoice month.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: invoice_month
+        description: First day of invoice month. This is the mart time axis.
+        tests:
+          - not_null
+
+      - name: invoice_count
+        tests:
+          - not_null
+
+      - name: invoice_line_count
+        tests:
+          - not_null
+
+      - name: invoice_currency_count
+        tests:
+          - not_null
+
+      - name: billed_amount_local
+        tests:
+          - not_null
+
+      - name: billed_amount_gbp
+        tests:
+          - not_null
+
+      - name: avg_invoice_amount_gbp
+        tests:
+          - not_null
+
+      - name: invoice_line_amount_gbp
+        tests:
+          - not_null
+
+      - name: recurring_saas_line_amount_gbp
+        tests:
+          - not_null
+
+      - name: legacy_subscription_line_amount_gbp
+        tests:
+          - not_null
+
+      - name: subscription_revenue_line_amount_gbp
+        tests:
+          - not_null
+
+      - name: allocation_count
+        tests:
+          - not_null
+
+      - name: distinct_payment_count
+        tests:
+          - not_null
+
+      - name: allocated_amount_local
+        tests:
+          - not_null
+
+      - name: allocated_amount_gbp
+        tests:
+          - not_null
+
+      - name: gross_collection_rate
+        description: Allocated cash divided by billed amount. May exceed 1 when invoice-month exposure is over-collected.
+        tests:
+          - not_null
+
+      - name: capped_collection_rate
+        description: Collection rate capped at 100 percent for executive KPI use.
+        tests:
+          - not_null
+
+      - name: net_unallocated_invoice_exposure_gbp
+        description: Billed amount less allocated amount. Can be negative where cash is over-applied.
+        tests:
+          - not_null
+
+      - name: open_invoice_exposure_gbp
+        description: Positive-only open invoice exposure after allocations.
+        tests:
+          - not_null
+
+      - name: open_exposure_rate
+        tests:
+          - not_null
+
+      - name: applied_allocation_amount_gbp
+        tests:
+          - not_null
+
+      - name: partially_applied_allocation_amount_gbp
+        tests:
+          - not_null
+
+      - name: over_applied_allocation_amount_gbp
+        tests:
+          - not_null
+
+      - name: applied_allocation_count
+        tests:
+          - not_null
+
+      - name: partially_applied_allocation_count
+        tests:
+          - not_null
+
+      - name: over_applied_allocation_count
+        tests:
+          - not_null
+
+      - name: allocated_from_fully_applied_payments_gbp
+        tests:
+          - not_null
+
+      - name: allocated_from_partially_applied_payments_gbp
+        tests:
+          - not_null
+
+      - name: allocated_from_unapplied_payments_gbp
+        tests:
+          - not_null
+
+      - name: fully_applied_payment_count
+        tests:
+          - not_null
+
+      - name: partially_applied_payment_count
+        tests:
+          - not_null
+
+      - name: unapplied_payment_count
+        tests:
+          - not_null
+
+      - name: invoices_with_no_allocation
+        tests:
+          - not_null
+
+      - name: invoices_not_fully_allocated
+        tests:
+          - not_null
+
+      - name: invoices_fully_allocated
+        tests:
+          - not_null
+
+      - name: invoices_over_allocated
+        tests:
+          - not_null
+
+      - name: clean_invoice_count
+        tests:
+          - not_null
+
+      - name: defective_invoice_count
+        tests:
+          - not_null
+
+      - name: paid_invoice_status_count
+        tests:
+          - not_null
+
+      - name: open_invoice_status_count
+        tests:
+          - not_null
+
+      - name: overdue_invoice_status_count
+        tests:
+          - not_null
+
+      - name: disputed_invoice_status_count
+        tests:
+          - not_null
+
+      - name: written_off_invoice_status_count
+        tests:
+          - not_null
+
+      - name: avg_days_invoice_to_allocation
+
+      - name: avg_days_due_to_allocation
+
+      - name: avg_days_payment_to_allocation
+
+      - name: has_open_exposure
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: has_over_applied_cash
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - true
+                  - false
+
+      - name: collection_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - No Collections
+                  - Partially Collected
+                  - Fully Collected
+                  - Over Collected

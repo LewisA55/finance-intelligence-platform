@@ -1,0 +1,223 @@
+version: 2
+
+models:
+  - name: fct_employee_compensation
+    description: >
+      Gold employee compensation fact at one row per compensation_line_id.
+      The model preserves employee-month-component compensation subledger grain
+      and conforms employee, department, region and date dimensions. It does not
+      map to a GL account because the source compensation extract does not expose
+      account_code; payroll GL account mapping is handled separately in
+      fct_payroll_expense_lines.
+
+    columns:
+      - name: employee_compensation_hk
+        description: Deterministic hash key for the employee compensation line.
+        tests:
+          - not_null
+          - unique
+
+      - name: compensation_line_id
+        description: Source compensation line identifier.
+        tests:
+          - not_null
+          - unique
+
+      - name: employee_hk
+        description: Conformed employee hash key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_employee')
+                field: employee_hk
+
+      - name: department_hk
+        description: Conformed department hash key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_department')
+                field: department_hk
+
+      - name: region_hk
+        description: Conformed region hash key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_hk
+
+      - name: compensation_period_date_hk
+        description: Date key for the compensation posting period.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: period_start_date_hk
+        description: Date key for the compensation period start date.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: period_end_date_hk
+        description: Date key for the compensation period end date.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: employee_id
+        description: Natural employee identifier from the workforce compensation extract.
+        tests:
+          - not_null
+
+      - name: department_id
+        description: Natural department identifier from the workforce compensation extract.
+        tests:
+          - not_null
+
+      - name: region_id
+        description: Natural region identifier from the workforce compensation extract.
+        tests:
+          - not_null
+
+      - name: country_code
+        description: Employee country code from the workforce compensation extract.
+        tests:
+          - not_null
+
+      - name: currency_code
+        description: Compensation transaction currency.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['GBP', 'USD', 'EUR', 'SGD']
+
+      - name: compensation_component
+        description: Compensation component classification.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - BASE_SALARY
+                  - EMPLOYER_TAX
+                  - BENEFITS
+                  - BONUS_ACCRUAL
+
+      - name: compensation_period_date
+        description: Monthly compensation posting period date.
+        tests:
+          - not_null
+
+      - name: period_start_date
+        description: Compensation period start date.
+        tests:
+          - not_null
+
+      - name: period_end_date
+        description: Compensation period end date.
+        tests:
+          - not_null
+
+      - name: annual_base_salary_local
+        description: Annual base salary in local currency.
+        tests:
+          - not_null
+
+      - name: monthly_base_salary_local
+        description: Monthly base salary in local currency.
+        tests:
+          - not_null
+
+      - name: component_rate
+        description: Component rate applied to the base salary amount.
+        tests:
+          - not_null
+
+      - name: amount_local
+        description: Compensation component amount in local currency.
+        tests:
+          - not_null
+
+      - name: amount_gbp
+        description: Compensation component amount translated to GBP.
+        tests:
+          - not_null
+
+      - name: fx_rate_to_gbp
+        description: FX rate used to translate local compensation amount to GBP.
+        tests:
+          - not_null
+
+      - name: is_base_salary
+        description: True when the compensation component is BASE_SALARY.
+        tests:
+          - not_null
+
+      - name: is_employer_tax
+        description: True when the compensation component is EMPLOYER_TAX.
+        tests:
+          - not_null
+
+      - name: is_benefits
+        description: True when the compensation component is BENEFITS.
+        tests:
+          - not_null
+
+      - name: is_bonus_accrual
+        description: True when the compensation component is BONUS_ACCRUAL.
+        tests:
+          - not_null
+
+      - name: is_payroll_related_cost
+        description: True when the row represents a recognised payroll-related compensation component.
+        tests:
+          - not_null
+
+      - name: is_unknown_department
+        description: True when the source department is the controlled DEPT_UNKNOWN suspense department.
+        tests:
+          - not_null
+
+      - name: is_defect
+        description: Source defect flag preserved from Silver.
+        tests:
+          - not_null
+
+      - name: source_system
+        description: Source system that generated the workforce compensation line.
+        tests:
+          - not_null
+
+      - name: is_system_generated
+        description: Indicates whether the row was system-generated.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze source row fingerprint preserved for Atlas lineage.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: Bronze ingestion timestamp preserved for Atlas lineage.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Source file name preserved for Atlas lineage.
+        tests:
+          - not_null

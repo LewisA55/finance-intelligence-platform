@@ -1,0 +1,240 @@
+version: 2
+
+models:
+  - name: fct_vendor_invoices
+    description: >
+      Gold fact table for vendor invoice headers in the Project Atlas
+      Procurement / Accounts Payable pillar. The grain is one row per
+      vendor_invoice_id. The model conforms vendor and date keys, preserves AP
+      payment status, invoice financial amounts, controlled defect telemetry,
+      and Atlas ingestion lineage.
+
+    config:
+      materialized: table
+      schema: gold
+      tags:
+        - gold
+        - core_fact
+        - procurement
+        - ap
+        - vendor_invoices
+        - p2p
+
+    columns:
+      - name: vendor_invoice_hk
+        description: Deterministic hash key generated from vendor_invoice_id.
+        tests:
+          - not_null
+          - unique
+
+      - name: vendor_invoice_pk
+        tests:
+          - not_null
+          - unique
+
+      - name: vendor_invoice_id
+        tests:
+          - not_null
+          - unique
+
+      - name: vendor_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_vendor')
+                field: vendor_hk
+
+      - name: vendor_id
+        tests:
+          - not_null
+
+      - name: vendor_name
+        tests:
+          - not_null
+
+      - name: invoice_number
+        tests:
+          - not_null
+
+      - name: invoice_date_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: due_date_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: posting_date_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: posting_period_date_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: invoice_date
+        tests:
+          - not_null
+
+      - name: due_date
+        tests:
+          - not_null
+
+      - name: posting_date
+        tests:
+          - not_null
+
+      - name: posting_period
+        tests:
+          - not_null
+
+      - name: currency_code
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - GBP
+                  - USD
+                  - SGD
+
+      - name: subtotal_local
+        tests:
+          - not_null
+
+      - name: tax_rate
+        tests:
+          - not_null
+
+      - name: tax_amount_local
+        tests:
+          - not_null
+
+      - name: total_local
+        tests:
+          - not_null
+
+      - name: subtotal_gbp
+        tests:
+          - not_null
+
+      - name: tax_amount_gbp
+        tests:
+          - not_null
+
+      - name: total_gbp
+        tests:
+          - not_null
+
+      - name: invoice_arithmetic_variance_local
+        tests:
+          - not_null
+
+      - name: invoice_arithmetic_variance_gbp
+        tests:
+          - not_null
+
+      - name: payment_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - Paid
+                  - Open
+                  - Overdue
+
+      - name: is_paid
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_open
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_overdue
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_negative_invoice_total
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_zero_invoice_total
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_defect
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: defect_type
+
+      - name: is_duplicate_vendor_invoice
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: is_ap_cutoff_failure
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+
+      - name: source_system
+        tests:
+          - not_null
+
+      - name: created_date
+
+      - name: updated_date
+
+      - name: _atlas_row_hash
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        tests:
+          - not_null

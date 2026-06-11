@@ -1,0 +1,170 @@
+version: 2
+
+models:
+  - name: mart_ap_working_capital_control
+    description: >
+      CFO-facing Accounts Payable working-capital control mart. The grain is
+      one row per vendor_hk per reporting_month_date. It combines vendor invoice
+      activity, invoice-line spend attribution, vendor payments, AP ageing
+      exposure, vendor concentration, payment velocity, and AP control telemetry.
+      The mart is designed for management control and cash optimisation; the
+      DPO metric is exposed as a vendor-level proxy rather than a statutory DPO
+      calculation.
+
+    config:
+      materialized: table
+      schema: gold
+      tags: [gold, mart, procurement, ap, working_capital, cfo_control, p2p]
+
+    columns:
+      - name: ap_working_capital_control_hk
+        tests: [not_null, unique]
+      - name: vendor_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_vendor')
+                field: vendor_hk
+      - name: vendor_id
+        tests: [not_null]
+      - name: vendor_name
+        tests: [not_null]
+      - name: vendor_category
+        tests: [not_null]
+      - name: vendor_status
+        tests: [not_null]
+      - name: vendor_default_currency_code
+        tests: [not_null]
+      - name: reporting_month_date_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+      - name: reporting_month_date
+        tests: [not_null]
+      - name: latest_snapshot_date
+      - name: monthly_invoice_count
+        tests: [not_null]
+      - name: monthly_invoice_total_gbp
+        tests: [not_null]
+      - name: monthly_invoice_subtotal_gbp
+        tests: [not_null]
+      - name: monthly_tax_amount_gbp
+        tests: [not_null]
+      - name: monthly_paid_invoice_count
+        tests: [not_null]
+      - name: monthly_open_invoice_count
+        tests: [not_null]
+      - name: monthly_overdue_invoice_count
+        tests: [not_null]
+      - name: monthly_invoice_line_count
+        tests: [not_null]
+      - name: monthly_expense_line_amount_gbp
+        tests: [not_null]
+      - name: distinct_expense_account_count
+        tests: [not_null]
+      - name: distinct_expense_category_count
+        tests: [not_null]
+      - name: defective_invoice_line_count
+        tests: [not_null]
+      - name: monthly_payment_count
+        tests: [not_null]
+      - name: monthly_payment_amount_gbp
+        tests: [not_null]
+      - name: average_payment_cycle_days
+      - name: min_payment_cycle_days
+      - name: max_payment_cycle_days
+      - name: distinct_payment_method_count
+        tests: [not_null]
+      - name: defective_payment_count
+        tests: [not_null]
+      - name: payment_control_exception_count
+        tests: [not_null]
+      - name: open_invoice_count
+        tests: [not_null]
+      - name: overdue_invoice_count
+        tests: [not_null]
+      - name: current_invoice_count
+        tests: [not_null]
+      - name: open_payable_liability_gbp
+        tests: [not_null]
+      - name: overdue_payable_liability_gbp
+        tests: [not_null]
+      - name: current_payable_liability_gbp
+        tests: [not_null]
+      - name: current_open_amount_gbp
+        tests: [not_null]
+      - name: one_to_thirty_overdue_gbp
+        tests: [not_null]
+      - name: thirty_one_to_sixty_overdue_gbp
+        tests: [not_null]
+      - name: sixty_one_to_ninety_overdue_gbp
+        tests: [not_null]
+      - name: ninety_plus_overdue_gbp
+        tests: [not_null]
+      - name: max_days_past_due
+      - name: average_days_past_due
+      - name: dpo_proxy_days
+      - name: vendor_spend_share_percentage
+        tests: [not_null]
+      - name: vendor_payment_share_percentage
+        tests: [not_null]
+      - name: vendor_open_ap_share_percentage
+        tests: [not_null]
+      - name: duplicate_invoice_count
+        tests: [not_null]
+      - name: duplicate_exposure_gbp
+        tests: [not_null]
+      - name: ap_cutoff_failure_count
+        tests: [not_null]
+      - name: ap_cutoff_failure_exposure_gbp
+        tests: [not_null]
+      - name: defective_invoice_count
+        tests: [not_null]
+      - name: defective_invoice_exposure_gbp
+        tests: [not_null]
+      - name: defective_ageing_count
+        tests: [not_null]
+      - name: ageing_control_exception_count
+        tests: [not_null]
+      - name: active_duplicate_invoice_count
+        tests: [not_null]
+      - name: active_duplicate_exposure_gbp
+        tests: [not_null]
+      - name: active_ap_cutoff_failure_count
+        tests: [not_null]
+      - name: active_ap_cutoff_failure_exposure_gbp
+        tests: [not_null]
+      - name: has_open_ap_exposure
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: has_overdue_ap_exposure
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: has_critical_overdue_exposure
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: has_ap_control_exception
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true, false]
+      - name: total_monthly_invoice_spend_gbp
+        tests: [not_null]
+      - name: total_monthly_payment_amount_gbp
+        tests: [not_null]
+      - name: total_open_payable_liability_gbp
+        tests: [not_null]

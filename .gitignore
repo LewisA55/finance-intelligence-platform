@@ -46,6 +46,8 @@ data/exports/*
 *.csv.gz
 *.xlsx
 *.xls
+data/exports/*
+!data/exports/.gitkeep
 
 # OS Files
 
@@ -64,6 +66,7 @@ Thumbs.db
 
 .env
 .env.*
+!.env.example
 
 # Power BI
 

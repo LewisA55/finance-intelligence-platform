@@ -19,6 +19,7 @@ The docs are organised for a hiring manager, finance leader, or data engineer re
 | [09_power_bi_reporting_plan.md](09_power_bi_reporting_plan.md) | Planned Power BI CFO reporting pack. |
 | [10_ai_commentary_roadmap.md](10_ai_commentary_roadmap.md) | Planned Atlas Intelligence Portal and AI commentary layer. |
 | [11_known_limitations.md](11_known_limitations.md) | Accepted caveats, current limitations, and roadmap boundaries. |
+| [final_validation_summary.md](final_validation_summary.md) | Locked dbt warehouse validation artifact. |
 
 ## Current Warehouse Milestone
 

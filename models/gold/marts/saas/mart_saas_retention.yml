@@ -1,0 +1,104 @@
+version: 2
+
+models:
+  - name: mart_saas_retention
+    description: >
+      Investor-grade SaaS retention mart at one row per reporting month, customer,
+      region and customer segment. The mart aggregates subscription-month states
+      to customer-month grain so GRR, NRR, logo retention and logo churn are based
+      on customer-level cohort status rather than subscription event counts. New
+      business ARR is intentionally excluded from retention formulas.
+
+    columns:
+      - name: saas_retention_hk
+        description: Deterministic key for the SaaS retention mart row.
+        tests:
+          - not_null
+          - unique
+      - name: reporting_month_date_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+      - name: reporting_month_date
+        tests:
+          - not_null
+      - name: customer_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_hk
+      - name: region_hk
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_hk
+      - name: customer_segment
+        tests:
+          - not_null
+      - name: subscription_count
+        tests:
+          - not_null
+      - name: beginning_arr_gbp
+        tests:
+          - not_null
+      - name: ending_active_arr_gbp
+        tests:
+          - not_null
+      - name: new_business_arr_gbp
+        tests:
+          - not_null
+      - name: expansion_arr_gbp
+        tests:
+          - not_null
+      - name: price_increase_arr_gbp
+        tests:
+          - not_null
+      - name: gross_expansion_arr_gbp
+        tests:
+          - not_null
+      - name: contraction_arr_gbp
+        tests:
+          - not_null
+      - name: churn_arr_gbp
+        tests:
+          - not_null
+      - name: pause_arr_gbp
+        tests:
+          - not_null
+      - name: gross_retained_arr_gbp
+        tests:
+          - not_null
+      - name: net_retained_arr_gbp
+        tests:
+          - not_null
+      - name: beginning_active_customer_count
+        tests:
+          - not_null
+      - name: ending_active_customer_count
+        tests:
+          - not_null
+      - name: retained_customer_count
+        tests:
+          - not_null
+      - name: churned_customer_count
+        tests:
+          - not_null
+      - name: paused_customer_count
+        tests:
+          - not_null
+      - name: new_customer_count
+        tests:
+          - not_null
+      - name: is_new_business_excluded_from_retention
+        tests:
+          - not_null
+      - name: has_saas_retention_control_issue
+        tests:
+          - not_null

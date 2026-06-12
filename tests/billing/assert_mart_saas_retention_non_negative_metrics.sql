@@ -1,0 +1,20 @@
+select *
+from {{ ref('mart_saas_retention') }}
+where subscription_count < 0
+   or active_subscription_count < 0
+   or paused_subscription_count < 0
+   or churned_subscription_count < 0
+   or beginning_active_customer_count < 0
+   or ending_active_customer_count < 0
+   or retained_customer_count < 0
+   or churned_customer_count < 0
+   or paused_customer_count < 0
+   or new_customer_count < 0
+   or new_business_arr_gbp < 0
+   or expansion_arr_gbp < 0
+   or price_increase_arr_gbp < 0
+   or gross_expansion_arr_gbp < 0
+   or contraction_arr_gbp < 0
+   or churn_arr_gbp < 0
+   or pause_arr_gbp < 0
+   or ending_active_arr_gbp < 0

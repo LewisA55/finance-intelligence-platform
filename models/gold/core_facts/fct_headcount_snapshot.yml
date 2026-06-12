@@ -1,0 +1,199 @@
+version: 2
+
+models:
+  - name: fct_headcount_snapshot
+    description: >
+      Gold HRIS headcount periodic snapshot fact at one row per employee_id per
+      snapshot_month_date. The model preserves the monthly HRIS population spine
+      and conforms employee, department, region and snapshot date dimensions. It
+      intentionally does not map to a GL account because this is an operational
+      headcount state fact rather than a payroll posting or accounting extract.
+
+    columns:
+      - name: headcount_snapshot_hk
+        description: Deterministic hash key generated from employee_id and snapshot_month_date.
+        tests:
+          - not_null
+          - unique
+
+      - name: employee_hk
+        description: Conformed employee hash key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_employee')
+                field: employee_hk
+
+      - name: department_hk
+        description: Conformed department hash key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_department')
+                field: department_hk
+
+      - name: region_hk
+        description: Conformed region hash key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_hk
+
+      - name: snapshot_month_date_hk
+        description: Conformed date key for the month-end HRIS snapshot date.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: employee_id
+        description: Natural employee identifier from the HRIS snapshot.
+        tests:
+          - not_null
+
+      - name: department_id
+        description: Natural department identifier from the HRIS snapshot.
+        tests:
+          - not_null
+
+      - name: department_code
+        description: HRIS department code.
+        tests:
+          - not_null
+
+      - name: functional_group
+        description: HRIS functional grouping for workforce analysis.
+        tests:
+          - not_null
+
+      - name: region_id
+        description: Natural region identifier from the HRIS snapshot.
+        tests:
+          - not_null
+
+      - name: currency_code
+        description: Salary currency code.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['GBP', 'USD', 'EUR', 'SGD']
+
+      - name: job_level
+        description: Employee job level at the snapshot month.
+        tests:
+          - not_null
+
+      - name: employment_status
+        description: Source HRIS employment status at the snapshot month.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Active', 'Terminated']
+
+      - name: snapshot_month_date
+        description: Month-end HRIS snapshot date.
+        tests:
+          - not_null
+
+      - name: monthly_salary_local
+        description: Monthly salary amount in local currency.
+        tests:
+          - not_null
+
+      - name: monthly_salary_gbp
+        description: Monthly salary amount translated to GBP.
+        tests:
+          - not_null
+
+      - name: fte_count
+        description: FTE count represented by the snapshot row.
+        tests:
+          - not_null
+
+      - name: active_fte_count
+        description: FTE count included when is_active is true, otherwise zero.
+        tests:
+          - not_null
+
+      - name: ghost_fte_count
+        description: FTE count included when is_ghost_headcount is true, otherwise zero.
+        tests:
+          - not_null
+
+      - name: active_headcount_count
+        description: Headcount count included when is_active is true, otherwise zero.
+        tests:
+          - not_null
+
+      - name: ghost_headcount_count
+        description: Headcount count included when is_ghost_headcount is true, otherwise zero.
+        tests:
+          - not_null
+
+      - name: is_active
+        description: Source HRIS active flag preserved from Silver.
+        tests:
+          - not_null
+
+      - name: is_ghost_headcount
+        description: Source HRIS ghost headcount flag preserved from Silver.
+        tests:
+          - not_null
+
+      - name: is_active_headcount
+        description: Gold semantic active headcount flag derived from is_active.
+        tests:
+          - not_null
+
+      - name: is_inactive_headcount
+        description: Gold semantic inactive headcount flag derived from is_active.
+        tests:
+          - not_null
+
+      - name: is_unknown_department
+        description: True when the row is assigned to the controlled DEPT_UNKNOWN suspense department.
+        tests:
+          - not_null
+
+      - name: is_terminated_status
+        description: True when employment_status is Terminated.
+        tests:
+          - not_null
+
+      - name: is_active_status
+        description: True when employment_status is Active.
+        tests:
+          - not_null
+
+      - name: is_status_active_mismatch
+        description: Flags rows where employment_status and is_active disagree, preserving HRIS telemetry rather than silently correcting the source.
+        tests:
+          - not_null
+
+      - name: is_month_end_snapshot
+        description: True when snapshot_month_date falls on the calendar month end.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze source row fingerprint preserved for Atlas lineage.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: Bronze ingestion timestamp preserved for Atlas lineage.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Source file name preserved for Atlas lineage.
+        tests:
+          - not_null

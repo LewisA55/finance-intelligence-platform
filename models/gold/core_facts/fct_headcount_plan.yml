@@ -1,0 +1,229 @@
+version: 2
+
+models:
+  - name: fct_headcount_plan
+    description: >
+      Gold headcount plan fact at one row per position_id. The model preserves
+      the workforce planning register grain and conforms employee, department,
+      region and planned date dimensions. ACTIVE positions are employee-backed;
+      OPEN_BUDGETED and BACKFILL positions are intentionally unfilled and use
+      the conformed UNASSIGNED employee anchor.
+
+    columns:
+      - name: headcount_plan_hk
+        description: Deterministic hash key for the workforce plan position.
+        tests:
+          - not_null
+          - unique
+
+      - name: position_id
+        description: Source position identifier from the headcount plan.
+        tests:
+          - not_null
+          - unique
+
+      - name: employee_hk
+        description: >
+          Conformed employee hash key. Open requisition and backfill positions
+          intentionally map to the UNASSIGNED employee anchor until filled.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_employee')
+                field: employee_hk
+
+      - name: department_hk
+        description: Conformed department hash key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_department')
+                field: department_hk
+
+      - name: region_hk
+        description: Conformed region hash key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_hk
+
+      - name: planned_hire_date_hk
+        description: >
+          Conformed planned hire date key. ACTIVE employee-backed positions
+          without planned hire dates intentionally map to the UNASSIGNED date.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: planned_start_period_date_hk
+        description: >
+          Conformed planned start period date key. ACTIVE employee-backed
+          positions without planned start periods intentionally map to the
+          UNASSIGNED date.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: plan_status
+        description: Workforce planning lifecycle status.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['ACTIVE', 'OPEN_BUDGETED', 'BACKFILL']
+
+      - name: department_id
+        description: Natural department identifier from the headcount plan.
+        tests:
+          - not_null
+
+      - name: region_id
+        description: Natural region identifier from the headcount plan.
+        tests:
+          - not_null
+
+      - name: country_code
+        description: Country code for the planned position.
+        tests:
+          - not_null
+
+      - name: currency_code
+        description: Salary planning currency code.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['GBP', 'USD', 'EUR', 'SGD']
+
+      - name: role_family
+        description: Workforce role family.
+        tests:
+          - not_null
+
+      - name: seniority_level
+        description: Workforce seniority level.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Junior', 'Mid', 'Senior', 'Manager', 'Director', 'Executive']
+
+      - name: target_salary_low_local
+        description: Low end of the target salary band in local currency.
+        tests:
+          - not_null
+
+      - name: target_salary_mid_local
+        description: Midpoint of the target salary band in local currency.
+        tests:
+          - not_null
+
+      - name: target_salary_high_local
+        description: High end of the target salary band in local currency.
+        tests:
+          - not_null
+
+      - name: target_salary_mid_gbp
+        description: Midpoint target salary translated to GBP.
+        tests:
+          - not_null
+
+      - name: fx_rate_to_gbp
+        description: FX rate used to translate local salary assumptions to GBP.
+        tests:
+          - not_null
+
+      - name: planned_position_count
+        description: Additive count of planned positions.
+        tests:
+          - not_null
+
+      - name: is_active_position
+        description: True when the plan row is an active employee-backed position.
+        tests:
+          - not_null
+
+      - name: is_open_budgeted_position
+        description: True when the plan row is an approved open budgeted position.
+        tests:
+          - not_null
+
+      - name: is_backfill_position
+        description: True when the plan row is an open backfill position.
+        tests:
+          - not_null
+
+      - name: is_open_position
+        description: True when the plan row is OPEN_BUDGETED or BACKFILL.
+        tests:
+          - not_null
+
+      - name: is_filled_position
+        description: True when the plan row is ACTIVE and linked to an employee.
+        tests:
+          - not_null
+
+      - name: is_backfill
+        description: Source backfill flag preserved from Silver.
+        tests:
+          - not_null
+
+      - name: is_growth_position
+        description: True when the position is not a backfill position.
+        tests:
+          - not_null
+
+      - name: is_planned_hire_date_missing
+        description: True when the planned hire date is missing.
+        tests:
+          - not_null
+
+      - name: is_planned_start_period_missing
+        description: True when the planned start period is missing.
+        tests:
+          - not_null
+
+      - name: is_unknown_department
+        description: True when the source department is the controlled DEPT_UNKNOWN suspense department.
+        tests:
+          - not_null
+
+      - name: is_defect
+        description: Source defect flag preserved from Silver.
+        tests:
+          - not_null
+
+      - name: source_system
+        description: Source system that generated the headcount plan row.
+        tests:
+          - not_null
+
+      - name: is_system_generated
+        description: Indicates whether the row was system-generated.
+        tests:
+          - not_null
+
+      - name: _atlas_row_hash
+        description: Bronze source row fingerprint preserved for Atlas lineage.
+        tests:
+          - not_null
+
+      - name: _atlas_ingested_at
+        description: Bronze ingestion timestamp preserved for Atlas lineage.
+        tests:
+          - not_null
+
+      - name: _atlas_source_file
+        description: Source file name preserved for Atlas lineage.
+        tests:
+          - not_null

@@ -26,17 +26,26 @@ logs/
 data/raw/*
 data/processed/*
 data/warehouse/*
+data/exports/*
 
 # Keep Folder Structure
 
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/warehouse/.gitkeep
+!data/exports/.gitkeep
 
 # DuckDB
 
 *.duckdb
 *.db
+
+# Warehouse / BI Extracts
+
+*.parquet
+*.csv.gz
+*.xlsx
+*.xls
 
 # OS Files
 

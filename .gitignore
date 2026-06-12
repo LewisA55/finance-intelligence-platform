@@ -1,9 +1,10 @@
 # Python
 
-**pycache**/
+__pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.py[cod]
 
 # Virtual Environments
 
@@ -64,3 +65,7 @@ Thumbs.db
 target/
 dbt_packages/
 logs/
+
+# txt
+
+repo_structure.txt

@@ -1,0 +1,112 @@
+version: 2
+
+models:
+  - name: mart_executive_cfo_command_center
+    description: >
+      Executive CFO command center at a governed monthly reporting scope grain.
+      The mart deliberately separates Company Total, Region Total and Business
+      Unit Total rows to prevent Power BI fan-out across incompatible source
+      grains. Region-enabled metrics are only populated on Company Total and
+      Region Total rows. Department-driven metrics are only populated on Company
+      Total and Business Unit Total rows. Corporate-only metrics remain scoped
+      to Company Total.
+
+    columns:
+      - name: executive_cfo_command_center_hk
+        description: Deterministic key for the executive command center row.
+        tests:
+          - not_null
+          - unique
+
+      - name: reporting_month_date_hk
+        description: Month-start reporting date hash key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: reporting_month_date
+        description: Month-start reporting date.
+        tests:
+          - not_null
+
+      - name: reporting_scope
+        description: Scope guardrail preventing accidental many-to-many fan-out in BI.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Company Total', 'Region Total', 'Business Unit Total']
+
+      - name: region_hk
+        description: Region key for Region Total rows; UNASSIGNED anchor for non-regional scopes.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_hk
+
+      - name: business_unit_code
+        description: Business unit scope code.
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['COMPANY_TOTAL', 'REGION_TOTAL', 'SALES_MARKETING', 'PRODUCT_ENGINEERING', 'CUSTOMER_SUCCESS', 'G_AND_A', 'UNKNOWN']
+
+      - name: actual_revenue_gbp
+        description: Actual recognised revenue from the financial performance mart, scoped only where department/company attribution is valid.
+        tests:
+          - not_null
+
+      - name: recognised_revenue_actual_gbp
+        description: Actual recognised revenue from the revenue waterfall mart, scoped only where customer/region attribution is valid.
+        tests:
+          - not_null
+
+      - name: active_arr_gbp
+        description: Active commercial ARR run-rate from the SaaS ARR movement mart.
+        tests:
+          - not_null
+
+      - name: closing_deferred_revenue_gbp
+        description: Corporate closing deferred revenue from the deferred revenue control mart.
+        tests:
+          - not_null
+
+      - name: cash_collected_gbp
+        description: Allocated O2C cash collected.
+        tests:
+          - not_null
+
+      - name: payroll_cost_gbp
+        description: Workforce payroll cost at company or business-unit scope.
+        tests:
+          - not_null
+
+      - name: open_ar_exposure_gbp
+        description: Open accounts receivable exposure from O2C collections.
+        tests:
+          - not_null
+
+      - name: open_ap_liability_gbp
+        description: Open accounts payable liability from AP working-capital control.
+        tests:
+          - not_null
+
+      - name: gross_revenue_retention_rate
+        description: Weighted GRR calculated from retained ARR numerator and beginning ARR denominator.
+
+      - name: net_revenue_retention_rate
+        description: Weighted NRR calculated from retained ARR numerator and beginning ARR denominator, excluding new business.
+
+      - name: logo_retention_rate
+        description: Customer-logo retention rate calculated from retained starting customers.
+
+      - name: has_any_executive_control_issue
+        description: True when any contributing pillar reports a control issue at the current scope.
+        tests:
+          - not_null

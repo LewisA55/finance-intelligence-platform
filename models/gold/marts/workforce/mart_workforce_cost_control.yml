@@ -1,0 +1,182 @@
+version: 2
+
+models:
+  - name: mart_workforce_cost_control
+    description: >
+      CFO-facing workforce cost and control mart at one row per department_hk
+      and reporting_month_date_hk. The mart standardises payroll month-start
+      dates, HRIS month-end snapshots and future headcount plan start periods
+      onto a governed reporting month-start key before combining metrics. It
+      exposes fully loaded payroll cost per active head/FTE, payroll component
+      mix, HRIS ghost headcount salary exposure, status mismatch telemetry, and
+      future open-position salary pressure.
+
+    columns:
+      - name: workforce_cost_control_hk
+        description: Deterministic mart row hash key.
+        tests:
+          - not_null
+          - unique
+
+      - name: department_hk
+        description: Conformed department hash key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_department')
+                field: department_hk
+
+      - name: reporting_month_date_hk
+        description: Conformed reporting month-start date key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: reporting_month_date
+        description: Reporting month-start date used to align payroll, headcount and plan sources.
+        tests:
+          - not_null
+
+      - name: department_id
+        description: Natural department identifier from dim_department.
+        tests:
+          - not_null
+
+      - name: payroll_cost_gbp
+        description: Fully loaded payroll cost in GBP from payroll expense lines.
+        tests:
+          - not_null
+
+      - name: base_salary_cost_gbp
+        description: Base salary component of payroll cost in GBP.
+        tests:
+          - not_null
+
+      - name: employer_tax_cost_gbp
+        description: Employer tax component of payroll cost in GBP.
+        tests:
+          - not_null
+
+      - name: benefits_cost_gbp
+        description: Benefits component of payroll cost in GBP.
+        tests:
+          - not_null
+
+      - name: bonus_accrual_cost_gbp
+        description: Bonus accrual component of payroll cost in GBP.
+        tests:
+          - not_null
+
+      - name: active_headcount_count
+        description: Active HRIS headcount count.
+        tests:
+          - not_null
+
+      - name: inactive_headcount_count
+        description: Inactive HRIS headcount count.
+        tests:
+          - not_null
+
+      - name: ghost_headcount_count
+        description: HRIS ghost headcount count.
+        tests:
+          - not_null
+
+      - name: active_fte_count
+        description: Active FTE count.
+        tests:
+          - not_null
+
+      - name: monthly_salary_exposure_gbp
+        description: HRIS monthly salary exposure in GBP.
+        tests:
+          - not_null
+
+      - name: ghost_monthly_salary_exposure_gbp
+        description: HRIS monthly salary exposure for ghost headcount rows.
+        tests:
+          - not_null
+
+      - name: status_active_mismatch_count
+        description: Count of rows where employment status and active flag conflict.
+        tests:
+          - not_null
+
+      - name: open_position_count
+        description: Open headcount plan positions.
+        tests:
+          - not_null
+
+      - name: open_position_annual_salary_exposure_gbp
+        description: Annual midpoint salary exposure for open headcount plan positions.
+        tests:
+          - not_null
+
+      - name: open_position_monthly_salary_exposure_gbp
+        description: Monthly midpoint salary exposure for open headcount plan positions.
+        tests:
+          - not_null
+
+      - name: payroll_cost_per_active_head_gbp
+        description: Fully loaded payroll cost per active head.
+        tests:
+          - not_null
+
+      - name: payroll_cost_per_active_fte_gbp
+        description: Fully loaded payroll cost per active FTE.
+        tests:
+          - not_null
+
+      - name: employer_tax_ratio
+        description: Employer tax cost as a percentage of total payroll cost.
+        tests:
+          - not_null
+
+      - name: benefits_ratio
+        description: Benefits cost as a percentage of total payroll cost.
+        tests:
+          - not_null
+
+      - name: bonus_accrual_ratio
+        description: Bonus accrual cost as a percentage of total payroll cost.
+        tests:
+          - not_null
+
+      - name: payroll_cost_share_of_month
+        description: Department share of total monthly payroll cost.
+        tests:
+          - not_null
+
+      - name: active_headcount_share_of_month
+        description: Department share of total monthly active headcount.
+        tests:
+          - not_null
+
+      - name: has_payroll_without_active_headcount
+        description: True when payroll cost exists without active headcount at department/month grain.
+        tests:
+          - not_null
+
+      - name: has_ghost_headcount
+        description: True when HRIS ghost headcount exists for the department/month.
+        tests:
+          - not_null
+
+      - name: has_status_active_mismatch
+        description: True when HRIS employment status and active flag mismatch telemetry exists.
+        tests:
+          - not_null
+
+      - name: has_open_hiring_pressure
+        description: True when future open hiring pressure exists for the department/month.
+        tests:
+          - not_null
+
+      - name: has_workforce_control_issue
+        description: True when any workforce control issue flag is present.
+        tests:
+          - not_null

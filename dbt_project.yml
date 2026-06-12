@@ -18,11 +18,7 @@ clean-targets:
 
 models:
   finance_intelligence_platform:
-    bronze:
-      +materialized: view
     silver:
       +materialized: view
     gold:
-      +materialized: table
-    marts:
       +materialized: table

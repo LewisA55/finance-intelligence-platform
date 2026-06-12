@@ -1,16 +1,8 @@
 pandas
 numpy
 duckdb
-pyarrow
-openpyxl
-faker
 pyyaml
 python-dateutil
 
 dbt-core
 dbt-duckdb
-
-matplotlib
-scikit-learn
-
-pytest

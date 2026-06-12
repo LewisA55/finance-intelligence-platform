@@ -1,9 +1,10 @@
 # Python
 
-**pycache**/
+__pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.py[cod]
 
 # Virtual Environments
 
@@ -25,17 +26,28 @@ logs/
 data/raw/*
 data/processed/*
 data/warehouse/*
+data/exports/*
 
 # Keep Folder Structure
 
 !data/raw/.gitkeep
 !data/processed/.gitkeep
 !data/warehouse/.gitkeep
+!data/exports/.gitkeep
 
 # DuckDB
 
 *.duckdb
 *.db
+
+# Warehouse / BI Extracts
+
+*.parquet
+*.csv.gz
+*.xlsx
+*.xls
+data/exports/*
+!data/exports/.gitkeep
 
 # OS Files
 
@@ -54,6 +66,7 @@ Thumbs.db
 
 .env
 .env.*
+!.env.example
 
 # Power BI
 
@@ -64,3 +77,7 @@ Thumbs.db
 target/
 dbt_packages/
 logs/
+
+# txt
+
+repo_structure.txt

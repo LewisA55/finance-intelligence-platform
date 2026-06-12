@@ -1,0 +1,150 @@
+version: 2
+
+models:
+  - name: mart_saas_arr_movement
+    description: >
+      CFO-facing SaaS ARR movement mart at one row per reporting month,
+      customer, region, product and customer segment. The mart aggregates the
+      event-led subscription periodic state fact into a commercial ARR waterfall
+      cube for board reporting. It preserves new business, expansion, price
+      increase, contraction, churn, pause and renewal ARR deltas separately, and
+      carries SaaS control telemetry from the underlying event/state facts.
+
+    columns:
+      - name: saas_arr_movement_hk
+        description: Deterministic key for the ARR movement mart row.
+        tests:
+          - not_null
+          - unique
+
+      - name: reporting_month_date_hk
+        description: Month-start reporting date hash key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_date')
+                field: date_hk
+
+      - name: reporting_month_date
+        description: Month-start reporting date.
+        tests:
+          - not_null
+
+      - name: customer_hk
+        description: Conformed customer hash key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customer')
+                field: customer_hk
+
+      - name: region_hk
+        description: Customer-derived conformed region hash key.
+        tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_region')
+                field: region_hk
+
+      - name: product_id
+        description: Degenerate product identifier, with UNKNOWN_PRODUCT used for missing subscription master rows.
+        tests:
+          - not_null
+
+      - name: customer_segment
+        description: Customer segment from subscription master, with Unknown used for missing subscription master rows.
+        tests:
+          - not_null
+
+      - name: subscription_count
+        description: Distinct subscription count at the mart grain.
+        tests:
+          - not_null
+
+      - name: active_subscription_count
+        description: Count of active subscription-month states.
+        tests:
+          - not_null
+
+      - name: beginning_arr_gbp
+        description: Opening ARR at the mart grain.
+        tests:
+          - not_null
+
+      - name: new_business_arr_gbp
+        description: New business ARR movement.
+        tests:
+          - not_null
+
+      - name: expansion_arr_gbp
+        description: Expansion ARR movement.
+        tests:
+          - not_null
+
+      - name: price_increase_arr_gbp
+        description: Price increase ARR movement.
+        tests:
+          - not_null
+
+      - name: gross_expansion_arr_gbp
+        description: Expansion plus price increase ARR movement.
+        tests:
+          - not_null
+
+      - name: contraction_arr_gbp
+        description: Contraction ARR loss stored as a positive waterfall amount.
+        tests:
+          - not_null
+
+      - name: churn_arr_gbp
+        description: Churn ARR loss stored as a positive waterfall amount.
+        tests:
+          - not_null
+
+      - name: pause_arr_gbp
+        description: Pause ARR loss stored as a positive waterfall amount.
+        tests:
+          - not_null
+
+      - name: renewal_arr_delta_gbp
+        description: Renewal ARR delta preserved as telemetry.
+        tests:
+          - not_null
+
+      - name: calculated_net_arr_movement_gbp
+        description: Net ARR movement recalculated from positive/negative waterfall vectors.
+        tests:
+          - not_null
+
+      - name: net_arr_delta_gbp
+        description: Signed ARR movement from the state fact.
+        tests:
+          - not_null
+
+      - name: ending_arr_gbp
+        description: Closing event-led ARR at the mart grain.
+        tests:
+          - not_null
+
+      - name: active_arr_gbp
+        description: Active positive run-rate ARR at the mart grain.
+        tests:
+          - not_null
+
+      - name: active_mrr_gbp
+        description: Active positive run-rate MRR at the mart grain.
+        tests:
+          - not_null
+
+      - name: arr_waterfall_variance_gbp
+        description: Difference between closing ARR and the calculated ARR waterfall.
+        tests:
+          - not_null
+
+      - name: has_saas_control_issue
+        description: True when any SaaS control telemetry is present at the mart grain.
+        tests:
+          - not_null

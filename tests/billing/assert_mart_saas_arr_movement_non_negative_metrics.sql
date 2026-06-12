@@ -1,0 +1,23 @@
+select *
+from {{ ref('mart_saas_arr_movement') }}
+where subscription_count < 0
+   or active_subscription_count < 0
+   or paused_subscription_count < 0
+   or churned_subscription_count < 0
+   or new_subscription_event_count < 0
+   or expanded_subscription_event_count < 0
+   or price_increase_subscription_event_count < 0
+   or contracted_subscription_event_count < 0
+   or churned_subscription_event_count < 0
+   or paused_subscription_event_count < 0
+   or renewed_subscription_event_count < 0
+   or event_count < 0
+   or new_business_arr_gbp < 0
+   or expansion_arr_gbp < 0
+   or price_increase_arr_gbp < 0
+   or gross_expansion_arr_gbp < 0
+   or contraction_arr_gbp < 0
+   or churn_arr_gbp < 0
+   or pause_arr_gbp < 0
+   or active_arr_gbp < 0
+   or active_mrr_gbp < 0

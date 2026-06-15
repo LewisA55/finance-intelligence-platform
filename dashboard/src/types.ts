@@ -82,6 +82,71 @@ export interface AccountVariance {
   favourability: string | null; // 'Favourable' | 'Adverse'
 }
 
+/** Working Capital — company position as at the latest month (from command center). */
+export interface WorkingCapitalPosition {
+  month_label: string;
+  month_iso: string;
+  open_ar: number;
+  open_ap: number;
+  net_wc: number;
+  overdue_ap: number;
+  cash_collected: number;
+  cash_pressure: number;
+  collection_rate: number | null;
+  over_applied_cash: number;
+  overdue_invoice_count: number;
+  duplicate_ap_exposure: number;
+}
+
+/** AR exposure vs cash collected, one row per month. */
+export interface ArCollectionsPoint {
+  month_label: string;
+  month_iso: string;
+  open_ar: number;
+  cash_collected: number;
+  billed: number;
+}
+
+/** AP ageing buckets at the latest snapshot. */
+export interface ApAgeing {
+  current_amt: number;
+  d1_30: number;
+  d31_60: number;
+  d61_90: number;
+  d90_plus: number;
+  open_ap: number;
+}
+
+/** Vendor-level AP at the latest snapshot. */
+export interface VendorAp {
+  vendor_name: string;
+  vendor_category: string;
+  open_ap: number;
+  overdue_ap: number;
+  max_dpd: number;
+  critical: boolean;
+}
+
+/** Control Tower — aggregated control exceptions by domain across the period. */
+export interface ControlSummary {
+  financial_exceptions: number;
+  financial_flag: boolean;
+  o2c_exceptions: number;
+  o2c_flag: boolean;
+  revenue_exceptions: number;
+  revenue_flag: boolean;
+  deferred_exceptions: number;
+  deferred_flag: boolean;
+  ap_exceptions: number;
+  ap_flag: boolean;
+  workforce_exceptions: number;
+  workforce_flag: boolean;
+  saas_exceptions: number;
+  saas_flag: boolean;
+  any_flag: boolean;
+  months: number;
+}
+
 /** Company-wide SaaS trend (SaaS Performance page). */
 export interface ExecutiveMonth {
   month_iso: string;

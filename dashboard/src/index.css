@@ -207,6 +207,7 @@ body {
 .status-pill.favourable { color: var(--favourable); background: var(--favourable-bg); border-color: transparent; }
 .status-pill.adverse { color: var(--adverse); background: var(--adverse-bg); border-color: transparent; }
 .status-pill.on-plan { color: var(--text-dim); }
+.status-pill.warning { color: var(--amber); background: var(--amber-bg); border-color: transparent; }
 .status-pill.neutral { color: var(--text-faint); }
 
 /* ---------- KPI cards (finance pack summary cards) ---------- */

@@ -81,3 +81,17 @@ logs/
 # txt
 
 repo_structure.txt
+
+# Dashboard (React + DuckDB-WASM)
+
+dashboard/node_modules/
+dashboard/dist/
+# TypeScript build-mode artifacts (emitted by `tsc -b`)
+dashboard/*.tsbuildinfo
+dashboard/vite.config.js
+dashboard/vite.config.d.ts
+
+# Dashboard ships a small, committed slice of synthetic mart data so the static
+# site is reproducible and deployable. Re-include it despite the global *.parquet ignore.
+!dashboard/public/data/
+!dashboard/public/data/*.parquet

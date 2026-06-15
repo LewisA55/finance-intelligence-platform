@@ -13,6 +13,12 @@ import type {
   ApAgeing,
   VendorAp,
   ControlSummary,
+  SaasKpis,
+  ArrWalk,
+  RegionArr,
+  ProductSegmentArr,
+  ProductMovement,
+  SegmentRetention,
 } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -174,6 +180,128 @@ export async function getDataAsAt(): Promise<{
     where ${COMPANY_TOTAL}
   `);
   return rows[0];
+}
+
+/** SaaS KPI snapshot for the latest month with SaaS data (Company Total). */
+export async function getSaasKpis(): Promise<SaasKpis | null> {
+  const rows = await runQuery<SaasKpis>(`
+    select
+      strftime(reporting_month_date, '%b %Y')        as month_label,
+      reporting_month_date::varchar                  as month_iso,
+      active_arr_gbp::double                          as active_arr,
+      active_mrr_gbp::double                          as active_mrr,
+      net_revenue_retention_rate::double             as nrr,
+      gross_revenue_retention_rate::double           as grr,
+      logo_retention_rate::double                    as logo_retention,
+      logo_churn_rate::double                         as logo_churn,
+      net_arr_delta_gbp::double                       as net_arr_delta,
+      new_customer_count::int                        as new_customers,
+      churned_customer_count::int                    as churned_customers,
+      paused_customer_count::int                     as paused_customers,
+      retained_customer_count::int                   as retained_customers,
+      beginning_active_customer_count::int           as beginning_customers,
+      ending_active_customer_count::int              as ending_customers,
+      subscription_count::int                        as subscriptions,
+      active_subscription_count::int                 as active_subscriptions
+    from mart_executive_cfo_command_center
+    where ${COMPANY_TOTAL} and active_arr_gbp > 0
+    order by reporting_month_date desc
+    limit 1
+  `);
+  return rows[0] ?? null;
+}
+
+/** Period ARR walk: opening (first month) + movement totals = closing (last month). */
+export async function getArrWalk(): Promise<ArrWalk | null> {
+  const rows = await runQuery<ArrWalk>(`
+    with m as (
+      select * from mart_executive_cfo_command_center
+      where ${COMPANY_TOTAL} and active_arr_gbp > 0
+    )
+    select
+      (select beginning_arr_gbp from m order by reporting_month_date limit 1)::double      as opening,
+      sum(new_business_arr_gbp)::double                                                    as new_business,
+      sum(expansion_arr_gbp)::double                                                       as expansion,
+      sum(price_increase_arr_gbp)::double                                                  as price_increase,
+      sum(contraction_arr_gbp)::double                                                     as contraction,
+      sum(churn_arr_gbp)::double                                                           as churn,
+      sum(pause_arr_gbp)::double                                                           as pause,
+      (select ending_arr_gbp from m order by reporting_month_date desc limit 1)::double    as closing
+    from m
+  `);
+  return rows[0] ?? null;
+}
+
+/** Active ARR by region at the latest month with SaaS data. */
+export async function getArrByRegion(): Promise<RegionArr[]> {
+  return runQuery<RegionArr>(`
+    select
+      coalesce(r.region_name, cc.region_hk)          as region,
+      cc.active_arr_gbp::double                       as active_arr,
+      cc.net_revenue_retention_rate::double           as nrr,
+      cc.ending_active_customer_count::int            as customers
+    from mart_executive_cfo_command_center as cc
+    left join dim_region as r on cc.region_hk = r.region_hk
+    where cc.reporting_scope = 'Region Total'
+      and cc.reporting_month_date = (
+        select max(reporting_month_date) from mart_executive_cfo_command_center
+        where reporting_scope = 'Region Total' and active_arr_gbp > 0
+      )
+    order by cc.active_arr_gbp desc
+  `);
+}
+
+const SAAS_WINDOW = `reporting_month_date between date '2026-01-01' and date '2026-12-01'`;
+
+/** Active ARR at product-family × segment grain, latest month (curated slice). */
+export async function getArrByProductSegment(): Promise<ProductSegmentArr[]> {
+  return runQuery<ProductSegmentArr>(`
+    select
+      product_family                       as product_family,
+      customer_segment                     as customer_segment,
+      sum(active_arr_gbp)::double           as active_arr
+    from mart_saas_arr_by_product_segment
+    where reporting_month_date = (
+      select max(reporting_month_date) from mart_saas_arr_by_product_segment
+      where ${SAAS_WINDOW} and active_arr_gbp > 0
+    )
+      and customer_segment in ('Enterprise', 'Mid-Market', 'SMB')
+    group by 1, 2
+  `);
+}
+
+/** FYTD ARR created vs lost by product family (curated slice). */
+export async function getArrMovementByProduct(): Promise<ProductMovement[]> {
+  return runQuery<ProductMovement>(`
+    select
+      product_family                                                          as product_family,
+      sum(new_business_arr_gbp + expansion_arr_gbp + price_increase_arr_gbp)::double as gain,
+      sum(contraction_arr_gbp + churn_arr_gbp + pause_arr_gbp)::double         as loss,
+      sum(net_arr_delta_gbp)::double                                          as net
+    from mart_saas_arr_by_product_segment
+    where ${SAAS_WINDOW}
+    group by 1
+    order by sum(active_arr_gbp) desc
+  `);
+}
+
+/** FYTD retention components by segment (rates computed in the app for correct weighting). */
+export async function getRetentionBySegment(): Promise<SegmentRetention[]> {
+  return runQuery<SegmentRetention>(`
+    select
+      customer_segment                     as customer_segment,
+      sum(beginning_arr_gbp)::double        as beginning_arr,
+      sum(gross_retained_arr_gbp)::double   as gross_retained,
+      sum(net_retained_arr_gbp)::double     as net_retained,
+      sum(beginning_customers)::int         as beginning_customers,
+      sum(retained_customers)::int          as retained_customers,
+      sum(churned_customers)::int           as churned_customers
+    from mart_saas_retention_by_segment
+    where ${SAAS_WINDOW}
+      and customer_segment in ('Enterprise', 'Mid-Market', 'SMB')
+    group by 1
+    order by sum(beginning_arr_gbp) desc
+  `);
 }
 
 /**

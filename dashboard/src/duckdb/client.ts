@@ -4,13 +4,15 @@ import mvpWorker from '@duckdb/duckdb-wasm/dist/duckdb-browser-mvp.worker.js?url
 import ehWasm from '@duckdb/duckdb-wasm/dist/duckdb-eh.wasm?url';
 import ehWorker from '@duckdb/duckdb-wasm/dist/duckdb-browser-eh.worker.js?url';
 
-// Parquet slices shipped in /public/data. Each becomes a queryable view of the
-// same name. Keep this list small — the executive marts are pre-aggregated, so
-// the whole foundation payload is ~160 KB.
+// Parquet slices shipped in /public/data; each becomes a queryable view of the
+// same name. Keep this list lean: the browser downloads every file, so we ship
+// curated, pre-aggregated executive slices rather than the raw detail marts.
 const DATA_FILES = [
   'mart_executive_cfo_command_center',
   'mart_financial_performance',
   'mart_ap_working_capital_control',
+  'mart_saas_arr_by_product_segment',
+  'mart_saas_retention_by_segment',
   'dim_region',
   'dim_date',
   'dim_department',

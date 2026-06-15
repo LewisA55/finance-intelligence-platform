@@ -147,6 +147,73 @@ export interface ControlSummary {
   months: number;
 }
 
+/** SaaS KPI snapshot for the latest month (Company Total). */
+export interface SaasKpis {
+  month_label: string;
+  month_iso: string;
+  active_arr: number;
+  active_mrr: number;
+  nrr: number | null;
+  grr: number | null;
+  logo_retention: number | null;
+  logo_churn: number | null;
+  net_arr_delta: number;
+  new_customers: number;
+  churned_customers: number;
+  paused_customers: number;
+  retained_customers: number;
+  beginning_customers: number;
+  ending_customers: number;
+  subscriptions: number;
+  active_subscriptions: number;
+}
+
+/** Period ARR walk (opening → movements → closing). */
+export interface ArrWalk {
+  opening: number;
+  new_business: number;
+  expansion: number;
+  price_increase: number;
+  contraction: number;
+  churn: number;
+  pause: number;
+  closing: number;
+}
+
+/** ARR by region at the latest month. */
+export interface RegionArr {
+  region: string;
+  active_arr: number;
+  nrr: number | null;
+  customers: number;
+}
+
+/** Active ARR at product-family × segment grain (latest month). */
+export interface ProductSegmentArr {
+  product_family: string;
+  customer_segment: string;
+  active_arr: number;
+}
+
+/** FYTD ARR created vs lost by product family. */
+export interface ProductMovement {
+  product_family: string;
+  gain: number; // new + expansion + price increase
+  loss: number; // contraction + churn + pause
+  net: number;
+}
+
+/** FYTD retention components by segment (rates computed in the app). */
+export interface SegmentRetention {
+  customer_segment: string;
+  beginning_arr: number;
+  gross_retained: number;
+  net_retained: number;
+  beginning_customers: number;
+  retained_customers: number;
+  churned_customers: number;
+}
+
 /** Company-wide SaaS trend (SaaS Performance page). */
 export interface ExecutiveMonth {
   month_iso: string;

@@ -10,6 +10,7 @@ import ehWorker from '@duckdb/duckdb-wasm/dist/duckdb-browser-eh.worker.js?url';
 const DATA_FILES = [
   'mart_executive_cfo_command_center',
   'mart_financial_performance',
+  'mart_ap_working_capital_control',
   'dim_region',
   'dim_date',
   'dim_department',

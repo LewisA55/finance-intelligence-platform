@@ -1,9 +1,10 @@
-export type StatusTone = 'favourable' | 'adverse' | 'on-plan' | 'neutral';
+export type StatusTone = 'favourable' | 'adverse' | 'on-plan' | 'warning' | 'neutral';
 
 const LABELS: Record<StatusTone, string> = {
   favourable: 'Favourable',
   adverse: 'Adverse',
   'on-plan': 'On Plan',
+  warning: 'Review',
   neutral: '—',
 };
 

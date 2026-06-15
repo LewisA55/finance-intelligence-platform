@@ -14,6 +14,7 @@ const targetDir = join(here, '..', 'public', 'data');
 const FILES = [
   'mart_executive_cfo_command_center.parquet',
   'mart_financial_performance.parquet',
+  'mart_ap_working_capital_control.parquet',
   'dim_region.parquet',
   'dim_date.parquet',
   'dim_department.parquet',

@@ -18,7 +18,7 @@ export const NAV: NavItem[] = [
   { id: 'command-center', label: 'CFO Command Center', status: 'live' },
   { id: 'saas', label: 'SaaS Performance', status: 'preview' },
   { id: 'financial', label: 'Financial Performance', status: 'live' },
-  { id: 'working-capital', label: 'Working Capital', status: 'soon' },
-  { id: 'control-tower', label: 'Control Tower', status: 'soon' },
+  { id: 'working-capital', label: 'Working Capital', status: 'live' },
+  { id: 'control-tower', label: 'Control Tower', status: 'live' },
   { id: 'validation', label: 'Data & Validation', status: 'live' },
 ];

@@ -8,6 +8,11 @@ import type {
   FinancialSummary,
   DepartmentVariance,
   AccountVariance,
+  WorkingCapitalPosition,
+  ArCollectionsPoint,
+  ApAgeing,
+  VendorAp,
+  ControlSummary,
 } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -195,6 +200,120 @@ export async function getExecutiveTrend(): Promise<ExecutiveMonth[]> {
     where ${COMPANY_TOTAL}
       and active_arr_gbp > 0
     order by reporting_month_date
+  `);
+}
+
+// ---------------------------------------------------------------------------
+// Control Tower
+// ---------------------------------------------------------------------------
+// The warehouse deliberately retains control exceptions rather than hiding them.
+// The command center already carries per-domain control flags + exception counts,
+// so the trust view needs no extra data — aggregate them across the period.
+export async function getControlSummary(): Promise<ControlSummary | null> {
+  const rows = await runQuery<ControlSummary>(`
+    select
+      sum(financial_defect_row_count)::int                                          as financial_exceptions,
+      bool_or(has_financial_performance_control_issue)                              as financial_flag,
+      sum(defective_invoice_count + customer_months_with_over_applied_cash)::int    as o2c_exceptions,
+      bool_or(has_o2c_control_issue)                                                as o2c_flag,
+      sum(revenue_governance_exception_count)::int                                  as revenue_exceptions,
+      bool_or(has_revenue_control_issue)                                            as revenue_flag,
+      sum(deferred_revenue_control_exception_count)::int                            as deferred_exceptions,
+      bool_or(has_deferred_revenue_control_issue)                                   as deferred_flag,
+      sum(ap_control_exception_count)::int                                          as ap_exceptions,
+      bool_or(has_ap_control_issue)                                                 as ap_flag,
+      sum(workforce_control_issue_count)::int                                       as workforce_exceptions,
+      bool_or(has_workforce_control_issue)                                          as workforce_flag,
+      sum(saas_arr_control_issue_count + saas_retention_control_issue_count)::int   as saas_exceptions,
+      bool_or(has_saas_control_issue)                                               as saas_flag,
+      bool_or(has_any_executive_control_issue)                                      as any_flag,
+      count(*)::int                                                                 as months
+    from mart_executive_cfo_command_center
+    where ${COMPANY_TOTAL}
+  `);
+  return rows[0] ?? null;
+}
+
+// ---------------------------------------------------------------------------
+// Working Capital
+// ---------------------------------------------------------------------------
+// AR builds across the year as collections lag; AP is a point-in-time snapshot
+// that only populates at the latest month. So this is a "current position as at
+// the latest month" view. Company/region O2C + AP aggregates come from the
+// command center; vendor-level AP detail comes from mart_ap_working_capital_control.
+
+/** Company working-capital position as at the latest month with WC activity. */
+export async function getWorkingCapitalPosition(): Promise<WorkingCapitalPosition | null> {
+  const rows = await runQuery<WorkingCapitalPosition>(`
+    select
+      strftime(reporting_month_date, '%b %Y')        as month_label,
+      reporting_month_date::varchar                  as month_iso,
+      open_ar_exposure_gbp::double                   as open_ar,
+      open_ap_liability_gbp::double                  as open_ap,
+      net_ar_less_ap_exposure_gbp::double            as net_wc,
+      overdue_ap_liability_gbp::double               as overdue_ap,
+      cash_collected_gbp::double                     as cash_collected,
+      operational_cash_pressure_gbp::double          as cash_pressure,
+      cash_collection_rate::double                   as collection_rate,
+      over_applied_cash_gbp::double                  as over_applied_cash,
+      overdue_invoice_count::integer                 as overdue_invoice_count,
+      duplicate_ap_exposure_gbp::double              as duplicate_ap_exposure
+    from mart_executive_cfo_command_center
+    where ${COMPANY_TOTAL}
+      and (open_ar_exposure_gbp > 0 or open_ap_liability_gbp > 0)
+    order by reporting_month_date desc
+    limit 1
+  `);
+  return rows[0] ?? null;
+}
+
+/** AR exposure vs cash collected by month (Company Total). */
+export async function getArCollectionsTrend(): Promise<ArCollectionsPoint[]> {
+  return runQuery<ArCollectionsPoint>(`
+    select
+      strftime(reporting_month_date, '%b %Y')        as month_label,
+      reporting_month_date::varchar                  as month_iso,
+      open_ar_exposure_gbp::double                   as open_ar,
+      cash_collected_gbp::double                     as cash_collected,
+      billed_amount_gbp::double                      as billed
+    from mart_executive_cfo_command_center
+    where ${COMPANY_TOTAL}
+      and (billed_amount_gbp > 0 or open_ar_exposure_gbp > 0)
+    order by reporting_month_date
+  `);
+}
+
+/** AP ageing buckets at the latest snapshot. */
+export async function getApAgeing(): Promise<ApAgeing | null> {
+  const rows = await runQuery<ApAgeing>(`
+    select
+      sum(current_open_amount_gbp)::double           as current_amt,
+      sum(one_to_thirty_overdue_gbp)::double         as d1_30,
+      sum(thirty_one_to_sixty_overdue_gbp)::double   as d31_60,
+      sum(sixty_one_to_ninety_overdue_gbp)::double   as d61_90,
+      sum(ninety_plus_overdue_gbp)::double           as d90_plus,
+      sum(open_payable_liability_gbp)::double        as open_ap
+    from mart_ap_working_capital_control
+    where reporting_month_date = (select max(reporting_month_date) from mart_ap_working_capital_control)
+  `);
+  return rows[0] ?? null;
+}
+
+/** Largest vendors by overdue AP at the latest snapshot. */
+export async function getTopVendorsAp(limit = 10): Promise<VendorAp[]> {
+  return runQuery<VendorAp>(`
+    select
+      vendor_name                                    as vendor_name,
+      vendor_category                                as vendor_category,
+      open_payable_liability_gbp::double             as open_ap,
+      overdue_payable_liability_gbp::double          as overdue_ap,
+      max_days_past_due::integer                     as max_dpd,
+      has_critical_overdue_exposure                  as critical
+    from mart_ap_working_capital_control
+    where reporting_month_date = (select max(reporting_month_date) from mart_ap_working_capital_control)
+      and open_payable_liability_gbp > 0
+    order by overdue_payable_liability_gbp desc, open_payable_liability_gbp desc
+    limit ${Math.max(1, Math.floor(limit))}
   `);
 }
 

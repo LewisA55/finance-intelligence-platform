@@ -19,6 +19,8 @@ import type {
   ProductSegmentArr,
   ProductMovement,
   SegmentRetention,
+  RevenueKpis,
+  RevRecMonth,
 } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -248,6 +250,53 @@ export async function getArrByRegion(): Promise<RegionArr[]> {
         where reporting_scope = 'Region Total' and active_arr_gbp > 0
       )
     order by cc.active_arr_gbp desc
+  `);
+}
+
+// ---------------------------------------------------------------------------
+// Revenue Recognition & deferred revenue (from the command center)
+// ---------------------------------------------------------------------------
+
+/** Revenue-recognition KPIs as at the latest actuals month (Company Total). */
+export async function getRevenueKpis(): Promise<RevenueKpis | null> {
+  const rows = await runQuery<RevenueKpis>(`
+    select
+      strftime(reporting_month_date, '%b %Y')        as month_label,
+      reporting_month_date::varchar                  as month_iso,
+      revenue_waterfall_billed_gbp::double           as billed,
+      recognised_revenue_actual_gbp::double          as recognised_actual,
+      recognition_variance_gbp::double               as recognition_variance,
+      opening_deferred_revenue_gbp::double           as opening_deferred,
+      new_billings_deferred_revenue_gbp::double      as new_billings_deferred,
+      deferred_recognised_revenue_gbp::double        as recognised_deferred,
+      closing_deferred_revenue_gbp::double           as closing_deferred,
+      deferred_revenue_control_exception_count::int  as deferred_exceptions,
+      unscheduled_billing_leakage_gbp::double        as unscheduled_leakage,
+      revenue_governance_exception_count::int        as revenue_governance_exceptions,
+      active_arr_gbp::double                          as active_arr,
+      active_mrr_gbp::double                          as active_mrr
+    from mart_executive_cfo_command_center
+    where ${COMPANY_TOTAL} and recognised_revenue_actual_gbp > 0
+    order by reporting_month_date desc
+    limit 1
+  `);
+  return rows[0] ?? null;
+}
+
+/** Billed vs recognised + deferred balance by month (Company Total). */
+export async function getRevRecTrend(): Promise<RevRecMonth[]> {
+  return runQuery<RevRecMonth>(`
+    select
+      strftime(reporting_month_date, '%b %Y')                                       as month_label,
+      reporting_month_date::varchar                                                 as month_iso,
+      case when revenue_waterfall_billed_gbp > 0 then revenue_waterfall_billed_gbp end::double      as billed,
+      case when recognised_revenue_actual_gbp > 0 then recognised_revenue_actual_gbp end::double    as recognised_actual,
+      recognised_revenue_total_gbp::double                                          as recognised_total,
+      closing_deferred_revenue_gbp::double                                          as closing_deferred
+    from mart_executive_cfo_command_center
+    where ${COMPANY_TOTAL}
+      and reporting_month_date between date '2026-01-01' and date '2026-12-01'
+    order by reporting_month_date
   `);
 }
 

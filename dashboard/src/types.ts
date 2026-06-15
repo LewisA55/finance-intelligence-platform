@@ -214,6 +214,34 @@ export interface SegmentRetention {
   churned_customers: number;
 }
 
+/** Revenue Recognition KPI snapshot (latest actuals month, Company Total). */
+export interface RevenueKpis {
+  month_label: string;
+  month_iso: string;
+  billed: number;
+  recognised_actual: number;
+  recognition_variance: number;
+  opening_deferred: number;
+  new_billings_deferred: number;
+  recognised_deferred: number;
+  closing_deferred: number;
+  deferred_exceptions: number;
+  unscheduled_leakage: number;
+  revenue_governance_exceptions: number;
+  active_arr: number;
+  active_mrr: number;
+}
+
+/** Billed vs recognised + deferred balance, one row per month. */
+export interface RevRecMonth {
+  month_label: string;
+  month_iso: string;
+  billed: number | null; // null after last billed month
+  recognised_actual: number | null; // null after last actuals month
+  recognised_total: number; // incl. scheduled future recognition
+  closing_deferred: number;
+}
+
 /** Company-wide SaaS trend (SaaS Performance page). */
 export interface ExecutiveMonth {
   month_iso: string;

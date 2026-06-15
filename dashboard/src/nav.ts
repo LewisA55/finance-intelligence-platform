@@ -2,6 +2,7 @@ export type PageId =
   | 'command-center'
   | 'saas'
   | 'financial'
+  | 'revenue'
   | 'working-capital'
   | 'control-tower'
   | 'validation';
@@ -18,6 +19,7 @@ export const NAV: NavItem[] = [
   { id: 'command-center', label: 'CFO Command Center', status: 'live' },
   { id: 'saas', label: 'SaaS Performance', status: 'live' },
   { id: 'financial', label: 'Financial Performance', status: 'live' },
+  { id: 'revenue', label: 'Revenue Recognition', status: 'live' },
   { id: 'working-capital', label: 'Working Capital', status: 'live' },
   { id: 'control-tower', label: 'Control Tower', status: 'live' },
   { id: 'validation', label: 'Data & Validation', status: 'live' },

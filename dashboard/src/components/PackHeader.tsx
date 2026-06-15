@@ -27,7 +27,7 @@ export function PackHeader() {
     <header className="pack-header">
       <div className="pack-title">
         <h1>Atlas — Nexus Technologies</h1>
-        <div className="pack-sub">FY 2026 · Internal · CFO Intelligence Pack</div>
+        <div className="pack-sub">FY 2026 · Internal · Synthetic demo · CFO Intelligence Pack</div>
       </div>
       <div className="pack-meta">
         <span className="live">LIVE</span> · BUILT {dayUpper(data?.built_date ?? null)}

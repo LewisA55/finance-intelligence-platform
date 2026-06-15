@@ -4,6 +4,11 @@ A static, interactive CFO finance-intelligence dashboard for **Project Atlas / N
 Technologies**. It runs entirely in the browser: **DuckDB-WASM** queries Parquet files
 served as static assets — no backend, no server. Deployable to GitHub Pages or Vercel.
 
+> **⚠ Synthetic data.** Nexus Technologies is a fictional company. Every figure in this
+> app and in the committed Parquet files is randomly generated for a portfolio /
+> demonstration project. It is **not** real company data, and nothing here is financial
+> advice or production reporting.
+
 ## Stack
 
 - **Vite + React + TypeScript**

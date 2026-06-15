@@ -77,6 +77,13 @@ Thumbs.db
 target/
 dbt_packages/
 logs/
+.dbt/
+
+# Node (defensive — beyond dashboard/)
+
+node_modules/
+dist/
+.vite/
 
 # txt
 

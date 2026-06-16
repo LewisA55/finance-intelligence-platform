@@ -242,6 +242,23 @@ export interface RevRecMonth {
   closing_deferred: number;
 }
 
+/** Top customer by open AR (latest month). */
+export interface ArCustomer {
+  customer_name: string;
+  customer_segment: string;
+  region: string;
+  open_ar: number;
+  overdue_invoices: number;
+}
+
+/** AR collection components at region × segment grain (FYTD). */
+export interface ArCollection {
+  region: string;
+  customer_segment: string;
+  billed: number;
+  collected: number;
+}
+
 /** Company-wide SaaS trend (SaaS Performance page). */
 export interface ExecutiveMonth {
   month_iso: string;

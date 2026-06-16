@@ -21,6 +21,8 @@ import type {
   SegmentRetention,
   RevenueKpis,
   RevRecMonth,
+  ArCustomer,
+  ArCollection,
 } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -474,6 +476,34 @@ export async function getApAgeing(): Promise<ApAgeing | null> {
     where reporting_month_date = (select max(reporting_month_date) from mart_ap_working_capital_control)
   `);
   return rows[0] ?? null;
+}
+
+/** Top customers by open AR at the latest month (curated slice). */
+export async function getTopArCustomers(limit = 12): Promise<ArCustomer[]> {
+  return runQuery<ArCustomer>(`
+    select
+      customer_name                        as customer_name,
+      customer_segment                     as customer_segment,
+      region                               as region,
+      open_ar::double                      as open_ar,
+      overdue_invoices::int                as overdue_invoices
+    from mart_o2c_top_customers
+    order by open_ar desc
+    limit ${Math.max(1, Math.floor(limit))}
+  `);
+}
+
+/** AR collection components at region x segment grain (FYTD; app computes rates). */
+export async function getArCollections(): Promise<ArCollection[]> {
+  return runQuery<ArCollection>(`
+    select
+      region                               as region,
+      customer_segment                     as customer_segment,
+      sum(billed)::double                  as billed,
+      sum(collected)::double               as collected
+    from mart_o2c_by_region_segment
+    group by 1, 2
+  `);
 }
 
 /** Largest vendors by overdue AP at the latest snapshot. */

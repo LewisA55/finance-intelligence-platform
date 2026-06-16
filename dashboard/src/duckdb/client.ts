@@ -13,6 +13,8 @@ const DATA_FILES = [
   'mart_ap_working_capital_control',
   'mart_saas_arr_by_product_segment',
   'mart_saas_retention_by_segment',
+  'mart_o2c_top_customers',
+  'mart_o2c_by_region_segment',
   'dim_region',
   'dim_date',
   'dim_department',

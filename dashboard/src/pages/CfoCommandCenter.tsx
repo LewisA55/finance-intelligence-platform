@@ -83,6 +83,14 @@ function buildFocusCues(k: CommandCenterKpis, hasActuals: boolean): FocusCue[] {
       tone: 'warning',
     });
   }
+  if (k.revenue_governance_exceptions > 0 || k.deferred_exceptions > 0) {
+    cues.push({
+      label: 'Revenue recognition governance',
+      detail: `${k.revenue_governance_exceptions} recognition exception${k.revenue_governance_exceptions === 1 ? '' : 's'} to review`,
+      page: 'revenue',
+      tone: 'warning',
+    });
+  }
   if (k.has_control_issue) {
     cues.push({
       label: 'Control exceptions to clear before sign-off',

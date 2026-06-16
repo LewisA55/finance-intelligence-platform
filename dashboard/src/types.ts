@@ -30,6 +30,8 @@ export interface CommandCenterKpis {
   payroll_cost: number;
   headcount: number;
   active_customers: number;
+  revenue_governance_exceptions: number;
+  deferred_exceptions: number;
   has_control_issue: boolean;
   control_issue_domains: number;
 }

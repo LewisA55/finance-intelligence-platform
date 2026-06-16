@@ -85,6 +85,8 @@ export async function getCommandCenterKpis(
       payroll_cost_gbp::double                                        as payroll_cost,
       active_headcount_count::integer                                as headcount,
       ending_active_customer_count::integer                          as active_customers,
+      revenue_governance_exception_count::integer                    as revenue_governance_exceptions,
+      deferred_revenue_control_exception_count::integer              as deferred_exceptions,
       has_any_executive_control_issue                                as has_control_issue,
       (
         cast(has_financial_performance_control_issue as int)

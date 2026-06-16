@@ -14,7 +14,7 @@ export default function App() {
 
   return (
     <Layout current={page} onNavigate={setPage}>
-      {page === 'command-center' && <CfoCommandCenter />}
+      {page === 'command-center' && <CfoCommandCenter onNavigate={setPage} />}
       {page === 'saas' && <SaaSPerformance />}
       {page === 'financial' && <FinancialPerformance />}
       {page === 'revenue' && <RevenueRecognition />}

@@ -29,6 +29,8 @@ import {
   formatSignedPercent,
 } from '../lib/format';
 import { chart } from '../lib/theme';
+import { NAV, type PageId } from '../nav';
+import type { CommandCenterKpis } from '../types';
 
 const ACCENT = chart.primary; // actual series — Atlas blue
 const INFO = chart.secondary; // forecast series — cyan
@@ -44,7 +46,56 @@ function varianceStatus(actual: number, plan: number): StatusTone {
   return 'on-plan';
 }
 
-export function CfoCommandCenter() {
+const pageLabel = (id: PageId) => NAV.find((n) => n.id === id)?.label ?? id;
+
+interface FocusCue {
+  label: string;
+  detail: string;
+  page: PageId;
+  tone: StatusTone;
+}
+
+/** "Where to focus next" — the through-line that routes the CFO from the hub to
+ *  the page that explains each pressure point. Driven by control + plan signals. */
+function buildFocusCues(k: CommandCenterKpis, hasActuals: boolean): FocusCue[] {
+  const cues: FocusCue[] = [];
+  if (hasActuals && k.budget_revenue > 0 && k.actual_revenue < k.budget_revenue) {
+    cues.push({
+      label: 'Revenue behind plan',
+      detail: `${formatSignedPercent((k.actual_revenue - k.budget_revenue) / k.budget_revenue)} vs budget`,
+      page: 'financial',
+      tone: 'adverse',
+    });
+  }
+  if (k.nrr != null && k.nrr < 1) {
+    cues.push({
+      label: 'ARR retention below 100%',
+      detail: `NRR ${formatPercent(k.nrr)} — see product & segment`,
+      page: 'saas',
+      tone: k.nrr < 0.97 ? 'adverse' : 'warning',
+    });
+  }
+  if (k.cash_pressure > 0) {
+    cues.push({
+      label: 'Cash conversion under pressure',
+      detail: `${formatGbpCompact(k.open_ar)} open AR · ${formatGbpCompact(k.cash_pressure)} pressure`,
+      page: 'working-capital',
+      tone: 'warning',
+    });
+  }
+  if (k.has_control_issue) {
+    cues.push({
+      label: 'Control exceptions to clear before sign-off',
+      detail: `${k.control_issue_domains} domain${k.control_issue_domains === 1 ? '' : 's'} flagged`,
+      page: 'control-tower',
+      tone: 'warning',
+    });
+  }
+  const rank: Record<StatusTone, number> = { adverse: 0, warning: 1, 'on-plan': 2, neutral: 3, favourable: 4 };
+  return cues.sort((a, b) => rank[a.tone] - rank[b.tone]);
+}
+
+export function CfoCommandCenter({ onNavigate }: { onNavigate: (page: PageId) => void }) {
   const months = useQuery(getReportingMonths, []);
   const trend = useQuery(getRevenueTrend, []);
   const [selected, setSelected] = useState<string | null>(null);
@@ -105,6 +156,8 @@ export function CfoCommandCenter() {
       </div>
     );
   }
+
+  const focusCues = buildFocusCues(k, hasActuals);
 
   return (
     <>
@@ -179,6 +232,32 @@ export function CfoCommandCenter() {
         />
       </div>
 
+      {/* Where to focus next — routing layer, directly after the KPI spine */}
+      {focusCues.length > 0 && (
+        <div className="panel" style={{ marginBottom: 22, paddingBottom: 14 }}>
+          <div className="panel-head">
+            <div>
+              <h3>Where to focus next</h3>
+              <p className="panel-sub">Prioritised by control and plan signals · select to drill into the page that explains it</p>
+            </div>
+          </div>
+          <div className="focus-list">
+            {focusCues.map((c) => (
+              <button
+                key={`${c.page}-${c.label}`}
+                type="button"
+                className={`focus-row tone-${c.tone}`}
+                onClick={() => onNavigate(c.page)}
+              >
+                <span className="focus-label">{c.label}</span>
+                <span className="focus-detail">{c.detail}</span>
+                <span className="focus-go">{pageLabel(c.page)} →</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* P&L summary (operating basis) */}
       <PnlSummary kpis={k} />
 
@@ -244,6 +323,8 @@ export function CfoCommandCenter() {
           secondary={`${formatCount(k.active_customers)} active customers`}
           source="mart_saas_arr_movement · retention"
           tone={k.nrr != null && k.nrr >= 1 ? 'favourable' : 'on-plan'}
+          to="saas"
+          onNavigate={onNavigate}
         />
         <DomainTile
           title="Working Capital"
@@ -252,6 +333,8 @@ export function CfoCommandCenter() {
           secondary={`AR ${formatGbpCompact(k.open_ar)} · AP ${formatGbpCompact(k.open_ap)}`}
           source="mart_o2c · mart_ap_working_capital_control"
           tone="neutral"
+          to="working-capital"
+          onNavigate={onNavigate}
         />
         <DomainTile
           title="Workforce Cost"
@@ -268,6 +351,8 @@ export function CfoCommandCenter() {
           secondary={k.has_control_issue ? 'Review Control Tower' : 'No exceptions this month'}
           source="control marts"
           tone={k.has_control_issue ? 'adverse' : 'favourable'}
+          to="control-tower"
+          onNavigate={onNavigate}
         />
       </div>
 
@@ -287,16 +372,27 @@ interface DomainTileProps {
   secondary: string;
   source: string;
   tone: StatusTone;
+  to?: PageId;
+  onNavigate?: (page: PageId) => void;
 }
 
-function DomainTile({ title, primary, primaryLabel, secondary, source, tone }: DomainTileProps) {
-  return (
-    <div className={`tile tone-${tone}`}>
+function DomainTile({ title, primary, primaryLabel, secondary, source, tone, to, onNavigate }: DomainTileProps) {
+  const clickable = !!to && !!onNavigate;
+  const inner = (
+    <>
       <div className="tile-title">{title}</div>
       <div className="tile-primary">{primary}</div>
       <div className="tile-primary-label">{primaryLabel}</div>
       <div className="tile-secondary">{secondary}</div>
       <div className="tile-source">{source}</div>
-    </div>
+      {clickable && <div className="tile-go">{pageLabel(to!)} →</div>}
+    </>
+  );
+  return clickable ? (
+    <button type="button" className={`tile tone-${tone} tile-clickable`} onClick={() => onNavigate!(to!)}>
+      {inner}
+    </button>
+  ) : (
+    <div className={`tile tone-${tone}`}>{inner}</div>
   );
 }

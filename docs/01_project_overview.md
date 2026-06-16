@@ -38,7 +38,7 @@ The project is built around realistic enterprise finance challenges:
 | dbt Gold conformed dimensions and facts | Complete |
 | Domain Gold marts | Complete |
 | Executive CFO Command Center mart | Complete |
-| Power BI CFO pack | Planned |
+| CFO dashboard (React + DuckDB-WASM) | Live |
 | Atlas Intelligence Portal / AI commentary | Planned |
 
 ## Final Warehouse Milestone

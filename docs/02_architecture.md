@@ -21,7 +21,7 @@ dbt Gold semantic layer
 Domain marts and executive marts
         |
         v
-Power BI CFO pack / Atlas Intelligence Portal (planned)
+React + DuckDB-WASM dashboard (live) / Atlas Intelligence Portal (planned)
 ```
 
 ## Layer Responsibilities
@@ -33,7 +33,7 @@ Power BI CFO pack / Atlas Intelligence Portal (planned)
 | Bronze | DuckDB | Preserve source payloads and append ingestion metadata. |
 | Silver | dbt views | Cast, clean, standardise, and expose source-aligned staging models. |
 | Gold | dbt tables | Build conformed dimensions, atomic facts, domain marts, and executive marts. |
-| Reporting | Power BI, planned | Consume governed Gold marts without redefining business logic. |
+| Reporting | React + DuckDB-WASM (live) | Consume governed Gold marts in-browser without redefining business logic. |
 | Intelligence | Streamlit / AI, planned | Summarise validated outputs without calculating finance metrics independently. |
 
 ## Current dbt Structure
@@ -88,7 +88,7 @@ The final executive mart does not force all metrics into one universal dimension
 - Region Total;
 - Business Unit Total.
 
-This protects executive reporting from Power BI fan-out and double-counting when combining customer, region, department, finance, SaaS, AP, and workforce metrics.
+This protects executive reporting from fan-out and double-counting when combining customer, region, department, finance, SaaS, AP, and workforce metrics.
 
 ## Local Artifacts
 

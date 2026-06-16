@@ -1,8 +1,15 @@
 # Power BI Reporting Plan
 
-The Power BI CFO reporting pack is planned future work.
+> **Superseded.** The realised BI/reporting layer is the live **React + DuckDB-WASM CFO
+> dashboard** ([dashboard/README.md](../dashboard/README.md) ·
+> [live site](https://lewisa55.github.io/finance-intelligence-platform/)), which consumes
+> these same Gold marts in-browser and enforces scope-safe Company-Total reads. This Power BI
+> plan is retained as an alternative reference; the page map below still maps cleanly onto the
+> delivered dashboard pages.
 
-The warehouse already provides the Gold marts needed for the reporting layer. Power BI should consume these marts directly without redefining core finance logic.
+The warehouse provides the Gold marts needed for the reporting layer. Any reporting tool
+(the delivered React/DuckDB-WASM dashboard, or Power BI) should consume these marts directly
+without redefining core finance logic.
 
 ## Planned Report Pages
 

@@ -18,6 +18,8 @@ import {
   getArCollectionsTrend,
   getApAgeing,
   getTopVendorsAp,
+  getTopArCustomers,
+  getArCollections,
 } from '../duckdb/queries';
 import { TopBar } from '../components/TopBar';
 import { KpiCard } from '../components/KpiCard';
@@ -34,8 +36,32 @@ export function WorkingCapital() {
   const trend = useQuery(getArCollectionsTrend, []);
   const ageing = useQuery(getApAgeing, []);
   const vendors = useQuery(getTopVendorsAp, []);
+  const arCustomers = useQuery(getTopArCustomers, []);
+  const arCollections = useQuery(getArCollections, []);
 
   const p = position.data;
+
+  // Collection rate (FYTD) = collected / billed, aggregated by region and segment.
+  const collByDim = (key: 'region' | 'customer_segment', keep?: string[]) => {
+    const rows = arCollections.data ?? [];
+    const m = new Map<string, { name: string; billed: number; collected: number }>();
+    for (const r of rows) {
+      const name = r[key];
+      if (keep && !keep.includes(name)) continue;
+      const e = m.get(name) ?? { name, billed: 0, collected: 0 };
+      e.billed += r.billed;
+      e.collected += r.collected;
+      m.set(name, e);
+    }
+    return Array.from(m.values())
+      .map((e) => ({ name: e.name, rate: e.billed > 0 ? e.collected / e.billed : 0 }))
+      .sort((a, b) => b.rate - a.rate);
+  };
+  const collByRegion = useMemo(() => collByDim('region'), [arCollections.data]);
+  const collBySegment = useMemo(
+    () => collByDim('customer_segment', ['Enterprise', 'Mid-Market', 'SMB']),
+    [arCollections.data],
+  );
 
   const ageingData = useMemo(() => {
     const a = ageing.data;
@@ -52,19 +78,25 @@ export function WorkingCapital() {
   const narrative = useMemo(() => {
     if (!p) return '';
     const topVendor = vendors.data?.[0];
+    const topCustomer = arCustomers.data?.[0];
+    const weakestRegion = collByRegion.length ? collByRegion[collByRegion.length - 1] : null;
     const a = ageing.data;
     const overdueShare = a && a.open_ap > 0 ? (a.d61_90 + a.d90_plus) / a.open_ap : null;
     return (
       `As at ${p.month_label}, open accounts receivable stands at ${formatGbp(p.open_ar)} against ` +
       `open payables of ${formatGbp(p.open_ap)}, a net working-capital position of ${formatGbp(p.net_wc)}. ` +
-      `${formatGbp(p.overdue_ap)} of AP is overdue` +
+      `On receivables, collection runs at ${formatPercent(p.collection_rate)} overall` +
+      `${weakestRegion ? `, weakest in ${weakestRegion.name} (${formatPercent(weakestRegion.rate)})` : ''}` +
+      `${topCustomer ? `, with ${topCustomer.customer_name} carrying the largest open exposure (${formatGbp(topCustomer.open_ar)})` : ''}. ` +
+      `On payables, ${formatGbp(p.overdue_ap)} is overdue` +
       `${overdueShare != null ? ` (${formatPercent(overdueShare)} of open AP is 60+ days past due)` : ''}` +
       `${topVendor ? `, concentrated in ${topVendor.vendor_name} (${formatGbp(topVendor.overdue_ap)} overdue, ${formatCount(topVendor.max_dpd)} days past due)` : ''}. ` +
       `All figures are governed Company-Total.`
     );
-  }, [p, vendors.data, ageing.data]);
+  }, [p, vendors.data, ageing.data, arCustomers.data, collByRegion]);
 
-  const anyError = position.error || trend.error || ageing.error || vendors.error;
+  const anyError =
+    position.error || trend.error || ageing.error || vendors.error || arCustomers.error || arCollections.error;
   if (anyError) {
     return <div className="error-box"><strong>Could not load data.</strong><div>{anyError.message}</div></div>;
   }
@@ -166,6 +198,68 @@ export function WorkingCapital() {
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
+      </div>
+
+      {/* Accounts receivable — collection performance */}
+      <div className="panel-grid" style={{ marginTop: 12 }}>
+        <ChartCard title="Collection rate by region" subtitle="FYTD collected / billed">
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={collByRegion} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+              <CartesianGrid stroke={GRID} vertical={false} />
+              <XAxis dataKey="name" stroke={AXIS} fontSize={11} tickLine={false} />
+              <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={48} domain={[0, 1]} tickFormatter={(v: number) => formatPercent(v, 0)} />
+              <Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)' }} contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }} formatter={(v: number) => [formatPercent(v), 'Collection rate']} />
+              <Bar dataKey="rate" fill={chart.primary} radius={[2, 2, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+        <ChartCard title="Collection rate by segment" subtitle="FYTD collected / billed">
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={collBySegment} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+              <CartesianGrid stroke={GRID} vertical={false} />
+              <XAxis dataKey="name" stroke={AXIS} fontSize={11} tickLine={false} />
+              <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={48} domain={[0, 1]} tickFormatter={(v: number) => formatPercent(v, 0)} />
+              <Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)' }} contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }} formatter={(v: number) => [formatPercent(v), 'Collection rate']} />
+              <Bar dataKey="rate" fill={chart.secondary} radius={[2, 2, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+
+      <div className="panel" style={{ marginTop: 12, paddingBottom: 16 }}>
+        <div className="panel-head">
+          <div>
+            <h3>Top customers by open AR</h3>
+            <p className="panel-sub">{p.month_label} · open receivable exposure</p>
+          </div>
+        </div>
+        <table className="pnl">
+          <thead>
+            <tr>
+              <th className="row-label">Customer</th>
+              <th className="row-label">Segment</th>
+              <th className="row-label">Region</th>
+              <th>Open AR</th>
+              <th>Overdue invoices</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(arCustomers.data ?? []).map((c, i) => (
+              <tr key={`${c.customer_name}-${i}`}>
+                <td className="row-label">{c.customer_name}</td>
+                <td className="row-label">{c.customer_segment}</td>
+                <td className="row-label">{c.region}</td>
+                <td>{formatGbp(c.open_ar)}</td>
+                <td className={c.overdue_invoices > 0 ? 'adv' : ''}>{formatCount(c.overdue_invoices)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="pnl-note">
+          AR ageing buckets are not shipped in this dashboard slice: the O2C mart carries open exposure
+          and overdue/disputed invoice counts, not GBP-aged buckets. AP ageing (above) uses bucketed
+          snapshot data, so it is shown in true ageing bands.
+        </p>
       </div>
 
       <div className="panel" style={{ marginTop: 12, paddingBottom: 16 }}>

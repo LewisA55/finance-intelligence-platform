@@ -13,6 +13,16 @@ import type {
   ApAgeing,
   VendorAp,
   ControlSummary,
+  SaasKpis,
+  ArrWalk,
+  RegionArr,
+  ProductSegmentArr,
+  ProductMovement,
+  SegmentRetention,
+  RevenueKpis,
+  RevRecMonth,
+  ArCustomer,
+  ArCollection,
 } from '../types';
 
 // ---------------------------------------------------------------------------
@@ -75,6 +85,8 @@ export async function getCommandCenterKpis(
       payroll_cost_gbp::double                                        as payroll_cost,
       active_headcount_count::integer                                as headcount,
       ending_active_customer_count::integer                          as active_customers,
+      revenue_governance_exception_count::integer                    as revenue_governance_exceptions,
+      deferred_revenue_control_exception_count::integer              as deferred_exceptions,
       has_any_executive_control_issue                                as has_control_issue,
       (
         cast(has_financial_performance_control_issue as int)
@@ -174,6 +186,175 @@ export async function getDataAsAt(): Promise<{
     where ${COMPANY_TOTAL}
   `);
   return rows[0];
+}
+
+/** SaaS KPI snapshot for the latest month with SaaS data (Company Total). */
+export async function getSaasKpis(): Promise<SaasKpis | null> {
+  const rows = await runQuery<SaasKpis>(`
+    select
+      strftime(reporting_month_date, '%b %Y')        as month_label,
+      reporting_month_date::varchar                  as month_iso,
+      active_arr_gbp::double                          as active_arr,
+      active_mrr_gbp::double                          as active_mrr,
+      net_revenue_retention_rate::double             as nrr,
+      gross_revenue_retention_rate::double           as grr,
+      logo_retention_rate::double                    as logo_retention,
+      logo_churn_rate::double                         as logo_churn,
+      net_arr_delta_gbp::double                       as net_arr_delta,
+      new_customer_count::int                        as new_customers,
+      churned_customer_count::int                    as churned_customers,
+      paused_customer_count::int                     as paused_customers,
+      retained_customer_count::int                   as retained_customers,
+      beginning_active_customer_count::int           as beginning_customers,
+      ending_active_customer_count::int              as ending_customers,
+      subscription_count::int                        as subscriptions,
+      active_subscription_count::int                 as active_subscriptions
+    from mart_executive_cfo_command_center
+    where ${COMPANY_TOTAL} and active_arr_gbp > 0
+    order by reporting_month_date desc
+    limit 1
+  `);
+  return rows[0] ?? null;
+}
+
+/** Period ARR walk: opening (first month) + movement totals = closing (last month). */
+export async function getArrWalk(): Promise<ArrWalk | null> {
+  const rows = await runQuery<ArrWalk>(`
+    with m as (
+      select * from mart_executive_cfo_command_center
+      where ${COMPANY_TOTAL} and active_arr_gbp > 0
+    )
+    select
+      (select beginning_arr_gbp from m order by reporting_month_date limit 1)::double      as opening,
+      sum(new_business_arr_gbp)::double                                                    as new_business,
+      sum(expansion_arr_gbp)::double                                                       as expansion,
+      sum(price_increase_arr_gbp)::double                                                  as price_increase,
+      sum(contraction_arr_gbp)::double                                                     as contraction,
+      sum(churn_arr_gbp)::double                                                           as churn,
+      sum(pause_arr_gbp)::double                                                           as pause,
+      (select ending_arr_gbp from m order by reporting_month_date desc limit 1)::double    as closing
+    from m
+  `);
+  return rows[0] ?? null;
+}
+
+/** Active ARR by region at the latest month with SaaS data. */
+export async function getArrByRegion(): Promise<RegionArr[]> {
+  return runQuery<RegionArr>(`
+    select
+      coalesce(r.region_name, cc.region_hk)          as region,
+      cc.active_arr_gbp::double                       as active_arr,
+      cc.net_revenue_retention_rate::double           as nrr,
+      cc.ending_active_customer_count::int            as customers
+    from mart_executive_cfo_command_center as cc
+    left join dim_region as r on cc.region_hk = r.region_hk
+    where cc.reporting_scope = 'Region Total'
+      and cc.reporting_month_date = (
+        select max(reporting_month_date) from mart_executive_cfo_command_center
+        where reporting_scope = 'Region Total' and active_arr_gbp > 0
+      )
+    order by cc.active_arr_gbp desc
+  `);
+}
+
+// ---------------------------------------------------------------------------
+// Revenue Recognition & deferred revenue (from the command center)
+// ---------------------------------------------------------------------------
+
+/** Revenue-recognition KPIs as at the latest actuals month (Company Total). */
+export async function getRevenueKpis(): Promise<RevenueKpis | null> {
+  const rows = await runQuery<RevenueKpis>(`
+    select
+      strftime(reporting_month_date, '%b %Y')        as month_label,
+      reporting_month_date::varchar                  as month_iso,
+      revenue_waterfall_billed_gbp::double           as billed,
+      recognised_revenue_actual_gbp::double          as recognised_actual,
+      recognition_variance_gbp::double               as recognition_variance,
+      opening_deferred_revenue_gbp::double           as opening_deferred,
+      new_billings_deferred_revenue_gbp::double      as new_billings_deferred,
+      deferred_recognised_revenue_gbp::double        as recognised_deferred,
+      closing_deferred_revenue_gbp::double           as closing_deferred,
+      deferred_revenue_control_exception_count::int  as deferred_exceptions,
+      unscheduled_billing_leakage_gbp::double        as unscheduled_leakage,
+      revenue_governance_exception_count::int        as revenue_governance_exceptions,
+      active_arr_gbp::double                          as active_arr,
+      active_mrr_gbp::double                          as active_mrr
+    from mart_executive_cfo_command_center
+    where ${COMPANY_TOTAL} and recognised_revenue_actual_gbp > 0
+    order by reporting_month_date desc
+    limit 1
+  `);
+  return rows[0] ?? null;
+}
+
+/** Billed vs recognised + deferred balance by month (Company Total). */
+export async function getRevRecTrend(): Promise<RevRecMonth[]> {
+  return runQuery<RevRecMonth>(`
+    select
+      strftime(reporting_month_date, '%b %Y')                                       as month_label,
+      reporting_month_date::varchar                                                 as month_iso,
+      case when revenue_waterfall_billed_gbp > 0 then revenue_waterfall_billed_gbp end::double      as billed,
+      case when recognised_revenue_actual_gbp > 0 then recognised_revenue_actual_gbp end::double    as recognised_actual,
+      recognised_revenue_total_gbp::double                                          as recognised_total,
+      closing_deferred_revenue_gbp::double                                          as closing_deferred
+    from mart_executive_cfo_command_center
+    where ${COMPANY_TOTAL}
+      and reporting_month_date between date '2026-01-01' and date '2026-12-01'
+    order by reporting_month_date
+  `);
+}
+
+const SAAS_WINDOW = `reporting_month_date between date '2026-01-01' and date '2026-12-01'`;
+
+/** Active ARR at product-family × segment grain, latest month (curated slice). */
+export async function getArrByProductSegment(): Promise<ProductSegmentArr[]> {
+  return runQuery<ProductSegmentArr>(`
+    select
+      product_family                       as product_family,
+      customer_segment                     as customer_segment,
+      sum(active_arr_gbp)::double           as active_arr
+    from mart_saas_arr_by_product_segment
+    where reporting_month_date = (
+      select max(reporting_month_date) from mart_saas_arr_by_product_segment
+      where ${SAAS_WINDOW} and active_arr_gbp > 0
+    )
+      and customer_segment in ('Enterprise', 'Mid-Market', 'SMB')
+    group by 1, 2
+  `);
+}
+
+/** FYTD ARR created vs lost by product family (curated slice). */
+export async function getArrMovementByProduct(): Promise<ProductMovement[]> {
+  return runQuery<ProductMovement>(`
+    select
+      product_family                                                          as product_family,
+      sum(new_business_arr_gbp + expansion_arr_gbp + price_increase_arr_gbp)::double as gain,
+      sum(contraction_arr_gbp + churn_arr_gbp + pause_arr_gbp)::double         as loss,
+      sum(net_arr_delta_gbp)::double                                          as net
+    from mart_saas_arr_by_product_segment
+    where ${SAAS_WINDOW}
+    group by 1
+    order by sum(active_arr_gbp) desc
+  `);
+}
+
+/** FYTD retention components by segment (rates computed in the app for correct weighting). */
+export async function getRetentionBySegment(): Promise<SegmentRetention[]> {
+  return runQuery<SegmentRetention>(`
+    select
+      customer_segment                     as customer_segment,
+      sum(beginning_arr_gbp)::double        as beginning_arr,
+      sum(gross_retained_arr_gbp)::double   as gross_retained,
+      sum(net_retained_arr_gbp)::double     as net_retained,
+      sum(beginning_customers)::int         as beginning_customers,
+      sum(retained_customers)::int          as retained_customers,
+      sum(churned_customers)::int           as churned_customers
+    from mart_saas_retention_by_segment
+    where ${SAAS_WINDOW}
+      and customer_segment in ('Enterprise', 'Mid-Market', 'SMB')
+    group by 1
+    order by sum(beginning_arr_gbp) desc
+  `);
 }
 
 /**
@@ -297,6 +478,34 @@ export async function getApAgeing(): Promise<ApAgeing | null> {
     where reporting_month_date = (select max(reporting_month_date) from mart_ap_working_capital_control)
   `);
   return rows[0] ?? null;
+}
+
+/** Top customers by open AR at the latest month (curated slice). */
+export async function getTopArCustomers(limit = 12): Promise<ArCustomer[]> {
+  return runQuery<ArCustomer>(`
+    select
+      customer_name                        as customer_name,
+      customer_segment                     as customer_segment,
+      region                               as region,
+      open_ar::double                      as open_ar,
+      overdue_invoices::int                as overdue_invoices
+    from mart_o2c_top_customers
+    order by open_ar desc
+    limit ${Math.max(1, Math.floor(limit))}
+  `);
+}
+
+/** AR collection components at region x segment grain (FYTD; app computes rates). */
+export async function getArCollections(): Promise<ArCollection[]> {
+  return runQuery<ArCollection>(`
+    select
+      region                               as region,
+      customer_segment                     as customer_segment,
+      sum(billed)::double                  as billed,
+      sum(collected)::double               as collected
+    from mart_o2c_by_region_segment
+    group by 1, 2
+  `);
 }
 
 /** Largest vendors by overdue AP at the latest snapshot. */

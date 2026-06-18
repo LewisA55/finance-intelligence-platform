@@ -3,28 +3,18 @@ import mvpWasm from '@duckdb/duckdb-wasm/dist/duckdb-mvp.wasm?url';
 import mvpWorker from '@duckdb/duckdb-wasm/dist/duckdb-browser-mvp.worker.js?url';
 import ehWasm from '@duckdb/duckdb-wasm/dist/duckdb-eh.wasm?url';
 import ehWorker from '@duckdb/duckdb-wasm/dist/duckdb-browser-eh.worker.js?url';
+import dataConfig from '../../data-files.json';
 
 // Parquet slices shipped in /public/data; each becomes a queryable view of the
 // same name. Keep this list lean: the browser downloads every file, so we ship
 // curated, pre-aggregated executive slices rather than the raw detail marts.
-const DATA_FILES = [
-  'mart_executive_cfo_command_center',
-  'mart_financial_performance',
-  'mart_ap_working_capital_control',
-  'mart_saas_arr_by_product_segment',
-  'mart_saas_retention_by_segment',
-  'mart_o2c_top_customers',
-  'mart_o2c_by_region_segment',
-  'dim_region',
-  'dim_date',
-  'dim_department',
-] as const;
+const DATA_FILES = dataConfig.files.map((file) => file.name);
 
 let dbPromise: Promise<duckdb.AsyncDuckDB> | null = null;
 let connPromise: Promise<duckdb.AsyncDuckDBConnection> | null = null;
 
 // Self-hosted bundles: Vite emits these assets into the build output and serves
-// them same-origin, so there is no CDN dependency at runtime (offline-capable).
+// them same-origin, so there is no runtime CDN dependency.
 // The browser downloads only the single bundle selectBundle picks.
 const MANUAL_BUNDLES: duckdb.DuckDBBundles = {
   mvp: { mainModule: mvpWasm, mainWorker: mvpWorker },
@@ -49,12 +39,15 @@ async function registerParquet(
   conn: duckdb.AsyncDuckDBConnection,
 ): Promise<void> {
   const base = import.meta.env.BASE_URL; // honours Vite `base` for GH Pages subpaths
-  for (const name of DATA_FILES) {
+  const files = await Promise.all(DATA_FILES.map(async (name) => {
     const response = await fetch(`${base}data/${name}.parquet`);
     if (!response.ok) {
       throw new Error(`Failed to load ${name}.parquet (HTTP ${response.status})`);
     }
-    const buffer = new Uint8Array(await response.arrayBuffer());
+    return { name, buffer: new Uint8Array(await response.arrayBuffer()) };
+  }));
+
+  for (const { name, buffer } of files) {
     await db.registerFileBuffer(`${name}.parquet`, buffer);
     await conn.query(
       `create or replace view ${name} as select * from read_parquet('${name}.parquet')`,
@@ -71,7 +64,11 @@ export function getConnection(): Promise<duckdb.AsyncDuckDBConnection> {
       const conn = await db.connect();
       await registerParquet(db, conn);
       return conn;
-    })();
+    })().catch((error) => {
+      connPromise = null;
+      dbPromise = null;
+      throw error;
+    });
   }
   return connPromise;
 }

@@ -4,6 +4,10 @@ This folder contains the portfolio-ready documentation for the Finance Intellige
 
 The docs are organised for a hiring manager, finance leader, or data engineer reviewing the project from the outside. They describe what is implemented now, what is planned, and how the warehouse is governed.
 
+The realised reporting layer is the live **React + DuckDB-WASM CFO dashboard** —
+[live site](https://lewisa55.github.io/finance-intelligence-platform/) ·
+[dashboard/README.md](../dashboard/README.md).
+
 ## Recommended Reading Order
 
 | File | Purpose |
@@ -16,7 +20,7 @@ The docs are organised for a hiring manager, finance leader, or data engineer re
 | [06_gold_semantic_layer.md](06_gold_semantic_layer.md) | Gold dimensions, facts, marts, grains, and semantic rules. |
 | [07_executive_marts.md](07_executive_marts.md) | Domain marts, CFO Command Center, and reporting scope guardrails. |
 | [08_testing_and_controls.md](08_testing_and_controls.md) | Final validation summary, test strategy, and finance controls. |
-| [09_power_bi_reporting_plan.md](09_power_bi_reporting_plan.md) | Planned Power BI CFO reporting pack. |
+| [09_power_bi_reporting_plan.md](09_power_bi_reporting_plan.md) | Power BI reporting plan (superseded by the live dashboard; kept as reference). |
 | [10_ai_commentary_roadmap.md](10_ai_commentary_roadmap.md) | Planned Atlas Intelligence Portal and AI commentary layer. |
 | [11_known_limitations.md](11_known_limitations.md) | Accepted caveats, current limitations, and roadmap boundaries. |
 | [final_validation_summary.md](final_validation_summary.md) | Locked dbt warehouse validation artifact. |
@@ -45,10 +49,12 @@ The full dbt warehouse milestone is complete and locked:
 | Phase 5 | Complete | dbt Silver staging and control layer. |
 | Phase 6 | Complete | dbt Gold semantic layer. |
 | Phase 7 | Complete | Executive CFO Command Center mart. |
+| Phase 8 | Live | React + DuckDB-WASM CFO intelligence dashboard (7 pages, deployed to GitHub Pages). |
 
 ## Planned Future Work
 
-- Power BI CFO reporting pack.
-- Atlas Intelligence Portal.
-- Guardrailed AI commentary layer.
-- Portfolio screenshots and reporting walkthrough.
+- Atlas Intelligence Portal (grounded AI commentary over validated mart outputs).
+- Portfolio screenshots from the live dashboard.
+
+The Power BI CFO pack is superseded by the live React/DuckDB-WASM dashboard; the
+[Power BI plan](09_power_bi_reporting_plan.md) is retained as an alternative reference.

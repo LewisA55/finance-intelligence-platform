@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-06-18T18:38:19.258Z",
+  "gitCommit": "969e25b19e690ddff6577abd21624f59e3f0fcbe",
+  "files": [
+    {
+      "name": "mart_executive_cfo_command_center.parquet",
+      "bytes": 39972,
+      "sha256": "f63ddb7cf1f2b4fe12a569431a6945257916042c696175175024bdcc8bcfc4cf",
+      "source": "export"
+    },
+    {
+      "name": "mart_financial_performance.parquet",
+      "bytes": 472179,
+      "sha256": "16630140be161b4b71949d93e5f5d1ad2ca8a8d23b0ae81f1b9dc981474dfd67",
+      "source": "export"
+    },
+    {
+      "name": "mart_ap_working_capital_control.parquet",
+      "bytes": 66866,
+      "sha256": "ccdbdff9440279e645ee87ed137cba42736f807bbd2af830abb0a6547c68d374",
+      "source": "export"
+    },
+    {
+      "name": "mart_saas_arr_by_product_segment.parquet",
+      "bytes": 48443,
+      "sha256": "7a5b078e6a98cc71488e957e64c90093ddf5896523c7d17e497a942633d5ba87",
+      "source": "curated"
+    },
+    {
+      "name": "mart_saas_retention_by_segment.parquet",
+      "bytes": 19257,
+      "sha256": "073fc67d7529cf7c217eb9a47ab58a68a3ed017094b52f88a15e5054092cd6fc",
+      "source": "curated"
+    },
+    {
+      "name": "mart_o2c_top_customers.parquet",
+      "bytes": 2969,
+      "sha256": "e1131dde02eaf04cafe87de8b21038686c695511cfcffb56dd193f9ba1528b85",
+      "source": "curated"
+    },
+    {
+      "name": "mart_o2c_by_region_segment.parquet",
+      "bytes": 3668,
+      "sha256": "a14331406c9d23b0393b020fcee497071dbc3e608153bc6b95ff207875ee493c",
+      "source": "curated"
+    },
+    {
+      "name": "dim_region.parquet",
+      "bytes": 3106,
+      "sha256": "3f29e68a965bc2268312ae193671bc4b99119aef28ee74b02f51525ef10b2a8d",
+      "source": "export"
+    },
+    {
+      "name": "dim_date.parquet",
+      "bytes": 113925,
+      "sha256": "4cf9a2fb118ef142642bc9cabb3db9047d2d3875d76940d2e56c6651ecb777d5",
+      "source": "export"
+    },
+    {
+      "name": "dim_department.parquet",
+      "bytes": 4960,
+      "sha256": "633cc766f528d8f7130074af5719c99e19ec40af0e0896f61055131205499729",
+      "source": "export"
+    }
+  ]
+}

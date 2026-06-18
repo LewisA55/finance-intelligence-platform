@@ -125,8 +125,8 @@ export function SaaSPerformance() {
       segNrr.length === 0
         ? ''
         : spread < 0.02
-          ? `Segment retention is broadly uniform (NRR ~${formatPercent(k.nrr)}), so the pressure is product-led rather than segment-led. `
-          : `Retention is weakest in ${segNrr[0].seg} (NRR ${formatPercent(segNrr[0].nrr)}). `;
+          ? `Monthly-cohort retention is broadly uniform by segment, so the pressure is product-led rather than segment-led. `
+          : `Period-weighted monthly retention is weakest in ${segNrr[0].seg} (NRR ${formatPercent(segNrr[0].nrr)}). `;
 
     const productClause =
       topProduct && worstNet && worstNet.net < 0
@@ -265,9 +265,10 @@ export function SaaSPerformance() {
         <div className="panel-head">
           <div>
             <h3>Retention by segment</h3>
-            <p className="panel-sub">FYTD · dollar-weighted NRR/GRR · logo retention from cohort counts</p>
+            <p className="panel-sub">FY 2026 monthly cohorts · exposure-weighted NRR/GRR · not a single opening-to-closing FYTD cohort</p>
           </div>
         </div>
+        <div className="table-scroll">
         <table className="pnl">
           <thead>
             <tr>
@@ -299,6 +300,7 @@ export function SaaSPerformance() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       <div className="panel-grid" style={{ marginTop: 12 }}>

@@ -5,9 +5,14 @@ import { KpiCard } from '../components/KpiCard';
 import { StatusPill } from '../components/StatusPill';
 import { formatCount } from '../lib/format';
 
-// Mirrors the locked dbt warehouse milestone (docs/final_validation_summary.md).
-// These are the validation evidence behind every governed figure in the pack.
-const DBT = { tableModels: 37, viewModels: 30, dataTests: 2946 };
+// Locked warehouse milestone from docs/final_validation_summary.md. These are
+// release evidence, not live test results from the browser session.
+const DBT = {
+  tableModels: 37,
+  viewModels: 30,
+  dataTests: 2946,
+  milestone: 'v1.0-dbt-warehouse-complete',
+};
 
 export function ControlTower() {
   const { data: c, loading, error } = useQuery(getControlSummary, []);
@@ -47,12 +52,12 @@ export function ControlTower() {
       <div className={`trustbar ${c.any_flag ? 'warn' : 'ok'}`}>
         <div className="tb-icon">{c.any_flag ? '⚠' : '✓'}</div>
         <div className="tb-body">
-          <div className="tb-head">Trust verdict · FY 2026 to date</div>
+          <div className="tb-head">Trust verdict · FY 2026 reporting snapshot</div>
           <div className="tb-text">
             {c.any_flag ? (
               <>
                 <strong>Safe to use — with review.</strong> {flagged} of {domains.length} domains
-                carry control exceptions across {c.months} reporting months. Exceptions are
+                carry control exceptions across {c.months} reporting periods. Exceptions are
                 surfaced, not hidden; figures remain governed Company-Total.
               </>
             ) : (
@@ -67,9 +72,9 @@ export function ControlTower() {
 
       {/* Validation evidence */}
       <div className="kpi-grid">
-        <KpiCard label="Table models" value={formatCount(DBT.tableModels)} sub="dbt gold layer" />
-        <KpiCard label="View models" value={formatCount(DBT.viewModels)} sub="dbt silver layer" />
-        <KpiCard label="Data tests" value={formatCount(DBT.dataTests)} sub="governed assertions" />
+          <KpiCard label="Table models" value={formatCount(DBT.tableModels)} sub="locked dbt milestone" />
+          <KpiCard label="View models" value={formatCount(DBT.viewModels)} sub="locked dbt milestone" />
+          <KpiCard label="Data tests" value={formatCount(DBT.dataTests)} sub={DBT.milestone} />
         <KpiCard
           label="Test failures"
           value="0"
@@ -83,15 +88,16 @@ export function ControlTower() {
         <div className="panel-head">
           <div>
             <h3>Domain control register</h3>
-            <p className="panel-sub">Control exceptions by domain across FY 2026 to date</p>
+            <p className="panel-sub">Exception-period observations by domain across FY 2026</p>
           </div>
         </div>
+        <div className="table-scroll">
         <table className="pnl">
           <thead>
             <tr>
               <th className="row-label">Domain</th>
               <th className="row-label">Control status</th>
-              <th>Exceptions</th>
+              <th>Exception periods</th>
               <th className="row-label">Governing mart</th>
             </tr>
           </thead>
@@ -111,6 +117,7 @@ export function ControlTower() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       <div className="narrative">

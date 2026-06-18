@@ -30,6 +30,10 @@ import { formatGbp, formatGbpCompact, formatPercent, formatCount } from '../lib/
 
 const GRID = chart.grid;
 const AXIS = chart.axis;
+const collectionRateDomain: [number, (max: number) => number] = [
+  0,
+  (max) => Math.max(1, Math.ceil(max * 20) / 20),
+];
 
 export function WorkingCapital() {
   const position = useQuery(getWorkingCapitalPosition, []);
@@ -207,7 +211,7 @@ export function WorkingCapital() {
             <BarChart data={collByRegion} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
               <CartesianGrid stroke={GRID} vertical={false} />
               <XAxis dataKey="name" stroke={AXIS} fontSize={11} tickLine={false} />
-              <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={48} domain={[0, 1]} tickFormatter={(v: number) => formatPercent(v, 0)} />
+              <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={48} domain={collectionRateDomain} tickFormatter={(v: number) => formatPercent(v, 0)} />
               <Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)' }} contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }} formatter={(v: number) => [formatPercent(v), 'Collection rate']} />
               <Bar dataKey="rate" fill={chart.primary} radius={[2, 2, 0, 0]} />
             </BarChart>
@@ -218,7 +222,7 @@ export function WorkingCapital() {
             <BarChart data={collBySegment} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
               <CartesianGrid stroke={GRID} vertical={false} />
               <XAxis dataKey="name" stroke={AXIS} fontSize={11} tickLine={false} />
-              <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={48} domain={[0, 1]} tickFormatter={(v: number) => formatPercent(v, 0)} />
+              <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={48} domain={collectionRateDomain} tickFormatter={(v: number) => formatPercent(v, 0)} />
               <Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)' }} contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }} formatter={(v: number) => [formatPercent(v), 'Collection rate']} />
               <Bar dataKey="rate" fill={chart.secondary} radius={[2, 2, 0, 0]} />
             </BarChart>
@@ -233,6 +237,7 @@ export function WorkingCapital() {
             <p className="panel-sub">{p.month_label} · open receivable exposure</p>
           </div>
         </div>
+        <div className="table-scroll">
         <table className="pnl">
           <thead>
             <tr>
@@ -255,6 +260,7 @@ export function WorkingCapital() {
             ))}
           </tbody>
         </table>
+        </div>
         <p className="pnl-note">
           AR ageing buckets are not shipped in this dashboard slice: the O2C mart carries open exposure
           and overdue/disputed invoice counts, not GBP-aged buckets. AP ageing (above) uses bucketed
@@ -269,6 +275,7 @@ export function WorkingCapital() {
             <p className="panel-sub">{p.month_label} · open vs overdue payable · days past due</p>
           </div>
         </div>
+        <div className="table-scroll">
         <table className="pnl">
           <thead>
             <tr>
@@ -298,6 +305,7 @@ export function WorkingCapital() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       <div className="narrative">

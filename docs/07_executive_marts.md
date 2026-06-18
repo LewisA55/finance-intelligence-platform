@@ -26,7 +26,7 @@ It uses controlled reporting scopes:
 - Region Total;
 - Business Unit Total.
 
-This is a critical design feature. It prevents incompatible grains from being force-joined and avoids Power BI fan-out or double-counting.
+This is a critical design feature. It prevents incompatible grains from being force-joined and avoids fan-out or double-counting in the reporting layer.
 
 ## Scope Rules
 
@@ -40,4 +40,4 @@ Metrics are populated only where the reporting scope is semantically valid.
 
 ## BI Consumption
 
-Power BI should consume these marts directly. Core calculations should remain in dbt, not in the BI semantic layer.
+The reporting layer — the live React + DuckDB-WASM dashboard — consumes these marts directly. Core calculations remain in dbt, not in the BI layer.

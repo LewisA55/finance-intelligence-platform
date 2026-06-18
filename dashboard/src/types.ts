@@ -55,6 +55,18 @@ export interface ValidationInfo {
   companyTotalRowCount: number;
 }
 
+export interface SnapshotManifest {
+  schemaVersion: number;
+  generatedAt: string;
+  gitCommit: string;
+  files: Array<{
+    name: string;
+    bytes: number;
+    sha256: string;
+    source: 'export' | 'curated';
+  }>;
+}
+
 /** Financial Performance — company revenue/opex actual vs budget vs forecast for a month. */
 export interface FinancialSummary {
   revenue_actual: number;

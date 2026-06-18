@@ -63,6 +63,7 @@ export function PnlSummary({ kpis }: PnlSummaryProps) {
           <p className="panel-sub">Operating basis · {kpis.month_label} · GBP · Company Total</p>
         </div>
       </div>
+      <div className="table-scroll">
       <table className="pnl">
         <thead>
           <tr>
@@ -88,6 +89,7 @@ export function PnlSummary({ kpis }: PnlSummaryProps) {
           })}
         </tbody>
       </table>
+      </div>
       <p className="pnl-note">
         Operating basis — gross margin is intentionally omitted as the executive mart
         carries total operating expense, not a COGS split.{' '}

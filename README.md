@@ -6,6 +6,30 @@ It demonstrates how synthetic enterprise finance data can be generated, loaded i
 
 The project uses synthetic data only. It is designed for portfolio and demonstration purposes, not for production financial reporting.
 
+## Live Dashboard
+
+**https://lewisa55.github.io/finance-intelligence-platform/**
+
+A static, browser-based **CFO intelligence dashboard** built on the governed Gold marts. It
+runs entirely client-side — **React + Vite + DuckDB-WASM** query exported Gold Parquet slices
+directly in the browser (no backend, no server, self-hosted wasm), enforcing scope-safe
+Company-Total reads. Pages:
+
+- **CFO Command Center** — KPI spine, P&L summary, actual vs budget vs forecast, domain health tiles, and a "where to focus next" routing layer.
+- **SaaS Performance** — FYTD ARR movement bridge, product-family × segment mix, retention by segment, regional ARR.
+- **Financial Performance** — department × account variance vs budget and forecast.
+- **Revenue Recognition** — billed vs recognised, deferred-revenue rollforward, and a commercial-ARR-vs-accounting-revenue bridge.
+- **Working Capital** — AR collections (by region/segment, top customers) plus AP ageing and vendor exposure.
+- **Control Tower** — governed control exceptions by domain and dbt validation evidence.
+- **Data & Validation** — loaded tables, row counts, and reporting scopes (auditable provenance).
+
+See [dashboard/README.md](dashboard/README.md) for architecture and how to run it locally.
+
+### Visual Walkthrough
+
+The live dashboard is the canonical interactive walkthrough. Portfolio screenshots will
+be added under `docs/img/` as a separate visual-evidence pass.
+
 ## Why It Was Built
 
 Nexus Technologies operates across the United Kingdom, United States, Germany, and Singapore. The company has grown rapidly, acquired DataPulse Analytics, and now faces common finance data challenges:
@@ -31,7 +55,7 @@ The dbt warehouse milestone is complete and locked.
 | dbt Silver staging and controls | Complete |
 | dbt Gold semantic layer | Complete |
 | Executive CFO Command Center mart | Complete |
-| Power BI CFO pack | Planned |
+| CFO intelligence dashboard (React + DuckDB-WASM) | Live |
 | Atlas Intelligence Portal / AI commentary | Planned |
 
 ## Final Validation Summary
@@ -57,8 +81,8 @@ Latest successful full build:
 | Local warehouse | DuckDB |
 | Transformation | dbt |
 | Validation | dbt tests and custom singular tests |
-| BI layer | Power BI, planned |
-| Intelligence layer | Streamlit / AI commentary, planned |
+| BI / reporting layer | React + Vite + DuckDB-WASM (in-browser SQL over Parquet) |
+| Intelligence layer | Grounded AI commentary, planned |
 
 ## Architecture
 
@@ -84,7 +108,7 @@ Domain marts and executive marts
 Executive CFO Command Center
         |
         v
-Power BI CFO pack / Atlas Intelligence Portal (planned)
+React + DuckDB-WASM CFO dashboard (live) / Atlas Intelligence Portal (planned)
 ```
 
 ## Finance Domains Covered
@@ -155,7 +179,7 @@ The Executive CFO Command Center uses controlled reporting scopes to avoid joini
 - Region Total
 - Business Unit Total
 
-This prevents Power BI fan-out and double-counting when finance, customer, workforce, SaaS, AP, and revenue-control metrics are combined.
+This prevents fan-out and double-counting when finance, customer, workforce, SaaS, AP, and revenue-control metrics are combined in the dashboard.
 
 ## How To Run Locally
 
@@ -199,12 +223,28 @@ dbt build
 
 Generated raw data, warehouse files, dbt targets, and logs are intentionally ignored by Git.
 
+### Run the dashboard
+
+Requires Node.js 22+.
+
+```bash
+cd dashboard
+npm install
+npm run dev      # http://localhost:5173
+```
+
+The dashboard reads small committed Parquet slices in `dashboard/public/data/`. After a
+new `dbt build` and Parquet export, run `npm run refresh-data` from `dashboard/`. That
+single command copies standard exports, rebuilds the curated SaaS/O2C slices, writes a
+SHA-256 manifest and validates the complete snapshot.
+
 ## Repository Structure
 
 ```text
 docs/                  Portfolio documentation
+dashboard/             React + DuckDB-WASM CFO dashboard (static, deployable to GitHub Pages)
 models/                dbt Bronze sources, Silver staging, and Gold semantic models
-macros/                dbt helper macros
+macros/                dbt helper macros (incl. curated dashboard-slice export macros)
 tests/                 dbt singular tests by finance domain
 scripts/               Source generation, QA, and warehouse loading scripts
 data/                  Local generated raw, processed, and warehouse outputs (ignored)
@@ -214,28 +254,27 @@ requirements.txt       Python dependencies
 
 ## Documentation
 
-Start with [docs/README.md](docs/README.md).
+Start with [docs/README.md](docs/README.md). For the reporting layer, see
+[dashboard/README.md](dashboard/README.md) or the
+[live dashboard](https://lewisa55.github.io/finance-intelligence-platform/).
 
-## Planned Reporting And Intelligence Layer
+## Reporting And Intelligence Layer
 
-Power BI screenshots are not included yet. The planned CFO pack will consume the Gold marts and focus on:
+The reporting layer is delivered as the **live React + DuckDB-WASM dashboard** above, which
+consumes the governed Gold marts and enforces scope-safe Company-Total reads. A Power BI pack
+was originally planned ([docs/09_power_bi_reporting_plan.md](docs/09_power_bi_reporting_plan.md));
+the React/DuckDB-WASM dashboard **supersedes it** as the realised BI layer, with the Power BI
+plan retained as an alternative reference.
 
-- executive financial performance;
-- ARR movement and SaaS retention;
-- revenue waterfall and deferred revenue controls;
-- O2C collections;
-- AP working capital;
-- workforce cost controls;
-- CFO command center scope views.
-
-The planned Atlas Intelligence Portal / AI commentary layer will summarise validated warehouse outputs only. It will not calculate finance metrics independently.
+The planned Atlas Intelligence Portal / AI commentary layer will summarise validated mart
+outputs only — it will not calculate finance metrics independently. The dashboard's narratives
+are currently deterministic, generated directly from query results.
 
 ## Roadmap
 
-- Build Power BI CFO reporting pack.
-- Build Atlas Intelligence Portal.
-- Add grounded AI commentary from validated mart outputs.
-- Add final portfolio screenshots once the reporting layer exists.
+- Wire the dashboard's deterministic narratives to a grounded LLM commentary layer (Atlas Intelligence Portal).
+- Add portfolio screenshots from the live dashboard to `docs/img/`.
+- Deepen pages as needed (e.g. product-level revenue recognition, true AR ageing slices).
 - Continue improving documentation with diagrams and dbt lineage artifacts.
 
 ## Author

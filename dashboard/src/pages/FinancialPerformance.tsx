@@ -73,8 +73,12 @@ export function FinancialPerformance() {
       return `${monthLabel} is a plan-only period — no financial actuals are recognised yet. Budget revenue is ${formatGbp(s.revenue_budget)} against budgeted operating expenses of ${formatGbp(s.opex_budget)}.`;
     }
     const rows = topVar.data ?? [];
-    const adverse = rows.filter((r) => r.favourability === 'Adverse')[0];
-    const favourable = [...rows].sort((a, b) => a.variance - b.variance)[0];
+    const adverse = rows
+      .filter((r) => r.favourability === 'Adverse')
+      .sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance))[0];
+    const favourable = rows
+      .filter((r) => r.favourability === 'Favourable')
+      .sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance))[0];
     const revVar = s.revenue_actual - s.revenue_budget;
     return (
       `For ${monthLabel}, revenue of ${formatGbp(s.revenue_actual)} is ${formatSignedPercent(revVar / s.revenue_budget)} vs budget, ` +
@@ -231,6 +235,7 @@ export function FinancialPerformance() {
             <p className="panel-sub">{monthLabel} · actual vs budget · FC_BASE_CASE</p>
           </div>
         </div>
+        <div className="table-scroll">
         <table className="pnl">
           <thead>
             <tr>
@@ -261,6 +266,7 @@ export function FinancialPerformance() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       <div className="narrative">

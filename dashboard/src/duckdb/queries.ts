@@ -191,7 +191,7 @@ export async function getDataAsAt(): Promise<{
     select
       max(case when actual_revenue_gbp > 0 then reporting_month_date end)::varchar as latest_actuals_month,
       max(reporting_month_date)::varchar                                           as latest_reporting_month,
-      strftime(max(_atlas_modelled_at), '%Y-%m-%d')                               as built_date
+      strftime(cast(max(_atlas_modelled_at) as timestamp), '%Y-%m-%d')            as built_date
     from mart_executive_cfo_command_center
     where ${COMPANY_TOTAL}
   `);

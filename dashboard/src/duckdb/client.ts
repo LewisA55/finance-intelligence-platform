@@ -12,6 +12,7 @@ const DATA_FILES = dataConfig.files.map((file) => file.name);
 
 let dbPromise: Promise<duckdb.AsyncDuckDB> | null = null;
 let connPromise: Promise<duckdb.AsyncDuckDBConnection> | null = null;
+let queryQueue: Promise<void> = Promise.resolve();
 
 // Self-hosted bundles: Vite emits these assets into the build output and serves
 // them same-origin, so there is no runtime CDN dependency.
@@ -82,15 +83,26 @@ export function getConnection(): Promise<duckdb.AsyncDuckDBConnection> {
 export async function runQuery<T = Record<string, unknown>>(
   sql: string,
 ): Promise<T[]> {
-  const conn = await getConnection();
-  const result = await conn.query(sql);
-  return result.toArray().map((row) => {
-    const obj = row.toJSON() as Record<string, unknown>;
-    for (const key of Object.keys(obj)) {
-      if (typeof obj[key] === 'bigint') {
-        obj[key] = Number(obj[key]);
-      }
-    }
-    return obj as T;
+  let releaseQueue = () => {};
+  const previousQuery = queryQueue;
+  queryQueue = new Promise<void>((resolveQueue) => {
+    releaseQueue = resolveQueue;
   });
+
+  await previousQuery;
+  try {
+    const conn = await getConnection();
+    const result = await conn.query(sql);
+    return result.toArray().map((row) => {
+      const obj = row.toJSON() as Record<string, unknown>;
+      for (const key of Object.keys(obj)) {
+        if (typeof obj[key] === 'bigint') {
+          obj[key] = Number(obj[key]);
+        }
+      }
+      return obj as T;
+    });
+  } finally {
+    releaseQueue();
+  }
 }

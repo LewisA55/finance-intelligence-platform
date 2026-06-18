@@ -62,9 +62,12 @@ Requires Node.js 22+.
 npm ci
 npm run dev
 npm run check
+npm run screenshots
 ```
 
 `npm run check` validates the committed data contract and performs a production build.
+`npm run screenshots` launches the dashboard locally and refreshes the portfolio images
+under `docs/img/` using the installed Chrome browser.
 
 ## Deployment
 

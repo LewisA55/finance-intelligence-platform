@@ -21,7 +21,7 @@ function dayUpper(iso: string | null): string {
  * (build date, as-of actuals month) — nothing is hardcoded.
  */
 export function PackHeader() {
-  const { data } = useQuery(getDataAsAt, []);
+  const { data, error } = useQuery(getDataAsAt, []);
 
   return (
     <header className="pack-header">
@@ -29,7 +29,7 @@ export function PackHeader() {
         <h1>Atlas — Nexus Technologies</h1>
         <div className="pack-sub">FY 2026 · Internal · Synthetic demo · CFO Intelligence Pack</div>
       </div>
-      <div className="pack-meta">
+      <div className="pack-meta" data-provenance-error={error?.message}>
         <span className="live">LIVE</span> · BUILT {dayUpper(data?.built_date ?? null)}
         <br />
         AS OF {monthUpper(data?.latest_actuals_month ?? null)} · COMPANY TOTAL

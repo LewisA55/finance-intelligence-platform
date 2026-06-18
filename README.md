@@ -27,8 +27,17 @@ See [dashboard/README.md](dashboard/README.md) for architecture and how to run i
 
 ### Visual Walkthrough
 
-The live dashboard is the canonical interactive walkthrough. Portfolio screenshots will
-be added under `docs/img/` as a separate visual-evidence pass.
+The live dashboard is the canonical interactive walkthrough.
+
+[![CFO Command Center](docs/img/command-center.png)](https://lewisa55.github.io/finance-intelligence-platform/#/command-center)
+
+| SaaS product and segment depth | Revenue recognition and deferred revenue |
+| --- | --- |
+| [![SaaS Performance](docs/img/saas-performance.png)](https://lewisa55.github.io/finance-intelligence-platform/#/saas) | [![Revenue Recognition](docs/img/revenue-recognition.png)](https://lewisa55.github.io/finance-intelligence-platform/#/revenue) |
+
+| Working capital and collections | Governed control evidence |
+| --- | --- |
+| [![Working Capital](docs/img/working-capital.png)](https://lewisa55.github.io/finance-intelligence-platform/#/working-capital) | [![Control Tower](docs/img/control-tower.png)](https://lewisa55.github.io/finance-intelligence-platform/#/control-tower) |
 
 ## Why It Was Built
 

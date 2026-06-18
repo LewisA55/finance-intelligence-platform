@@ -4,6 +4,7 @@ import type {
   CommandCenterKpis,
   RevenueTrendPoint,
   ValidationInfo,
+  SnapshotManifest,
   ExecutiveMonth,
   FinancialSummary,
   DepartmentVariance,
@@ -24,6 +25,15 @@ import type {
   ArCustomer,
   ArCollection,
 } from '../types';
+
+/** Build-level provenance for the committed dashboard snapshot. */
+export async function getSnapshotManifest(): Promise<SnapshotManifest> {
+  const response = await fetch(`${import.meta.env.BASE_URL}data/manifest.json`);
+  if (!response.ok) {
+    throw new Error(`Failed to load dashboard data manifest (HTTP ${response.status})`);
+  }
+  return response.json() as Promise<SnapshotManifest>;
+}
 
 // ---------------------------------------------------------------------------
 // Semantic guardrail
@@ -338,7 +348,7 @@ export async function getArrMovementByProduct(): Promise<ProductMovement[]> {
   `);
 }
 
-/** FYTD retention components by segment (rates computed in the app for correct weighting). */
+/** Period-weighted monthly retention components by segment. */
 export async function getRetentionBySegment(): Promise<SegmentRetention[]> {
   return runQuery<SegmentRetention>(`
     select
@@ -593,7 +603,6 @@ export async function getTopAccountVariances(
     left join dim_department as d on fp.department_hk = d.department_hk
     where fp.${FC_BASE}
       and fp.posting_period = date '${monthIso}'
-      and fp.actual_amount_gbp > 0
     group by 1, 2, 3
     order by abs(sum(fp.actual_vs_budget_variance_gbp)) desc
     limit ${Math.max(1, Math.floor(limit))}

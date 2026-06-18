@@ -25,16 +25,10 @@ Company-Total reads. Pages:
 
 See [dashboard/README.md](dashboard/README.md) for architecture and how to run it locally.
 
-### Screenshots
+### Visual Walkthrough
 
-Screenshots from the live site live in `docs/img/`. To add them, capture each page and save to the paths below, then uncomment:
-
-<!--
-![CFO Command Center](docs/img/command-center.png)
-![SaaS Performance](docs/img/saas-performance.png)
-![Working Capital](docs/img/working-capital.png)
-![Control Tower](docs/img/control-tower.png)
--->
+The live dashboard is the canonical interactive walkthrough. Portfolio screenshots will
+be added under `docs/img/` as a separate visual-evidence pass.
 
 ## Why It Was Built
 
@@ -231,7 +225,7 @@ Generated raw data, warehouse files, dbt targets, and logs are intentionally ign
 
 ### Run the dashboard
 
-Requires Node.js 20+.
+Requires Node.js 22+.
 
 ```bash
 cd dashboard
@@ -239,10 +233,10 @@ npm install
 npm run dev      # http://localhost:5173
 ```
 
-The dashboard reads small committed Parquet slices in `dashboard/public/data/`. To refresh
-them after a new `dbt build` + Parquet export: `npm run refresh-data` (executive marts +
-dimensions), then `dbt run-operation export_saas_aggregates` and
-`dbt run-operation export_o2c_aggregates` for the curated product/segment and AR slices.
+The dashboard reads small committed Parquet slices in `dashboard/public/data/`. After a
+new `dbt build` and Parquet export, run `npm run refresh-data` from `dashboard/`. That
+single command copies standard exports, rebuilds the curated SaaS/O2C slices, writes a
+SHA-256 manifest and validates the complete snapshot.
 
 ## Repository Structure
 

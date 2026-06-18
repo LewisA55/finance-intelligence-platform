@@ -5,20 +5,18 @@ interface TabsProps {
   onNavigate: (page: PageId) => void;
 }
 
-const STATUS_LABEL: Record<string, string> = { preview: 'PREVIEW', soon: 'SOON' };
-
 export function Tabs({ current, onNavigate }: TabsProps) {
   return (
-    <nav className="tabs">
+    <nav className="tabs" aria-label="Dashboard pages">
       {NAV.map((item) => (
         <button
           key={item.id}
           type="button"
           className={`tab ${item.id === current ? 'active' : ''}`}
           onClick={() => onNavigate(item.id)}
+          aria-current={item.id === current ? 'page' : undefined}
         >
           <span>{item.label}</span>
-          {item.status !== 'live' && <span className="soon">{STATUS_LABEL[item.status]}</span>}
         </button>
       ))}
     </nav>

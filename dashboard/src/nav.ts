@@ -7,20 +7,17 @@ export type PageId =
   | 'control-tower'
   | 'validation';
 
-export type PageStatus = 'live' | 'preview' | 'soon';
-
 export interface NavItem {
   id: PageId;
   label: string;
-  status: PageStatus;
 }
 
 export const NAV: NavItem[] = [
-  { id: 'command-center', label: 'CFO Command Center', status: 'live' },
-  { id: 'saas', label: 'SaaS Performance', status: 'live' },
-  { id: 'financial', label: 'Financial Performance', status: 'live' },
-  { id: 'revenue', label: 'Revenue Recognition', status: 'live' },
-  { id: 'working-capital', label: 'Working Capital', status: 'live' },
-  { id: 'control-tower', label: 'Control Tower', status: 'live' },
-  { id: 'validation', label: 'Data & Validation', status: 'live' },
+  { id: 'command-center', label: 'CFO Command Center' },
+  { id: 'saas', label: 'SaaS Performance' },
+  { id: 'financial', label: 'Financial Performance' },
+  { id: 'revenue', label: 'Revenue Recognition' },
+  { id: 'working-capital', label: 'Working Capital' },
+  { id: 'control-tower', label: 'Control Tower' },
+  { id: 'validation', label: 'Data & Validation' },
 ];

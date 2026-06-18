@@ -1,10 +1,12 @@
 import { useQuery } from '../hooks/useQuery';
-import { getValidationInfo } from '../duckdb/queries';
+import { getSnapshotManifest, getValidationInfo } from '../duckdb/queries';
 import { TopBar } from '../components/TopBar';
 import { formatCount } from '../lib/format';
 
 export function Validation() {
   const { data, loading, error } = useQuery(getValidationInfo, []);
+  const manifest = useQuery(getSnapshotManifest, []);
+  const anyError = error || manifest.error;
 
   return (
     <>
@@ -19,7 +21,7 @@ export function Validation() {
           <div>Running validation queries…</div>
         </div>
       )}
-      {error && <div className="error-box">{error.message}</div>}
+      {anyError && <div className="error-box">{anyError.message}</div>}
 
       {data && (
         <div className="validation-grid">
@@ -32,6 +34,19 @@ export function Validation() {
               ))}
             </ul>
           </div>
+
+          {manifest.data && (
+            <div className="panel">
+              <h3>Snapshot contract</h3>
+              <p className="panel-sub">Hash-validated files shipped with this dashboard build</p>
+              <ul className="kv">
+                <li><span>Manifest schema</span><strong>v{manifest.data.schemaVersion}</strong></li>
+                <li><span>Files</span><strong>{formatCount(manifest.data.files.length)}</strong></li>
+                <li><span>Generated</span><strong>{new Date(manifest.data.generatedAt).toLocaleDateString('en-GB')}</strong></li>
+                <li><span>Source commit</span><strong><code>{manifest.data.gitCommit.slice(0, 8)}</code></strong></li>
+              </ul>
+            </div>
+          )}
 
           <div className="panel">
             <h3>Executive mart</h3>

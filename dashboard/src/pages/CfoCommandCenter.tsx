@@ -313,11 +313,14 @@ export function CfoCommandCenter({ onNavigate }: { onNavigate: (page: PageId) =>
 
         <ChartCard
           title="Variance by driver"
-          subtitle="Planned for the Financial Performance page"
+          subtitle="Department and account analysis is available in the governed financial mart"
         >
-          <div className="placeholder-chart">
-            <p>Driver-level variance is not exposed on the executive mart.</p>
-            <p className="src">Will be powered by <code>mart_financial_performance</code> (department × account variance).</p>
+          <div className="drillthrough-panel">
+            <p>Review the largest favourable and adverse drivers behind the company result.</p>
+            <button type="button" className="drillthrough-link" onClick={() => onNavigate('financial')}>
+              Open Financial Performance →
+            </button>
+            <p className="src"><code>mart_financial_performance</code> · department × account</p>
           </div>
         </ChartCard>
       </div>

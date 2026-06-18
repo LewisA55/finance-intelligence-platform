@@ -1,0 +1,14 @@
+{
+  "files": [
+    { "name": "mart_executive_cfo_command_center", "source": "export" },
+    { "name": "mart_financial_performance", "source": "export" },
+    { "name": "mart_ap_working_capital_control", "source": "export" },
+    { "name": "mart_saas_arr_by_product_segment", "source": "curated" },
+    { "name": "mart_saas_retention_by_segment", "source": "curated" },
+    { "name": "mart_o2c_top_customers", "source": "curated" },
+    { "name": "mart_o2c_by_region_segment", "source": "curated" },
+    { "name": "dim_region", "source": "export" },
+    { "name": "dim_date", "source": "export" },
+    { "name": "dim_department", "source": "export" }
+  ]
+}

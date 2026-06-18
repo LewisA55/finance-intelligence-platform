@@ -1,91 +1,85 @@
 # Atlas Dashboard
 
-A static, interactive CFO finance-intelligence dashboard for **Project Atlas / Nexus
-Technologies**. It runs entirely in the browser: **DuckDB-WASM** queries Parquet files
-served as static assets — no backend, no server. Deployable to GitHub Pages or Vercel.
+Static CFO intelligence dashboard for the fictional Nexus Technologies portfolio case.
 
-> **⚠ Synthetic data.** Nexus Technologies is a fictional company. Every figure in this
-> app and in the committed Parquet files is randomly generated for a portfolio /
-> demonstration project. It is **not** real company data, and nothing here is financial
-> advice or production reporting.
+**Live:** https://lewisa55.github.io/finance-intelligence-platform/
+
+The app runs entirely in the browser. React renders the interface while DuckDB-WASM
+queries small, governed Parquet slices exported from the dbt Gold layer. There is no
+application backend and no runtime CDN dependency.
+
+> All data is synthetic. The dashboard is a portfolio demonstration, not production
+> financial reporting or financial advice.
+
+## Pages
+
+- **CFO Command Center**: executive KPIs, P&L summary, plan variance, control status,
+  and prioritised drill-through cues.
+- **Financial Performance**: actual, budget and forecast analysis by department and account.
+- **SaaS Performance**: ARR movement, product/segment mix, retention and regional exposure.
+- **Revenue Recognition**: billing, earned revenue, deferred revenue and accounting controls.
+- **Working Capital**: AR collections, customer exposure, AP ageing and vendor exposure.
+- **Control Tower**: exception-period observations and locked dbt validation evidence.
+- **Data & Validation**: loaded views, reporting scopes and snapshot provenance.
 
 ## Stack
 
-- **Vite + React + TypeScript**
-- **DuckDB-WASM** (`@duckdb/duckdb-wasm`) — SQL over Parquet in-browser. The wasm +
-  worker bundles are **self-hosted**: Vite emits them into `dist/` via `?url` imports
-  and serves them same-origin, so there is no CDN dependency at runtime (offline-capable).
-  The browser downloads only the single bundle it selects (eh where supported, else mvp).
-- **Recharts** for visuals
+- React 18, TypeScript and Vite
+- DuckDB-WASM for in-browser SQL over Parquet
+- Recharts for visualisation
+- GitHub Actions and GitHub Pages
 
-## Data
+The DuckDB WASM and worker assets are self-hosted by the Pages build. The app chooses
+the exception-handling bundle where supported and falls back to the MVP bundle.
 
-The app ships a small, committed slice of the dbt mart exports in `public/data/`
-(~160 KB): the pre-aggregated executive command center mart plus the region and date
-dimensions. Because the command center is already aggregated to a governed reporting
-scope, the four headline views need only this slice — the multi-MB raw marts are added
-per-view later, when drill-down requires them.
+## Dashboard Data Contract
 
-To refresh the slice after a new `dbt build` + parquet export:
+`data-files.json` is the authoritative list of required browser assets. The committed
+snapshot currently contains ten files, approximately 760 KB in total:
+
+- governed executive, financial-performance and AP exports;
+- curated SaaS product/segment and retention slices;
+- curated O2C customer and region/segment slices;
+- date, region and department dimensions.
+
+`public/data/manifest.json` records the source commit, byte size and SHA-256 hash of
+every file. CI runs `npm run validate-data` before building.
+
+Refresh after a successful warehouse build and Parquet export:
 
 ```bash
 npm run refresh-data
 ```
 
-This copies from `../data/exports/powerbi/parquet/` into `public/data/`. The file list
-is kept in sync with `DATA_FILES` in `src/duckdb/client.ts`.
+This command copies the standard exports, runs both curated dbt export macros, creates
+the manifest and validates the completed snapshot.
 
-## Develop
+## Development
 
-Requires **Node.js 20+**.
-
-```bash
-npm install
-npm run dev      # http://localhost:5173
-```
-
-## Build & deploy
+Requires Node.js 22+.
 
 ```bash
-npm run build    # outputs to dist/
-npm run preview  # serve the production build locally
+npm ci
+npm run dev
+npm run check
 ```
 
-`vite.config.ts` uses a relative `base` (`./`) so the build works unchanged on a
-GitHub Pages project subpath (e.g. `/finance-intelligence-platform/`) or on Vercel (`/`).
+`npm run check` validates the committed data contract and performs a production build.
 
-## Structure
+## Deployment
 
-```
-src/
-  duckdb/client.ts     DuckDB-WASM init + parquet registration (singleton)   [= lib/duckdb.ts]
-  duckdb/queries.ts    typed, scope-safe SQL query functions                 [= lib/atlasQueries.ts]
-  hooks/useQuery.ts    run a query loader -> { data, loading, error }
-  lib/format.ts        GBP / percent / count formatting                      [= lib/formatters.ts]
-  nav.ts               page registry (id, label, status)
-  components/          Sidebar · TopBar · Layout · KpiCard · StatusPill ·
-                       ChartCard · DataQualityBanner · PlaceholderPage
-  pages/               CfoCommandCenter · SaaSPerformance · FinancialPerformance ·
-                       WorkingCapital · ControlTower · Validation
-  types.ts
-```
+`vite.config.ts` uses `/finance-intelligence-platform/` for production builds and `/`
+for local development. The GitHub Actions workflow validates pull requests and deploys
+successful `main` builds to GitHub Pages.
 
-## Pages
+Navigation uses hash-backed page IDs, so individual pages can be linked directly without
+requiring server-side route rewrites.
 
-- **CFO Command Center** — _live_. KPI spine (revenue/operating result/margin/ARR/working
-  capital) with variance + favourable/adverse status, actual-vs-budget-vs-forecast trend,
-  domain health strip, executive narrative, month selector, data-quality banner. Every
-  query is hard-filtered to `reporting_scope = 'Company Total'`.
-- **SaaS Performance** — _preview_. ARR trend, NRR/GRR, monthly ARR movement.
-- **Financial Performance · Working Capital · Control Tower** — _planned shells_ stating
-  purpose and the governed marts that will power them.
-- **Data & Validation** — _live_. Loaded tables, row counts, distinct reporting scopes,
-  latest reporting/actuals month — auditable provenance via DuckDB-WASM.
+## Semantic Guardrails
 
-### Semantic guardrail
-`mart_executive_cfo_command_center` mixes `Company Total`, `Region Total` and
-`Business Unit Total` rows. These are **never** aggregated together — company KPIs
-hard-filter `reporting_scope = 'Company Total'` (see `COMPANY_TOTAL` in `duckdb/queries.ts`).
+`mart_executive_cfo_command_center` contains Company Total, Region Total and Business
+Unit Total rows. Company KPIs hard-filter `reporting_scope = 'Company Total'`; incompatible
+scopes are never summed together.
 
-The executive narrative is generated deterministically from the query results; the visual
-contract is stable so it can be wired to a Claude/OpenAI call later.
+Business calculations belong in dbt models or curated export queries. React is responsible
+for presentation, interaction and clearly labelled derived display values.

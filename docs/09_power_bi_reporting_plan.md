@@ -33,6 +33,8 @@ without redefining core finance logic.
 - Use domain marts for detailed drill paths.
 - Clearly label commercial ARR separately from recognised revenue.
 
-## Screenshot Status
+## Visual Evidence
 
-Screenshots are not included yet because the reporting pack is planned future work.
+The delivered React/DuckDB-WASM reporting layer is available through the live dashboard.
+Static portfolio screenshots remain a documentation follow-up; they are no longer blocked
+on a future reporting build.

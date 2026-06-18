@@ -4,11 +4,17 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Project Atlas - CFO Finance Intelligence dashboard (React + DuckDB-WASM, static).",
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "refresh-data": "node scripts/refresh-data.mjs"
+    "refresh-data": "node scripts/refresh-data.mjs",
+    "manifest-data": "node scripts/data-manifest.mjs",
+    "validate-data": "node scripts/validate-data.mjs",
+    "check": "npm run validate-data && npm run build"
   },
   "dependencies": {
     "@duckdb/duckdb-wasm": "^1.29.0",
@@ -19,8 +25,8 @@
   "devDependencies": {
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.3.1",
+    "@vitejs/plugin-react": "^6.0.2",
     "typescript": "^5.5.4",
-    "vite": "^5.4.8"
+    "vite": "^8.0.16"
   }
 }

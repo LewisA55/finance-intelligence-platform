@@ -101,4 +101,6 @@ Generated data and warehouse files are intentionally not tracked by Git:
 - dbt `target/`
 - dbt `logs/`
 
-The repository tracks code, dbt models, tests, documentation, and placeholder `.gitkeep` files only.
+The repository tracks code, dbt models, tests, documentation, and a deliberately small
+synthetic dashboard snapshot under `dashboard/public/data/`. Raw sources, local warehouses,
+full exports and dbt build artifacts remain untracked.

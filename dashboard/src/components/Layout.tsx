@@ -13,10 +13,11 @@ interface LayoutProps {
 export function Layout({ current, onNavigate, children }: LayoutProps) {
   return (
     <div className="doc">
+      <a className="skip-link" href="#main-content">Skip to dashboard content</a>
       <PackHeader />
       <Tabs current={current} onNavigate={onNavigate} />
-      <main className="main">{children}</main>
-      <GovernanceFooter />
+      <main id="main-content" className="main" tabIndex={-1}>{children}</main>
+      <GovernanceFooter current={current} />
     </div>
   );
 }

@@ -1,10 +1,23 @@
-# Finance Intelligence Platform
+# Project Atlas — Finance Intelligence Platform
 
-Project Atlas is a portfolio-grade finance analytics engineering project for a fictional multinational SaaS company, Nexus Technologies.
+[![Live Dashboard](https://img.shields.io/badge/live_dashboard-open-2e7d5b)](https://lewisa55.github.io/finance-intelligence-platform/)
+[![Dashboard CI](https://github.com/LewisA55/finance-intelligence-platform/actions/workflows/deploy-dashboard.yml/badge.svg?branch=main)](https://github.com/LewisA55/finance-intelligence-platform/actions/workflows/deploy-dashboard.yml)
+[![dbt](https://img.shields.io/badge/dbt-semantic_layer-FF694B)](https://www.getdbt.com/)
+[![DuckDB](https://img.shields.io/badge/DuckDB-local_warehouse-F5E642)](https://duckdb.org/)
 
-It demonstrates how synthetic enterprise finance data can be generated, loaded into a local DuckDB warehouse, transformed with dbt, validated with automated controls, and shaped into CFO-ready semantic marts.
+Project Atlas is an end-to-end finance analytics engineering portfolio project for a
+fictional multinational SaaS company, Nexus Technologies.
+
+It generates synthetic enterprise source data, loads a local DuckDB warehouse, transforms
+and validates it through dbt, and publishes governed CFO-ready marts to a live browser
+dashboard.
 
 The project uses synthetic data only. It is designed for portfolio and demonstration purposes, not for production financial reporting.
+
+**Start here:** [Live dashboard](https://lewisa55.github.io/finance-intelligence-platform/) ·
+[Architecture](docs/02_architecture.md) ·
+[Gold semantic layer](docs/06_gold_semantic_layer.md) ·
+[Validation summary](docs/final_validation_summary.md)
 
 ## Live Dashboard
 
@@ -282,9 +295,9 @@ are currently deterministic, generated directly from query results.
 ## Roadmap
 
 - Wire the dashboard's deterministic narratives to a grounded LLM commentary layer (Atlas Intelligence Portal).
-- Add portfolio screenshots from the live dashboard to `docs/img/`.
 - Deepen pages as needed (e.g. product-level revenue recognition, true AR ageing slices).
-- Continue improving documentation with diagrams and dbt lineage artifacts.
+- Add a concise architecture/lineage graphic and generated dbt lineage evidence.
+- Add focused browser interaction and accessibility tests.
 
 ## Author
 

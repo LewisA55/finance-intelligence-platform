@@ -4,11 +4,26 @@ updates:
     directory: /dashboard
     schedule:
       interval: monthly
+    open-pull-requests-limit: 5
     groups:
+      react-ecosystem:
+        patterns:
+          - react
+          - react-dom
+          - "@types/react"
+          - "@types/react-dom"
       dashboard-development:
         dependency-type: development
+        exclude-patterns:
+          - "@types/react"
+          - "@types/react-dom"
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
 
   - package-ecosystem: pip
     directory: /
     schedule:
       interval: monthly
+    open-pull-requests-limit: 5

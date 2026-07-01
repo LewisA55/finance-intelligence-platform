@@ -27,6 +27,7 @@ from scripts.generators.workforce_cost_generator import WorkforceCostGenerator
 from scripts.generators.budget_generator import BudgetGenerator
 from scripts.generators.forecast_generator import ForecastGenerator
 from scripts.generators.variance_source_extract_generator import VarianceSourceExtractGenerator
+from scripts.generators.modeling_layer_generator import ModelingLayerGenerator
 from scripts.utils.logger import get_logger
 
 
@@ -262,6 +263,21 @@ def main() -> None:
         logger.info(
             "Control Findings Register generation complete: %s findings",
             f"{len(control_findings_register):,}",
+        )
+
+        logger.info("Phase 3J.5: Generating CFO modelling layer source anchors")
+
+        modeling_layer_generator = ModelingLayerGenerator()
+        opening_balance_sheet, model_readiness_controls = modeling_layer_generator.generate()
+        modeling_layer_generator.save(
+            opening_balance_sheet=opening_balance_sheet,
+            model_readiness_controls=model_readiness_controls,
+        )
+
+        logger.info(
+            "CFO modelling source generation complete: %s opening balance sheet rows, %s readiness controls",
+            f"{len(opening_balance_sheet):,}",
+            f"{len(model_readiness_controls):,}",
         )
 
         logger.info("Phase 3K.1: Generating workforce cost source extracts")

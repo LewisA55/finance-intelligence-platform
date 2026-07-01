@@ -16,7 +16,8 @@ const manifestFiles = new Map(manifest.files.map((file) => [file.name, file]));
 
 const errors = [];
 for (const entry of config.files) {
-  const filename = `${entry.name}.parquet`;
+  const format = entry.format ?? 'parquet';
+  const filename = `${entry.name}.${format}`;
   const expected = manifestFiles.get(filename);
   if (!expected) {
     errors.push(`${filename}: missing from manifest`);
@@ -39,7 +40,7 @@ for (const entry of config.files) {
 
 const unexpected = manifest.files
   .map((file) => file.name)
-  .filter((name) => !config.files.some((entry) => `${entry.name}.parquet` === name));
+  .filter((name) => !config.files.some((entry) => `${entry.name}.${entry.format ?? 'parquet'}` === name));
 for (const name of unexpected) errors.push(`${name}: unexpected manifest entry`);
 
 if (errors.length) {

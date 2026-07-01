@@ -22,6 +22,9 @@ import {
   getArrByProductSegment,
   getArrMovementByProduct,
   getRetentionBySegment,
+  getSaasIntelligenceTrend,
+  getSaasProductTrend,
+  getSaasSegmentTrend,
 } from '../duckdb/queries';
 import { TopBar } from '../components/TopBar';
 import { KpiCard } from '../components/KpiCard';
@@ -37,6 +40,14 @@ const SEG_FILL: Record<string, string> = {
   Enterprise: chart.primary,
   'Mid-Market': chart.secondary,
   SMB: chart.budget,
+};
+const PRODUCT_FILL: Record<string, string> = {
+  Core: chart.primary,
+  Analytics: chart.secondary,
+  AI: chart.favourable,
+  'Professional Services': chart.budget,
+  Legacy: chart.adverse,
+  Other: chart.axis,
 };
 
 interface WalkStep {
@@ -60,6 +71,9 @@ export function SaaSPerformance() {
   const prodSeg = useQuery(getArrByProductSegment, []);
   const prodMove = useQuery(getArrMovementByProduct, []);
   const segRet = useQuery(getRetentionBySegment, []);
+  const longTrend = useQuery(getSaasIntelligenceTrend, []);
+  const productTrend = useQuery(getSaasProductTrend, []);
+  const segmentTrend = useQuery(getSaasSegmentTrend, []);
 
   const k = kpis.data;
 
@@ -104,6 +118,49 @@ export function SaaSPerformance() {
     );
   }, [prodSeg.data]);
 
+  const productHistory = useMemo(() => {
+    const rows = productTrend.data ?? [];
+    const months = Array.from(new Set(rows.map((r) => r.month_iso))).slice(-36);
+    const keep = new Set(months);
+    const byMonth = new Map<string, Record<string, number | string>>();
+    for (const r of rows) {
+      if (!keep.has(r.month_iso)) continue;
+      const row = byMonth.get(r.month_iso) ?? {
+        month_iso: r.month_iso,
+        month_label: r.month_label,
+        Core: 0,
+        Analytics: 0,
+        AI: 0,
+        'Professional Services': 0,
+        Legacy: 0,
+        Other: 0,
+      };
+      row[r.product_family] = ((row[r.product_family] as number) ?? 0) + r.active_arr;
+      byMonth.set(r.month_iso, row);
+    }
+    return Array.from(byMonth.values()).sort((a, b) => String(a.month_iso).localeCompare(String(b.month_iso)));
+  }, [productTrend.data]);
+
+  const segmentHistory = useMemo(() => {
+    const rows = segmentTrend.data ?? [];
+    const months = Array.from(new Set(rows.map((r) => r.month_iso))).slice(-36);
+    const keep = new Set(months);
+    const byMonth = new Map<string, Record<string, number | string | null>>();
+    for (const r of rows) {
+      if (!keep.has(r.month_iso)) continue;
+      const row = byMonth.get(r.month_iso) ?? {
+        month_iso: r.month_iso,
+        month_label: r.month_label,
+        Enterprise: null,
+        'Mid-Market': null,
+        SMB: null,
+      };
+      row[r.customer_segment] = r.nrr;
+      byMonth.set(r.month_iso, row);
+    }
+    return Array.from(byMonth.values()).sort((a, b) => String(a.month_iso).localeCompare(String(b.month_iso)));
+  }, [segmentTrend.data]);
+
   const stepFill = (kind: WalkStep['kind']) =>
     kind === 'total' ? chart.primary : kind === 'up' ? chart.favourable : chart.adverse;
 
@@ -144,7 +201,9 @@ export function SaaSPerformance() {
     );
   }, [k, walk.data, region.data, segRet.data, prodMove.data]);
 
-  const anyError = kpis.error || walk.error || region.error || trend.error || prodSeg.error || prodMove.error || segRet.error;
+  const anyError =
+    kpis.error || walk.error || region.error || trend.error || prodSeg.error || prodMove.error || segRet.error ||
+    longTrend.error || productTrend.error || segmentTrend.error;
   if (anyError) {
     return <div className="error-box"><strong>Could not load data.</strong><div>{anyError.message}</div></div>;
   }
@@ -178,6 +237,72 @@ export function SaaSPerformance() {
         <KpiCard label="Logo Retention" value={formatPercent(k.logo_retention)} sub={`${formatCount(k.ending_customers)} customers`} status={{ tone: k.logo_retention != null && k.logo_retention >= 0.9 ? 'favourable' : 'on-plan' }} />
         <KpiCard label="Logo Churn" value={formatPercent(k.logo_churn)} sub={`${formatCount(k.churned_customers)} churned`} status={{ tone: k.logo_churn != null && k.logo_churn <= 0.05 ? 'favourable' : 'neutral' }} />
       </div>
+
+      <div className="panel-grid">
+        <ChartCard
+          title="SaaS run-rate history"
+          subtitle="Full exported history, Jan 2018-Jun 2026: active ARR with NRR overlay"
+        >
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={longTrend.data ?? []} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+              <CartesianGrid stroke={GRID} vertical={false} />
+              <XAxis dataKey="month_label" stroke={AXIS} fontSize={11} tickLine={false} minTickGap={24} />
+              <YAxis yAxisId="money" stroke={AXIS} fontSize={11} tickLine={false} width={56} tickFormatter={(v: number) => formatGbpCompact(v)} />
+              <YAxis yAxisId="rate" orientation="right" stroke={AXIS} fontSize={11} tickLine={false} width={44} domain={[0.94, 1.02]} tickFormatter={(v: number) => formatPercent(v, 0)} />
+              <Tooltip
+                contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }}
+                formatter={(v: number, name) => [
+                  name === 'nrr' ? formatPercent(v) : formatGbp(v),
+                  name === 'nrr' ? 'NRR' : 'Active ARR',
+                ]}
+              />
+              <Legend formatter={(v) => (v === 'active_arr' ? 'Active ARR' : 'NRR')} />
+              <Line yAxisId="money" type="monotone" dataKey="active_arr" stroke={chart.primary} strokeWidth={2.5} dot={false} />
+              <Line yAxisId="rate" type="monotone" dataKey="nrr" stroke={chart.adverse} strokeWidth={1.8} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard title="Retention by segment over time" subtitle="Trailing 36 months: monthly cohort NRR">
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={segmentHistory} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+              <CartesianGrid stroke={GRID} vertical={false} />
+              <XAxis dataKey="month_label" stroke={AXIS} fontSize={11} tickLine={false} minTickGap={20} />
+              <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={44} domain={[0.94, 1.02]} tickFormatter={(v: number) => formatPercent(v, 0)} />
+              <Tooltip
+                contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }}
+                formatter={(v: number, name) => [formatPercent(v), name as string]}
+              />
+              <Legend />
+              {SEGMENTS.map((seg) => (
+                <Line key={seg} type="monotone" dataKey={seg} stroke={SEG_FILL[seg]} strokeWidth={2} dot={false} connectNulls />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+
+      <ChartCard
+        title="Product-family ARR mix"
+        subtitle="Trailing 36 months, stacked active ARR by product family"
+      >
+        <ResponsiveContainer width="100%" height={290}>
+          <BarChart data={productHistory} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+            <CartesianGrid stroke={GRID} vertical={false} />
+            <XAxis dataKey="month_label" stroke={AXIS} fontSize={11} tickLine={false} minTickGap={20} />
+            <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={56} tickFormatter={(v: number) => formatGbpCompact(v)} />
+            <Tooltip
+              cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+              contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }}
+              formatter={(v: number, name) => [formatGbp(v), name as string]}
+            />
+            <Legend />
+            {Object.keys(PRODUCT_FILL).map((family) => (
+              <Bar key={family} dataKey={family} stackId="product" fill={PRODUCT_FILL[family]} radius={family === 'Other' ? [2, 2, 0, 0] : [0, 0, 0, 0]} />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
 
       {/* FYTD ARR movement bridge */}
       <ChartCard

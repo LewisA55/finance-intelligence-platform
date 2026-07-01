@@ -13,6 +13,9 @@ DEFAULT_EXPORT_DIR = PROJECT_ROOT / "data" / "exports" / "powerbi"
 POWERBI_TABLES = [
     # Executive reporting surface
     "gold.mart_executive_cfo_command_center",
+    "gold.mart_model_actuals_feed",
+    "gold.mart_opening_balance_sheet",
+    "gold.mart_model_readiness_controls",
 
     # Supporting marts / drilldown surfaces
     "gold.mart_financial_performance",
@@ -35,6 +38,12 @@ POWERBI_TABLES = [
     "gold.dim_budget_version",
     "gold.dim_forecast_scenario",
 ]
+
+EXPORT_ORDER_BY = {
+    "gold.mart_model_actuals_feed": "reporting_month_date",
+    "gold.mart_opening_balance_sheet": "as_of_date",
+    "gold.mart_model_readiness_controls": "control_domain, control_key",
+}
 
 
 def quote_qualified_name(table_name: str) -> str:
@@ -68,8 +77,13 @@ def export_table(
     else:
         raise ValueError(f"Unsupported export format: {export_format}")
 
+    order_by = EXPORT_ORDER_BY.get(table_name)
+    source_sql = f"SELECT * FROM {qualified_name}"
+    if order_by:
+        source_sql = f"{source_sql} ORDER BY {order_by}"
+
     connection.execute(
-        f"COPY (SELECT * FROM {qualified_name}) "
+        f"COPY ({source_sql}) "
         f"TO '{output_sql_literal}' "
         f"WITH ({copy_options})"
     )

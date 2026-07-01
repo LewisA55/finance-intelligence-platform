@@ -1,9 +1,22 @@
+import { useMemo } from 'react';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from 'recharts';
 import { useQuery } from '../hooks/useQuery';
-import { getControlSummary } from '../duckdb/queries';
+import { getControlSummary, getControlHistory } from '../duckdb/queries';
 import { TopBar } from '../components/TopBar';
 import { KpiCard } from '../components/KpiCard';
+import { ChartCard } from '../components/ChartCard';
 import { StatusPill } from '../components/StatusPill';
 import { formatCount } from '../lib/format';
+import { chart } from '../lib/theme';
 
 // Locked warehouse milestone from docs/final_validation_summary.md. These are
 // release evidence, not live test results from the browser session.
@@ -16,6 +29,28 @@ const DBT = {
 
 export function ControlTower() {
   const { data: c, loading, error } = useQuery(getControlSummary, []);
+  const history = useQuery(getControlHistory, []);
+
+  const historyData = useMemo(() => {
+    const byMonth = new Map<string, Record<string, number | string>>();
+    for (const row of history.data ?? []) {
+      const current = byMonth.get(row.month_iso) ?? { month_iso: row.month_iso, month_label: row.month_label };
+      current[row.domain] = row.exception_count;
+      byMonth.set(row.month_iso, current);
+    }
+    return Array.from(byMonth.values()).sort((a, b) => String(a.month_iso).localeCompare(String(b.month_iso)));
+  }, [history.data]);
+
+  const domainColours: Record<string, string> = {
+    'Financial Performance': chart.primary,
+    'Order-to-Cash': chart.secondary,
+    'Revenue Recognition': chart.budget,
+    'Deferred Revenue': chart.amber,
+    'Accounts Payable': chart.adverse,
+    Workforce: chart.favourable,
+    'SaaS ARR': '#6b7280',
+    'SaaS Retention': '#374151',
+  };
 
   if (loading) {
     return (
@@ -25,7 +60,7 @@ export function ControlTower() {
       </div>
     );
   }
-  if (error) return <div className="error-box"><strong>Could not load data.</strong><div>{error.message}</div></div>;
+  if (error || history.error) return <div className="error-box"><strong>Could not load data.</strong><div>{(error || history.error)?.message}</div></div>;
   if (!c) return <div className="state">No control data.</div>;
 
   const domains = [
@@ -82,6 +117,28 @@ export function ControlTower() {
           status={{ tone: 'favourable', label: 'Pass' }}
         />
       </div>
+
+      <ChartCard
+        title="Control exception history"
+        subtitle="All available domain histories: SaaS 2018-2026, O2C/AP 2023-2026, revenue 2022-2027, workforce 2022-2027"
+      >
+        <ResponsiveContainer width="100%" height={320}>
+          <BarChart data={historyData} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+            <CartesianGrid stroke={chart.grid} vertical={false} />
+            <XAxis dataKey="month_label" stroke={chart.axis} fontSize={11} tickLine={false} minTickGap={24} />
+            <YAxis stroke={chart.axis} fontSize={11} tickLine={false} width={44} tickFormatter={(v: number) => formatCount(v)} />
+            <Tooltip
+              cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+              contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }}
+              formatter={(v: number, name) => [formatCount(v), name as string]}
+            />
+            <Legend />
+            {Object.entries(domainColours).map(([domain, fill]) => (
+              <Bar key={domain} dataKey={domain} stackId="domain" fill={fill} radius={[0, 0, 0, 0]} />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
 
       {/* Domain control register */}
       <div className="panel" style={{ paddingBottom: 16 }}>

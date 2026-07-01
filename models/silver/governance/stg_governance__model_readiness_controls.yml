@@ -1,0 +1,26 @@
+version: 2
+
+models:
+  - name: stg_governance__model_readiness_controls
+    description: >
+      Typed staging model for model-readiness control classifications used by
+      the CFO model-serving marts.
+    columns:
+      - name: control_key
+        tests:
+          - not_null
+          - unique
+      - name: control_name
+        tests: [not_null]
+      - name: control_domain
+        tests: [not_null]
+      - name: severity
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['High', 'Medium', 'Low']
+      - name: model_blocking_flag
+        tests: [not_null]
+      - name: accepted_limitation_flag
+        tests: [not_null]

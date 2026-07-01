@@ -1,0 +1,119 @@
+version: 2
+
+models:
+  - name: mart_model_actuals_feed
+    description: >
+      CFO model-serving mart at one row per reporting month and Company Total
+      scenario. This is the canonical actuals/scheduled feed for Excel
+      modelling, React KPI/model pages, Power BI command-center surfaces, and
+      future AI commentary prompts.
+    columns:
+      - name: model_actuals_feed_hk
+        tests:
+          - not_null
+          - unique
+      - name: reporting_month_date
+        tests:
+          - not_null
+          - unique
+      - name: reporting_scope
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Company Total']
+      - name: scenario_code
+        tests:
+          - not_null
+      - name: model_period_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Actual', 'Scheduled']
+      - name: recognised_revenue_gbp
+        tests: [not_null]
+      - name: billings_gbp
+        tests: [not_null]
+      - name: cash_collected_gbp
+        tests: [not_null]
+      - name: closing_deferred_revenue_gbp
+        tests: [not_null]
+      - name: headline_arr_gbp
+        tests: [not_null]
+      - name: model_readiness_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Ready', 'Usable with review', 'Blocked', 'Accepted limitation']
+      - name: is_actual_period
+        tests: [not_null]
+      - name: is_scheduled_period
+        tests: [not_null]
+      - name: use_in_excel_actuals_flag
+        tests: [not_null]
+      - name: has_revenue_actuals
+        tests: [not_null]
+      - name: has_o2c_actuals
+        tests: [not_null]
+      - name: has_financial_actuals
+        tests: [not_null]
+      - name: has_saas_actuals
+        tests: [not_null]
+
+  - name: mart_opening_balance_sheet
+    description: >
+      Opening statutory balance sheet mart for the CFO modelling layer. Provides
+      the anchor balance sheet used by the integrated three-statement model.
+    columns:
+      - name: opening_balance_sheet_hk
+        tests:
+          - not_null
+          - unique
+      - name: as_of_date
+        tests:
+          - not_null
+          - unique
+      - name: total_assets_gbp
+        tests: [not_null]
+      - name: total_liabilities_gbp
+        tests: [not_null]
+      - name: total_equity_gbp
+        tests: [not_null]
+      - name: balance_check_variance_gbp
+        tests: [not_null]
+      - name: is_balanced
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [true]
+
+  - name: mart_model_readiness_controls
+    description: >
+      Model-readiness classification mart that converts raw control observations
+      into modelling treatments: blocking, accepted limitation, or monitor.
+    columns:
+      - name: model_readiness_control_hk
+        tests:
+          - not_null
+          - unique
+      - name: control_key
+        tests:
+          - not_null
+          - unique
+      - name: control_domain
+        tests: [not_null]
+      - name: severity
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['High', 'Medium', 'Low']
+      - name: model_readiness_treatment
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Model Blocking', 'Usable with review', 'Accepted Limitation', 'Monitor']

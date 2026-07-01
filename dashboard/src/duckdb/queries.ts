@@ -24,6 +24,14 @@ import type {
   RevRecMonth,
   ArCustomer,
   ArCollection,
+  SaasIntelligenceMonth,
+  SaasProductTrend,
+  SaasSegmentTrend,
+  RevenueQualityMonth,
+  CashConversionMonth,
+  WorkforceMonth,
+  WorkforceDepartment,
+  ControlHistoryMonth,
 } from '../types';
 
 /** Build-level provenance for the committed dashboard snapshot. */
@@ -606,5 +614,178 @@ export async function getTopAccountVariances(
     group by 1, 2, 3
     order by abs(sum(fp.actual_vs_budget_variance_gbp)) desc
     limit ${Math.max(1, Math.floor(limit))}
+  `);
+}
+
+// ---------------------------------------------------------------------------
+// Intelligence slices: compact dashboard exports that expose the multi-year
+// history / forward schedule without shipping raw customer-level marts.
+// ---------------------------------------------------------------------------
+
+export async function getSaasIntelligenceTrend(): Promise<SaasIntelligenceMonth[]> {
+  return runQuery<SaasIntelligenceMonth>(`
+    with retention as (
+      select
+        month_iso,
+        sum(beginning_arr_gbp)                                      as beginning_arr,
+        sum(gross_retained_arr_gbp)                                 as gross_retained,
+        sum(net_retained_arr_gbp)                                   as net_retained
+      from dashboard_saas_segment_trend
+      group by 1
+    )
+    select
+      m.month_iso::varchar                                          as month_iso,
+      strftime(cast(m.month_iso as date), '%b %Y')                  as month_label,
+      m.active_arr_gbp::double                                      as active_arr,
+      m.ending_arr_gbp::double                                      as ending_arr,
+      m.net_arr_delta_gbp::double                                   as net_arr_delta,
+      m.new_business_arr_gbp::double                                as new_business,
+      m.expansion_arr_gbp::double                                   as expansion,
+      m.price_increase_arr_gbp::double                              as price_increase,
+      m.contraction_arr_gbp::double                                 as contraction,
+      m.churn_arr_gbp::double                                       as churn,
+      m.pause_arr_gbp::double                                       as pause,
+      case when r.beginning_arr > 0 then r.net_retained / r.beginning_arr end::double as nrr,
+      case when r.beginning_arr > 0 then r.gross_retained / r.beginning_arr end::double as grr,
+      m.active_subscription_count::integer                          as active_subscriptions,
+      m.control_exception_count::integer                            as control_exceptions
+    from dashboard_saas_monthly_intelligence as m
+    left join retention as r on m.month_iso = r.month_iso
+    order by cast(m.month_iso as date)
+  `);
+}
+
+export async function getSaasProductTrend(): Promise<SaasProductTrend[]> {
+  return runQuery<SaasProductTrend>(`
+    select
+      month_iso::varchar                                            as month_iso,
+      strftime(cast(month_iso as date), '%b %Y')                    as month_label,
+      product_family,
+      sum(active_arr_gbp)::double                                   as active_arr,
+      sum(new_business_arr_gbp + expansion_arr_gbp + price_increase_arr_gbp)::double as gain,
+      sum(contraction_arr_gbp + churn_arr_gbp + pause_arr_gbp)::double as loss,
+      sum(net_arr_delta_gbp)::double                                as net
+    from dashboard_saas_product_trend
+    group by 1, 2, 3
+    order by cast(month_iso as date), product_family
+  `);
+}
+
+export async function getSaasSegmentTrend(): Promise<SaasSegmentTrend[]> {
+  return runQuery<SaasSegmentTrend>(`
+    select
+      month_iso::varchar                                            as month_iso,
+      strftime(cast(month_iso as date), '%b %Y')                    as month_label,
+      customer_segment,
+      sum(beginning_arr_gbp)::double                                as beginning_arr,
+      case when sum(beginning_arr_gbp) > 0
+           then sum(net_retained_arr_gbp) / sum(beginning_arr_gbp) end::double as nrr,
+      case when sum(beginning_arr_gbp) > 0
+           then sum(gross_retained_arr_gbp) / sum(beginning_arr_gbp) end::double as grr,
+      case when sum(beginning_customers) > 0
+           then sum(retained_customers) / sum(beginning_customers) end::double as logo_retention,
+      sum(churned_customers)::integer                               as churned_customers
+    from dashboard_saas_segment_trend
+    where customer_segment in ('Enterprise', 'Mid-Market', 'SMB')
+    group by 1, 2, 3
+    order by cast(month_iso as date), customer_segment
+  `);
+}
+
+export async function getRevenueQualityTrend(): Promise<RevenueQualityMonth[]> {
+  return runQuery<RevenueQualityMonth>(`
+    with deferred as (
+      select
+        month_iso,
+        max(period_status)                                          as period_status,
+        sum(closing_deferred_gbp)                                   as closing_deferred
+      from dashboard_deferred_revenue_trend
+      group by 1
+    )
+    select
+      r.month_iso::varchar                                          as month_iso,
+      strftime(cast(r.month_iso as date), '%b %Y')                  as month_label,
+      case when d.period_status = 'Scheduled' then 'Scheduled' else 'Actual' end as period_type,
+      r.billed_amount_gbp::double                                   as billed,
+      r.recognised_revenue_actual_gbp::double                       as recognised_actual,
+      r.recognised_revenue_scheduled_gbp::double                    as recognised_scheduled,
+      r.recognised_revenue_total_gbp::double                        as recognised_total,
+      coalesce(d.closing_deferred, 0)::double                       as closing_deferred,
+      r.scheduled_backlog_count::integer                            as scheduled_backlog_count,
+      r.governance_exception_count::integer                         as governance_exceptions,
+      r.unscheduled_billing_leakage_gbp::double                     as unscheduled_leakage
+    from dashboard_revenue_quality as r
+    left join deferred as d on r.month_iso = d.month_iso
+    order by cast(r.month_iso as date)
+  `);
+}
+
+export async function getCashConversionTrend(): Promise<CashConversionMonth[]> {
+  return runQuery<CashConversionMonth>(`
+    select
+      month_iso::varchar                                            as month_iso,
+      strftime(cast(month_iso as date), '%b %Y')                    as month_label,
+      sum(billed_amount_gbp)::double                                as billed,
+      sum(allocated_amount_gbp)::double                             as collected,
+      sum(open_invoice_exposure_gbp)::double                        as open_ar,
+      case when sum(billed_amount_gbp) > 0
+           then sum(allocated_amount_gbp) / sum(billed_amount_gbp) end::double as collection_rate,
+      sum(overdue_invoice_count)::integer                           as overdue_invoices,
+      sum(disputed_invoice_count)::integer                          as disputed_invoices,
+      sum(defective_invoice_count)::integer                         as defective_invoices
+    from dashboard_cash_conversion
+    group by 1, 2
+    order by cast(month_iso as date)
+  `);
+}
+
+export async function getWorkforceTrend(): Promise<WorkforceMonth[]> {
+  return runQuery<WorkforceMonth>(`
+    select
+      month_iso::varchar                                            as month_iso,
+      strftime(cast(month_iso as date), '%b %Y')                    as month_label,
+      case when cast(month_iso as date) > date '2026-06-01' then 'Plan' else 'Actual' end as period_type,
+      sum(payroll_cost_gbp)::double                                 as payroll_cost,
+      sum(active_headcount_count)::integer                          as active_headcount,
+      sum(active_fte_count)::double                                 as active_fte,
+      case when sum(active_fte_count) > 0
+           then sum(payroll_cost_gbp) / sum(active_fte_count) end::double as payroll_per_fte,
+      sum(ghost_headcount_count)::integer                           as ghost_headcount,
+      sum(open_position_count)::integer                             as open_positions,
+      sum(open_position_monthly_salary_exposure_gbp)::double        as open_position_monthly_exposure,
+      sum(control_exception_count)::integer                         as control_exceptions
+    from dashboard_workforce_capacity
+    group by 1, 2
+    order by cast(month_iso as date)
+  `);
+}
+
+export async function getWorkforceDepartments(monthIso: string): Promise<WorkforceDepartment[]> {
+  assertMonthIso(monthIso);
+  return runQuery<WorkforceDepartment>(`
+    select
+      department,
+      sum(payroll_cost_gbp)::double                                 as payroll_cost,
+      sum(active_headcount_count)::integer                          as active_headcount,
+      sum(open_position_count)::integer                             as open_positions,
+      sum(control_exception_count)::integer                         as control_exceptions
+    from dashboard_workforce_capacity
+    where month_iso = date '${monthIso}'
+    group by 1
+    order by sum(payroll_cost_gbp) desc, sum(open_position_count) desc
+  `);
+}
+
+export async function getControlHistory(): Promise<ControlHistoryMonth[]> {
+  return runQuery<ControlHistoryMonth>(`
+    select
+      month_iso::varchar                                            as month_iso,
+      strftime(cast(month_iso as date), '%b %Y')                    as month_label,
+      domain,
+      sum(exception_count)::integer                                 as exception_count,
+      sum(flagged_observation_count)::integer                       as flagged_observation_count
+    from dashboard_control_history
+    group by 1, 2, 3
+    order by cast(month_iso as date), domain
   `);
 }

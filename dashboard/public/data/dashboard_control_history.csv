@@ -1,0 +1,481 @@
+month_iso,domain,exception_count,flagged_observation_count
+2018-01-01,SaaS ARR,0,0
+2018-01-01,SaaS Retention,0,0
+2018-02-01,SaaS ARR,0,0
+2018-02-01,SaaS Retention,0,0
+2018-03-01,SaaS ARR,0,0
+2018-03-01,SaaS Retention,0,0
+2018-04-01,SaaS ARR,1,1
+2018-04-01,SaaS Retention,1,1
+2018-05-01,SaaS ARR,0,0
+2018-05-01,SaaS Retention,0,0
+2018-06-01,SaaS ARR,0,0
+2018-06-01,SaaS Retention,0,0
+2018-07-01,SaaS ARR,0,0
+2018-07-01,SaaS Retention,0,0
+2018-08-01,SaaS ARR,0,0
+2018-08-01,SaaS Retention,0,0
+2018-09-01,SaaS ARR,1,1
+2018-09-01,SaaS Retention,1,1
+2018-10-01,SaaS ARR,1,1
+2018-10-01,SaaS Retention,1,1
+2018-11-01,SaaS ARR,2,1
+2018-11-01,SaaS Retention,2,2
+2018-12-01,SaaS ARR,1,1
+2018-12-01,SaaS Retention,1,1
+2019-01-01,SaaS ARR,1,1
+2019-01-01,SaaS Retention,1,1
+2019-02-01,SaaS ARR,2,1
+2019-02-01,SaaS Retention,2,2
+2019-03-01,SaaS ARR,1,1
+2019-03-01,SaaS Retention,1,1
+2019-04-01,SaaS ARR,3,1
+2019-04-01,SaaS Retention,4,2
+2019-05-01,SaaS ARR,3,1
+2019-05-01,SaaS Retention,4,2
+2019-06-01,SaaS ARR,4,1
+2019-06-01,SaaS Retention,6,2
+2019-07-01,SaaS ARR,7,1
+2019-07-01,SaaS Retention,9,3
+2019-08-01,SaaS ARR,4,1
+2019-08-01,SaaS Retention,6,2
+2019-09-01,SaaS ARR,6,1
+2019-09-01,SaaS Retention,8,2
+2019-10-01,SaaS ARR,7,1
+2019-10-01,SaaS Retention,9,2
+2019-11-01,SaaS ARR,6,1
+2019-11-01,SaaS Retention,8,2
+2019-12-01,SaaS ARR,7,1
+2019-12-01,SaaS Retention,9,2
+2020-01-01,SaaS ARR,6,1
+2020-01-01,SaaS Retention,8,2
+2020-02-01,SaaS ARR,9,1
+2020-02-01,SaaS Retention,11,3
+2020-03-01,SaaS ARR,6,1
+2020-03-01,SaaS Retention,8,2
+2020-04-01,SaaS ARR,8,1
+2020-04-01,SaaS Retention,10,2
+2020-05-01,SaaS ARR,8,1
+2020-05-01,SaaS Retention,10,3
+2020-06-01,SaaS ARR,8,1
+2020-06-01,SaaS Retention,10,2
+2020-07-01,SaaS ARR,8,1
+2020-07-01,SaaS Retention,10,2
+2020-08-01,SaaS ARR,7,1
+2020-08-01,SaaS Retention,9,2
+2020-09-01,SaaS ARR,9,1
+2020-09-01,SaaS Retention,11,3
+2020-10-01,SaaS ARR,8,1
+2020-10-01,SaaS Retention,10,2
+2020-11-01,SaaS ARR,7,1
+2020-11-01,SaaS Retention,9,2
+2020-12-01,SaaS ARR,7,1
+2020-12-01,SaaS Retention,9,2
+2021-01-01,SaaS ARR,8,1
+2021-01-01,SaaS Retention,10,2
+2021-02-01,SaaS ARR,10,1
+2021-02-01,SaaS Retention,12,3
+2021-03-01,SaaS ARR,9,1
+2021-03-01,SaaS Retention,11,2
+2021-04-01,SaaS ARR,9,1
+2021-04-01,SaaS Retention,11,3
+2021-05-01,SaaS ARR,8,1
+2021-05-01,SaaS Retention,10,2
+2021-06-01,SaaS ARR,8,1
+2021-06-01,SaaS Retention,10,2
+2021-07-01,SaaS ARR,10,1
+2021-07-01,SaaS Retention,12,3
+2021-08-01,SaaS ARR,8,1
+2021-08-01,SaaS Retention,10,2
+2021-09-01,SaaS ARR,9,1
+2021-09-01,SaaS Retention,11,2
+2021-10-01,SaaS ARR,13,1
+2021-10-01,SaaS Retention,15,3
+2021-11-01,SaaS ARR,10,1
+2021-11-01,SaaS Retention,12,2
+2021-12-01,SaaS ARR,12,1
+2021-12-01,SaaS Retention,14,3
+2022-01-01,SaaS ARR,12,1
+2022-01-01,SaaS Retention,14,2
+2022-01-01,Workforce,7,7
+2022-02-01,SaaS ARR,11,1
+2022-02-01,SaaS Retention,13,2
+2022-02-01,Workforce,7,7
+2022-03-01,SaaS ARR,10,1
+2022-03-01,SaaS Retention,12,2
+2022-03-01,Workforce,7,7
+2022-04-01,SaaS ARR,14,1
+2022-04-01,SaaS Retention,16,3
+2022-04-01,Workforce,7,7
+2022-05-01,SaaS ARR,13,1
+2022-05-01,SaaS Retention,15,3
+2022-05-01,Workforce,7,7
+2022-06-01,SaaS ARR,14,1
+2022-06-01,SaaS Retention,16,3
+2022-06-01,Workforce,7,7
+2022-07-01,SaaS ARR,15,1
+2022-07-01,SaaS Retention,17,3
+2022-07-01,Workforce,7,7
+2022-08-01,SaaS ARR,19,1
+2022-08-01,SaaS Retention,22,4
+2022-08-01,Workforce,7,7
+2022-09-01,SaaS ARR,16,1
+2022-09-01,SaaS Retention,20,2
+2022-09-01,Workforce,7,7
+2022-10-01,SaaS ARR,17,1
+2022-10-01,SaaS Retention,22,3
+2022-10-01,Workforce,7,7
+2022-11-01,SaaS ARR,21,1
+2022-11-01,SaaS Retention,26,4
+2022-11-01,Workforce,7,7
+2022-12-01,Deferred Revenue,1,1
+2022-12-01,Revenue Recognition,2,1
+2022-12-01,SaaS ARR,21,1
+2022-12-01,SaaS Retention,26,4
+2022-12-01,Workforce,7,7
+2023-01-01,Accounts Payable,0,0
+2023-01-01,Deferred Revenue,0,0
+2023-01-01,Order-to-Cash,69,10
+2023-01-01,Revenue Recognition,12,1
+2023-01-01,SaaS ARR,22,1
+2023-01-01,SaaS Retention,28,4
+2023-01-01,Workforce,7,7
+2023-02-01,Accounts Payable,0,0
+2023-02-01,Deferred Revenue,0,0
+2023-02-01,Order-to-Cash,62,9
+2023-02-01,Revenue Recognition,14,1
+2023-02-01,SaaS ARR,26,1
+2023-02-01,SaaS Retention,32,4
+2023-02-01,Workforce,8,8
+2023-03-01,Accounts Payable,0,0
+2023-03-01,Deferred Revenue,0,0
+2023-03-01,Order-to-Cash,47,9
+2023-03-01,Revenue Recognition,13,1
+2023-03-01,SaaS ARR,30,1
+2023-03-01,SaaS Retention,36,4
+2023-03-01,Workforce,8,8
+2023-04-01,Accounts Payable,0,0
+2023-04-01,Deferred Revenue,0,0
+2023-04-01,Order-to-Cash,51,9
+2023-04-01,Revenue Recognition,15,1
+2023-04-01,SaaS ARR,30,1
+2023-04-01,SaaS Retention,36,4
+2023-04-01,Workforce,8,8
+2023-05-01,Accounts Payable,0,0
+2023-05-01,Deferred Revenue,0,0
+2023-05-01,Order-to-Cash,57,10
+2023-05-01,Revenue Recognition,13,1
+2023-05-01,SaaS ARR,31,1
+2023-05-01,SaaS Retention,37,4
+2023-05-01,Workforce,8,8
+2023-06-01,Accounts Payable,0,0
+2023-06-01,Deferred Revenue,0,0
+2023-06-01,Order-to-Cash,67,9
+2023-06-01,Revenue Recognition,18,1
+2023-06-01,SaaS ARR,33,1
+2023-06-01,SaaS Retention,39,4
+2023-06-01,Workforce,8,8
+2023-07-01,Accounts Payable,0,0
+2023-07-01,Deferred Revenue,0,0
+2023-07-01,Order-to-Cash,49,9
+2023-07-01,Revenue Recognition,23,1
+2023-07-01,SaaS ARR,30,1
+2023-07-01,SaaS Retention,36,4
+2023-07-01,Workforce,8,8
+2023-08-01,Accounts Payable,0,0
+2023-08-01,Deferred Revenue,0,0
+2023-08-01,Order-to-Cash,49,10
+2023-08-01,Revenue Recognition,10,1
+2023-08-01,SaaS ARR,33,1
+2023-08-01,SaaS Retention,39,4
+2023-08-01,Workforce,8,8
+2023-09-01,Accounts Payable,0,0
+2023-09-01,Deferred Revenue,0,0
+2023-09-01,Order-to-Cash,54,8
+2023-09-01,Revenue Recognition,13,1
+2023-09-01,SaaS ARR,32,1
+2023-09-01,SaaS Retention,38,4
+2023-09-01,Workforce,8,8
+2023-10-01,Accounts Payable,0,0
+2023-10-01,Deferred Revenue,0,0
+2023-10-01,Order-to-Cash,50,9
+2023-10-01,Revenue Recognition,15,1
+2023-10-01,SaaS ARR,32,1
+2023-10-01,SaaS Retention,38,4
+2023-10-01,Workforce,8,8
+2023-11-01,Accounts Payable,0,0
+2023-11-01,Deferred Revenue,1,1
+2023-11-01,Order-to-Cash,63,9
+2023-11-01,Revenue Recognition,18,1
+2023-11-01,SaaS ARR,32,1
+2023-11-01,SaaS Retention,39,4
+2023-11-01,Workforce,8,8
+2023-12-01,Accounts Payable,0,0
+2023-12-01,Deferred Revenue,1,1
+2023-12-01,Order-to-Cash,78,9
+2023-12-01,Revenue Recognition,19,1
+2023-12-01,SaaS ARR,33,1
+2023-12-01,SaaS Retention,40,4
+2023-12-01,Workforce,8,8
+2024-01-01,Accounts Payable,0,0
+2024-01-01,Deferred Revenue,0,0
+2024-01-01,Order-to-Cash,73,9
+2024-01-01,Revenue Recognition,20,1
+2024-01-01,SaaS ARR,35,1
+2024-01-01,SaaS Retention,43,4
+2024-01-01,Workforce,8,8
+2024-02-01,Accounts Payable,0,0
+2024-02-01,Deferred Revenue,0,0
+2024-02-01,Order-to-Cash,65,10
+2024-02-01,Revenue Recognition,16,1
+2024-02-01,SaaS ARR,37,1
+2024-02-01,SaaS Retention,45,4
+2024-02-01,Workforce,8,8
+2024-03-01,Accounts Payable,0,0
+2024-03-01,Deferred Revenue,0,0
+2024-03-01,Order-to-Cash,81,10
+2024-03-01,Revenue Recognition,18,1
+2024-03-01,SaaS ARR,41,1
+2024-03-01,SaaS Retention,50,4
+2024-03-01,Workforce,8,8
+2024-04-01,Accounts Payable,0,0
+2024-04-01,Deferred Revenue,0,0
+2024-04-01,Order-to-Cash,87,10
+2024-04-01,Revenue Recognition,18,1
+2024-04-01,SaaS ARR,37,1
+2024-04-01,SaaS Retention,46,4
+2024-04-01,Workforce,8,8
+2024-05-01,Accounts Payable,0,0
+2024-05-01,Deferred Revenue,0,0
+2024-05-01,Order-to-Cash,60,12
+2024-05-01,Revenue Recognition,18,1
+2024-05-01,SaaS ARR,40,1
+2024-05-01,SaaS Retention,50,4
+2024-05-01,Workforce,8,8
+2024-06-01,Accounts Payable,0,0
+2024-06-01,Deferred Revenue,0,0
+2024-06-01,Order-to-Cash,80,10
+2024-06-01,Revenue Recognition,10,1
+2024-06-01,SaaS ARR,39,1
+2024-06-01,SaaS Retention,50,4
+2024-06-01,Workforce,8,8
+2024-07-01,Accounts Payable,0,0
+2024-07-01,Deferred Revenue,0,0
+2024-07-01,Order-to-Cash,65,8
+2024-07-01,Revenue Recognition,17,1
+2024-07-01,SaaS ARR,47,1
+2024-07-01,SaaS Retention,59,4
+2024-07-01,Workforce,8,8
+2024-08-01,Accounts Payable,0,0
+2024-08-01,Deferred Revenue,0,0
+2024-08-01,Order-to-Cash,79,9
+2024-08-01,Revenue Recognition,12,1
+2024-08-01,SaaS ARR,45,1
+2024-08-01,SaaS Retention,58,4
+2024-08-01,Workforce,8,8
+2024-09-01,Accounts Payable,0,0
+2024-09-01,Deferred Revenue,0,0
+2024-09-01,Order-to-Cash,86,8
+2024-09-01,Revenue Recognition,17,1
+2024-09-01,SaaS ARR,46,1
+2024-09-01,SaaS Retention,59,4
+2024-09-01,Workforce,8,8
+2024-10-01,Accounts Payable,0,0
+2024-10-01,Deferred Revenue,0,0
+2024-10-01,Order-to-Cash,77,10
+2024-10-01,Revenue Recognition,17,1
+2024-10-01,SaaS ARR,51,1
+2024-10-01,SaaS Retention,66,4
+2024-10-01,Workforce,8,8
+2024-11-01,Accounts Payable,0,0
+2024-11-01,Deferred Revenue,0,0
+2024-11-01,Order-to-Cash,66,11
+2024-11-01,Revenue Recognition,16,1
+2024-11-01,SaaS ARR,52,1
+2024-11-01,SaaS Retention,68,4
+2024-11-01,Workforce,8,8
+2024-12-01,Accounts Payable,0,0
+2024-12-01,Deferred Revenue,0,0
+2024-12-01,Order-to-Cash,78,8
+2024-12-01,Revenue Recognition,14,1
+2024-12-01,SaaS ARR,49,1
+2024-12-01,SaaS Retention,65,4
+2024-12-01,Workforce,8,8
+2025-01-01,Accounts Payable,0,0
+2025-01-01,Deferred Revenue,0,0
+2025-01-01,Order-to-Cash,85,10
+2025-01-01,Revenue Recognition,23,1
+2025-01-01,SaaS ARR,51,1
+2025-01-01,SaaS Retention,67,4
+2025-01-01,Workforce,8,8
+2025-02-01,Accounts Payable,0,0
+2025-02-01,Deferred Revenue,0,0
+2025-02-01,Order-to-Cash,89,9
+2025-02-01,Revenue Recognition,26,1
+2025-02-01,SaaS ARR,51,1
+2025-02-01,SaaS Retention,67,4
+2025-02-01,Workforce,8,8
+2025-03-01,Accounts Payable,0,0
+2025-03-01,Deferred Revenue,0,0
+2025-03-01,Order-to-Cash,81,9
+2025-03-01,Revenue Recognition,28,1
+2025-03-01,SaaS ARR,54,1
+2025-03-01,SaaS Retention,71,4
+2025-03-01,Workforce,8,8
+2025-04-01,Accounts Payable,0,0
+2025-04-01,Deferred Revenue,0,0
+2025-04-01,Order-to-Cash,90,9
+2025-04-01,Revenue Recognition,25,1
+2025-04-01,SaaS ARR,57,1
+2025-04-01,SaaS Retention,75,4
+2025-04-01,Workforce,8,8
+2025-05-01,Accounts Payable,0,0
+2025-05-01,Deferred Revenue,0,0
+2025-05-01,Order-to-Cash,86,12
+2025-05-01,Revenue Recognition,18,1
+2025-05-01,SaaS ARR,58,1
+2025-05-01,SaaS Retention,78,4
+2025-05-01,Workforce,8,8
+2025-06-01,Accounts Payable,0,0
+2025-06-01,Deferred Revenue,0,0
+2025-06-01,Order-to-Cash,67,9
+2025-06-01,Revenue Recognition,13,1
+2025-06-01,SaaS ARR,58,1
+2025-06-01,SaaS Retention,81,4
+2025-06-01,Workforce,8,8
+2025-07-01,Accounts Payable,1,1
+2025-07-01,Deferred Revenue,0,0
+2025-07-01,Order-to-Cash,100,11
+2025-07-01,Revenue Recognition,12,1
+2025-07-01,SaaS ARR,58,1
+2025-07-01,SaaS Retention,82,4
+2025-07-01,Workforce,8,8
+2025-08-01,Accounts Payable,0,0
+2025-08-01,Deferred Revenue,0,0
+2025-08-01,Order-to-Cash,79,10
+2025-08-01,Revenue Recognition,16,1
+2025-08-01,SaaS ARR,57,1
+2025-08-01,SaaS Retention,82,4
+2025-08-01,Workforce,8,8
+2025-09-01,Accounts Payable,0,0
+2025-09-01,Deferred Revenue,0,0
+2025-09-01,Order-to-Cash,88,10
+2025-09-01,Revenue Recognition,21,1
+2025-09-01,SaaS ARR,59,1
+2025-09-01,SaaS Retention,84,4
+2025-09-01,Workforce,8,8
+2025-10-01,Accounts Payable,0,0
+2025-10-01,Deferred Revenue,0,0
+2025-10-01,Order-to-Cash,80,8
+2025-10-01,Revenue Recognition,15,1
+2025-10-01,SaaS ARR,60,1
+2025-10-01,SaaS Retention,85,4
+2025-10-01,Workforce,8,8
+2025-11-01,Accounts Payable,0,0
+2025-11-01,Deferred Revenue,0,0
+2025-11-01,Order-to-Cash,78,9
+2025-11-01,Revenue Recognition,18,1
+2025-11-01,SaaS ARR,66,1
+2025-11-01,SaaS Retention,91,4
+2025-11-01,Workforce,8,8
+2025-12-01,Accounts Payable,0,0
+2025-12-01,Deferred Revenue,0,0
+2025-12-01,Order-to-Cash,91,11
+2025-12-01,Revenue Recognition,20,1
+2025-12-01,SaaS ARR,64,1
+2025-12-01,SaaS Retention,89,4
+2025-12-01,Workforce,8,8
+2026-01-01,Accounts Payable,0,0
+2026-01-01,Deferred Revenue,0,0
+2026-01-01,Financial Performance,0,0
+2026-01-01,Order-to-Cash,86,9
+2026-01-01,Revenue Recognition,18,1
+2026-01-01,SaaS ARR,65,1
+2026-01-01,SaaS Retention,91,4
+2026-01-01,Workforce,8,8
+2026-02-01,Accounts Payable,1,1
+2026-02-01,Deferred Revenue,0,0
+2026-02-01,Financial Performance,0,0
+2026-02-01,Order-to-Cash,85,10
+2026-02-01,Revenue Recognition,18,1
+2026-02-01,SaaS ARR,64,1
+2026-02-01,SaaS Retention,90,4
+2026-02-01,Workforce,8,8
+2026-03-01,Accounts Payable,1,1
+2026-03-01,Deferred Revenue,0,0
+2026-03-01,Financial Performance,0,0
+2026-03-01,Order-to-Cash,87,10
+2026-03-01,Revenue Recognition,13,1
+2026-03-01,SaaS ARR,67,1
+2026-03-01,SaaS Retention,93,4
+2026-03-01,Workforce,8,8
+2026-04-01,Accounts Payable,0,0
+2026-04-01,Deferred Revenue,0,0
+2026-04-01,Financial Performance,0,0
+2026-04-01,Order-to-Cash,77,8
+2026-04-01,Revenue Recognition,18,1
+2026-04-01,SaaS ARR,70,1
+2026-04-01,SaaS Retention,97,4
+2026-04-01,Workforce,8,8
+2026-05-01,Accounts Payable,0,0
+2026-05-01,Deferred Revenue,0,0
+2026-05-01,Financial Performance,0,0
+2026-05-01,Order-to-Cash,71,10
+2026-05-01,Revenue Recognition,20,1
+2026-05-01,SaaS ARR,66,1
+2026-05-01,SaaS Retention,93,4
+2026-05-01,Workforce,8,8
+2026-06-01,Accounts Payable,0,0
+2026-06-01,Deferred Revenue,0,0
+2026-06-01,Financial Performance,0,0
+2026-06-01,Order-to-Cash,55,8
+2026-06-01,Revenue Recognition,6,1
+2026-06-01,SaaS ARR,67,1
+2026-06-01,SaaS Retention,95,4
+2026-06-01,Workforce,8,8
+2026-07-01,Deferred Revenue,0,0
+2026-07-01,Financial Performance,0,0
+2026-07-01,Revenue Recognition,1,1
+2026-07-01,Workforce,8,8
+2026-08-01,Deferred Revenue,0,0
+2026-08-01,Financial Performance,0,0
+2026-08-01,Revenue Recognition,0,0
+2026-08-01,Workforce,8,8
+2026-09-01,Deferred Revenue,0,0
+2026-09-01,Financial Performance,0,0
+2026-09-01,Revenue Recognition,0,0
+2026-09-01,Workforce,8,8
+2026-10-01,Deferred Revenue,0,0
+2026-10-01,Financial Performance,0,0
+2026-10-01,Revenue Recognition,2,1
+2026-10-01,Workforce,8,8
+2026-11-01,Deferred Revenue,0,0
+2026-11-01,Financial Performance,0,0
+2026-11-01,Revenue Recognition,0,0
+2026-11-01,Workforce,8,8
+2026-12-01,Deferred Revenue,0,0
+2026-12-01,Financial Performance,0,0
+2026-12-01,Revenue Recognition,0,0
+2026-12-01,Workforce,8,8
+2027-01-01,Deferred Revenue,0,0
+2027-01-01,Revenue Recognition,0,0
+2027-01-01,Workforce,0,0
+2027-02-01,Deferred Revenue,0,0
+2027-02-01,Revenue Recognition,1,1
+2027-02-01,Workforce,0,0
+2027-03-01,Deferred Revenue,0,0
+2027-03-01,Revenue Recognition,0,0
+2027-03-01,Workforce,0,0
+2027-04-01,Deferred Revenue,0,0
+2027-04-01,Revenue Recognition,0,0
+2027-04-01,Workforce,0,0
+2027-05-01,Deferred Revenue,0,0
+2027-05-01,Revenue Recognition,1,1
+2027-05-01,Workforce,0,0
+2027-06-01,Workforce,0,0
+2027-07-01,Workforce,0,0
+2027-08-01,Workforce,0,0
+2027-09-01,Workforce,0,0
+2027-10-01,Workforce,0,0
+2027-11-01,Workforce,1,1
+2027-12-01,Workforce,0,0

@@ -20,6 +20,7 @@ import {
   getTopVendorsAp,
   getTopArCustomers,
   getArCollections,
+  getCashConversionTrend,
 } from '../duckdb/queries';
 import { TopBar } from '../components/TopBar';
 import { KpiCard } from '../components/KpiCard';
@@ -42,6 +43,7 @@ export function WorkingCapital() {
   const vendors = useQuery(getTopVendorsAp, []);
   const arCustomers = useQuery(getTopArCustomers, []);
   const arCollections = useQuery(getArCollections, []);
+  const cashTrend = useQuery(getCashConversionTrend, []);
 
   const p = position.data;
 
@@ -100,7 +102,7 @@ export function WorkingCapital() {
   }, [p, vendors.data, ageing.data, arCustomers.data, collByRegion]);
 
   const anyError =
-    position.error || trend.error || ageing.error || vendors.error || arCustomers.error || arCollections.error;
+    position.error || trend.error || ageing.error || vendors.error || arCustomers.error || arCollections.error || cashTrend.error;
   if (anyError) {
     return <div className="error-box"><strong>Could not load data.</strong><div>{anyError.message}</div></div>;
   }
@@ -160,6 +162,61 @@ export function WorkingCapital() {
           sub="heuristic indicator"
           status={{ tone: 'neutral', label: 'Monitor' }}
         />
+      </div>
+
+      <div className="panel-grid">
+        <ChartCard
+          title="Cash conversion history"
+          subtitle="Jan 2023-Jun 2026: billed, collected and open receivables"
+        >
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={cashTrend.data ?? []} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+              <CartesianGrid stroke={GRID} vertical={false} />
+              <XAxis dataKey="month_label" stroke={AXIS} fontSize={11} tickLine={false} minTickGap={24} />
+              <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={56} tickFormatter={(v: number) => formatGbpCompact(v)} />
+              <Tooltip
+                contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }}
+                formatter={(v: number, name) => {
+                  const labels: Record<string, string> = {
+                    billed: 'Billed',
+                    collected: 'Collected',
+                    open_ar: 'Open AR',
+                  };
+                  return [formatGbp(v), labels[name as string] ?? name];
+                }}
+              />
+              <Legend formatter={(v) => ({ billed: 'Billed', collected: 'Collected', open_ar: 'Open AR' }[v as string] ?? v)} />
+              <Line type="monotone" dataKey="billed" stroke={chart.budget} strokeWidth={1.8} dot={false} />
+              <Line type="monotone" dataKey="collected" stroke={chart.secondary} strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="open_ar" stroke={chart.primary} strokeWidth={2.4} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard title="Collections control trend" subtitle="Overdue, disputed and defective invoice observations">
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={cashTrend.data ?? []} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+              <CartesianGrid stroke={GRID} vertical={false} />
+              <XAxis dataKey="month_label" stroke={AXIS} fontSize={11} tickLine={false} minTickGap={24} />
+              <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={44} tickFormatter={(v: number) => formatCount(v)} />
+              <Tooltip
+                contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }}
+                formatter={(v: number, name) => {
+                  const labels: Record<string, string> = {
+                    overdue_invoices: 'Overdue',
+                    disputed_invoices: 'Disputed',
+                    defective_invoices: 'Defective',
+                  };
+                  return [formatCount(v), labels[name as string] ?? name];
+                }}
+              />
+              <Legend formatter={(v) => ({ overdue_invoices: 'Overdue', disputed_invoices: 'Disputed', defective_invoices: 'Defective' }[v as string] ?? v)} />
+              <Line type="monotone" dataKey="overdue_invoices" stroke={chart.amber} strokeWidth={2} dot={false} />
+              <Line type="monotone" dataKey="disputed_invoices" stroke={chart.adverse} strokeWidth={1.8} dot={false} />
+              <Line type="monotone" dataKey="defective_invoices" stroke={chart.axis} strokeWidth={1.8} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
       </div>
 
       <div className="panel-grid">

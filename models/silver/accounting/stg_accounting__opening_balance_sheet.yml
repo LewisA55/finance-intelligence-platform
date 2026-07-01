@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: stg_accounting__opening_balance_sheet
+    description: >
+      Typed staging model for the synthetic opening statutory balance sheet used
+      to anchor the CFO modelling layer and integrated Excel model.
+    columns:
+      - name: as_of_date
+        tests:
+          - not_null
+          - unique
+      - name: cash_gbp
+        tests: [not_null]
+      - name: accounts_receivable_gbp
+        tests: [not_null]
+      - name: deferred_revenue_gbp
+        tests: [not_null]
+      - name: retained_earnings_gbp
+        tests: [not_null]

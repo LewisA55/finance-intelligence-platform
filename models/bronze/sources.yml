@@ -123,6 +123,25 @@ sources:
             tests:
               - not_null
 
+      - name: accounting__opening_balance_sheet
+        description: >
+          Accounting source table loaded from opening balance sheet.csv
+          This table anchors the CFO modelling layer with a synthetic opening statutory balance sheet.
+        loaded_at_field: cast(_atlas_ingested_at as timestamp)
+        columns:
+          - name: _atlas_row_hash
+            description: Deterministic MD5 fingerprint of the ordered original source row values using duckdb_json_array_v1.
+            tests:
+              - not_null
+          - name: _atlas_ingested_at
+            description: UTC timestamp of the Atlas Bronze load run.
+            tests:
+              - not_null
+          - name: _atlas_source_file
+            description: Origin CSV filename loaded into the Bronze table.
+            tests:
+              - not_null
+
       - name: billing__ar_ageing_snapshot
         description: >
           Billing source table loaded from ar ageing snapshot.csv
@@ -336,6 +355,25 @@ sources:
         description: >
           Governance source table loaded from source generation qa results.csv
           This table is part of the locked Bronze ingestion boundary.
+        loaded_at_field: cast(_atlas_ingested_at as timestamp)
+        columns:
+          - name: _atlas_row_hash
+            description: Deterministic MD5 fingerprint of the ordered original source row values using duckdb_json_array_v1.
+            tests:
+              - not_null
+          - name: _atlas_ingested_at
+            description: UTC timestamp of the Atlas Bronze load run.
+            tests:
+              - not_null
+          - name: _atlas_source_file
+            description: Origin CSV filename loaded into the Bronze table.
+            tests:
+              - not_null
+
+      - name: governance__model_readiness_controls
+        description: >
+          Governance source table loaded from model readiness controls.csv
+          This table classifies source/model controls by severity and model-readiness treatment.
         loaded_at_field: cast(_atlas_ingested_at as timestamp)
         columns:
           - name: _atlas_row_hash

@@ -354,6 +354,8 @@ export function CfoCommandCenter({ onNavigate }: { onNavigate: (page: PageId) =>
           secondary={`${formatCount(k.headcount)} active headcount`}
           source="mart_workforce_cost_control"
           tone="neutral"
+          to="workforce"
+          onNavigate={onNavigate}
         />
         <DomainTile
           title="Controls"

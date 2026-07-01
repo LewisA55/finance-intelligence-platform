@@ -37,6 +37,13 @@ for (const entry of exportedFiles) {
 runDbtMacro('export_saas_aggregates');
 runDbtMacro('export_o2c_aggregates');
 
+const intelligence = spawnSync(
+  process.execPath,
+  [join(here, 'build-intelligence-data.mjs')],
+  { cwd: repoRoot, stdio: 'inherit' },
+);
+if (intelligence.status !== 0) throw new Error('Failed to build dashboard intelligence data');
+
 const manifest = spawnSync(
   process.execPath,
   [join(here, 'data-manifest.mjs')],

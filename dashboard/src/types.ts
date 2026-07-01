@@ -64,6 +64,7 @@ export interface SnapshotManifest {
     bytes: number;
     sha256: string;
     source: 'export' | 'curated';
+    format?: 'parquet' | 'csv';
   }>;
 }
 
@@ -287,4 +288,100 @@ export interface ExecutiveMonth {
   gross_expansion_arr_gbp: number;
   active_customers: number;
   has_any_control_issue: boolean;
+}
+
+/** Multi-year SaaS intelligence trend from the curated dashboard slice. */
+export interface SaasIntelligenceMonth {
+  month_iso: string;
+  month_label: string;
+  active_arr: number;
+  ending_arr: number;
+  net_arr_delta: number;
+  new_business: number;
+  expansion: number;
+  price_increase: number;
+  contraction: number;
+  churn: number;
+  pause: number;
+  nrr: number | null;
+  grr: number | null;
+  active_subscriptions: number;
+  control_exceptions: number;
+}
+
+export interface SaasProductTrend {
+  month_iso: string;
+  month_label: string;
+  product_family: string;
+  active_arr: number;
+  gain: number;
+  loss: number;
+  net: number;
+}
+
+export interface SaasSegmentTrend {
+  month_iso: string;
+  month_label: string;
+  customer_segment: string;
+  beginning_arr: number;
+  nrr: number | null;
+  grr: number | null;
+  logo_retention: number | null;
+  churned_customers: number;
+}
+
+export interface RevenueQualityMonth {
+  month_iso: string;
+  month_label: string;
+  period_type: 'Actual' | 'Scheduled';
+  billed: number;
+  recognised_actual: number;
+  recognised_scheduled: number;
+  recognised_total: number;
+  closing_deferred: number;
+  scheduled_backlog_count: number;
+  governance_exceptions: number;
+  unscheduled_leakage: number;
+}
+
+export interface CashConversionMonth {
+  month_iso: string;
+  month_label: string;
+  billed: number;
+  collected: number;
+  open_ar: number;
+  collection_rate: number | null;
+  overdue_invoices: number;
+  disputed_invoices: number;
+  defective_invoices: number;
+}
+
+export interface WorkforceMonth {
+  month_iso: string;
+  month_label: string;
+  period_type: 'Actual' | 'Plan';
+  payroll_cost: number;
+  active_headcount: number;
+  active_fte: number;
+  payroll_per_fte: number | null;
+  ghost_headcount: number;
+  open_positions: number;
+  open_position_monthly_exposure: number;
+  control_exceptions: number;
+}
+
+export interface WorkforceDepartment {
+  department: string;
+  payroll_cost: number;
+  active_headcount: number;
+  open_positions: number;
+  control_exceptions: number;
+}
+
+export interface ControlHistoryMonth {
+  month_iso: string;
+  month_label: string;
+  domain: string;
+  exception_count: number;
+  flagged_observation_count: number;
 }

@@ -27,6 +27,7 @@ const SOURCES: Record<PageId, string> = {
   financial: 'mart_financial_performance',
   revenue: 'mart_executive_cfo_command_center',
   'working-capital': 'executive mart + O2C/AP slices',
+  workforce: 'mart_workforce_cost_control',
   'control-tower': 'mart_executive_cfo_command_center',
-  validation: 'dashboard Parquet snapshot',
+  validation: 'dashboard data snapshot',
 };

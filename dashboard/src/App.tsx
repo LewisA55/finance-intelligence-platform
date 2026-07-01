@@ -6,6 +6,7 @@ import { SaaSPerformance } from './pages/SaaSPerformance';
 import { FinancialPerformance } from './pages/FinancialPerformance';
 import { RevenueRecognition } from './pages/RevenueRecognition';
 import { WorkingCapital } from './pages/WorkingCapital';
+import { WorkforceCapacity } from './pages/WorkforceCapacity';
 import { ControlTower } from './pages/ControlTower';
 import { Validation } from './pages/Validation';
 
@@ -38,6 +39,7 @@ export default function App() {
       {page === 'financial' && <FinancialPerformance />}
       {page === 'revenue' && <RevenueRecognition />}
       {page === 'working-capital' && <WorkingCapital />}
+      {page === 'workforce' && <WorkforceCapacity />}
       {page === 'control-tower' && <ControlTower />}
       {page === 'validation' && <Validation />}
     </Layout>

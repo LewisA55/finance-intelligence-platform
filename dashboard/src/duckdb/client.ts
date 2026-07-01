@@ -5,10 +5,16 @@ import ehWasm from '@duckdb/duckdb-wasm/dist/duckdb-eh.wasm?url';
 import ehWorker from '@duckdb/duckdb-wasm/dist/duckdb-browser-eh.worker.js?url';
 import dataConfig from '../../data-files.json';
 
-// Parquet slices shipped in /public/data; each becomes a queryable view of the
+interface DataFile {
+  name: string;
+  source: 'export' | 'curated';
+  format?: 'parquet' | 'csv';
+}
+
+// Dashboard slices shipped in /public/data; each becomes a queryable view of the
 // same name. Keep this list lean: the browser downloads every file, so we ship
 // curated, pre-aggregated executive slices rather than the raw detail marts.
-const DATA_FILES = dataConfig.files.map((file) => file.name);
+const DATA_FILES = dataConfig.files as DataFile[];
 
 let dbPromise: Promise<duckdb.AsyncDuckDB> | null = null;
 let connPromise: Promise<duckdb.AsyncDuckDBConnection> | null = null;
@@ -40,19 +46,23 @@ async function registerParquet(
   conn: duckdb.AsyncDuckDBConnection,
 ): Promise<void> {
   const base = import.meta.env.BASE_URL; // honours Vite `base` for GH Pages subpaths
-  const files = await Promise.all(DATA_FILES.map(async (name) => {
-    const response = await fetch(`${base}data/${name}.parquet`);
+  const files = await Promise.all(DATA_FILES.map(async (file) => {
+    const format = file.format ?? 'parquet';
+    const response = await fetch(`${base}data/${file.name}.${format}`);
     if (!response.ok) {
-      throw new Error(`Failed to load ${name}.parquet (HTTP ${response.status})`);
+      throw new Error(`Failed to load ${file.name}.${format} (HTTP ${response.status})`);
     }
-    return { name, buffer: new Uint8Array(await response.arrayBuffer()) };
+    return { ...file, format, buffer: new Uint8Array(await response.arrayBuffer()) };
   }));
 
-  for (const { name, buffer } of files) {
-    await db.registerFileBuffer(`${name}.parquet`, buffer);
-    await conn.query(
-      `create or replace view ${name} as select * from read_parquet('${name}.parquet')`,
-    );
+  for (const { name, format, buffer } of files) {
+    const filename = `${name}.${format}`;
+    await db.registerFileBuffer(filename, buffer);
+    const reader =
+      format === 'csv'
+        ? `read_csv_auto('${filename}', header = true)`
+        : `read_parquet('${filename}')`;
+    await conn.query(`create or replace view ${name} as select * from ${reader}`);
   }
 }
 

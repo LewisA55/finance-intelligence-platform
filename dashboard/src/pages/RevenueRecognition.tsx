@@ -13,7 +13,7 @@ import {
   Legend,
 } from 'recharts';
 import { useQuery } from '../hooks/useQuery';
-import { getRevenueKpis, getRevRecTrend } from '../duckdb/queries';
+import { getRevenueKpis, getRevRecTrend, getRevenueQualityTrend } from '../duckdb/queries';
 import { TopBar } from '../components/TopBar';
 import { KpiCard } from '../components/KpiCard';
 import { ChartCard } from '../components/ChartCard';
@@ -26,6 +26,7 @@ const AXIS = chart.axis;
 export function RevenueRecognition() {
   const kpis = useQuery(getRevenueKpis, []);
   const trend = useQuery(getRevRecTrend, []);
+  const qualityTrend = useQuery(getRevenueQualityTrend, []);
 
   const k = kpis.data;
 
@@ -42,8 +43,8 @@ export function RevenueRecognition() {
     );
   }, [k, trend.data]);
 
-  if (kpis.error || trend.error) {
-    const msg = (kpis.error || trend.error)?.message;
+  if (kpis.error || trend.error || qualityTrend.error) {
+    const msg = (kpis.error || trend.error || qualityTrend.error)?.message;
     return <div className="error-box"><strong>Could not load data.</strong><div>{msg}</div></div>;
   }
   if (!k) {
@@ -100,6 +101,61 @@ export function RevenueRecognition() {
           sub="rollforward continuity"
           status={{ tone: k.deferred_exceptions > 0 ? 'warning' : 'favourable', label: k.deferred_exceptions > 0 ? 'Review' : 'Clean' }}
         />
+      </div>
+
+      <div className="panel-grid">
+        <ChartCard
+          title="Recognition history and forward schedule"
+          subtitle="Dec 2022-May 2027: actual recognition plus scheduled future recognition"
+        >
+          <ResponsiveContainer width="100%" height={300}>
+            <ComposedChart data={qualityTrend.data ?? []} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+              <CartesianGrid stroke={GRID} vertical={false} />
+              <XAxis dataKey="month_label" stroke={AXIS} fontSize={11} tickLine={false} minTickGap={24} />
+              <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={56} tickFormatter={(v: number) => formatGbpCompact(v)} />
+              <Tooltip
+                cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+                contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }}
+                formatter={(v: number, name) => {
+                  const labels: Record<string, string> = {
+                    billed: 'Billed',
+                    recognised_actual: 'Actual recognition',
+                    recognised_scheduled: 'Scheduled recognition',
+                  };
+                  return [formatGbp(v), labels[name as string] ?? name];
+                }}
+              />
+              <Legend formatter={(v) => ({ billed: 'Billed', recognised_actual: 'Actual', recognised_scheduled: 'Scheduled' }[v as string] ?? v)} />
+              <Bar dataKey="billed" fill={chart.budget} radius={[2, 2, 0, 0]} />
+              <Line type="monotone" dataKey="recognised_actual" stroke={chart.primary} strokeWidth={2.4} dot={false} connectNulls={false} />
+              <Line type="monotone" dataKey="recognised_scheduled" stroke={chart.secondary} strokeWidth={2} dot={false} connectNulls={false} />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard
+          title="Deferred backlog burn-down"
+          subtitle="Actual and scheduled corporate closing deferred revenue"
+        >
+          <ResponsiveContainer width="100%" height={300}>
+            <AreaChart data={qualityTrend.data ?? []} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+              <defs>
+                <linearGradient id="defLongFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={chart.primary} stopOpacity={0.25} />
+                  <stop offset="100%" stopColor={chart.primary} stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid stroke={GRID} vertical={false} />
+              <XAxis dataKey="month_label" stroke={AXIS} fontSize={11} tickLine={false} minTickGap={24} />
+              <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={56} tickFormatter={(v: number) => formatGbpCompact(v)} />
+              <Tooltip
+                contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }}
+                formatter={(v: number) => [formatGbp(v), 'Closing deferred']}
+              />
+              <Area type="monotone" dataKey="closing_deferred" stroke={chart.primary} strokeWidth={2} fill="url(#defLongFill)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </ChartCard>
       </div>
 
       <div className="panel-grid">

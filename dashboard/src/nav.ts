@@ -4,6 +4,7 @@ export type PageId =
   | 'financial'
   | 'revenue'
   | 'working-capital'
+  | 'workforce'
   | 'control-tower'
   | 'validation';
 
@@ -18,6 +19,7 @@ export const NAV: NavItem[] = [
   { id: 'financial', label: 'Financial Performance' },
   { id: 'revenue', label: 'Revenue Recognition' },
   { id: 'working-capital', label: 'Working Capital' },
+  { id: 'workforce', label: 'Workforce Capacity' },
   { id: 'control-tower', label: 'Control Tower' },
   { id: 'validation', label: 'Data & Validation' },
 ];

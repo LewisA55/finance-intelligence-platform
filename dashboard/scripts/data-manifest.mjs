@@ -26,13 +26,15 @@ function gitCommit() {
 
 const files = [];
 for (const entry of config.files) {
-  const filename = `${entry.name}.parquet`;
+  const format = entry.format ?? 'parquet';
+  const filename = `${entry.name}.${format}`;
   const buffer = await readFile(join(dataDir, filename));
   files.push({
     name: filename,
     bytes: buffer.byteLength,
     sha256: createHash('sha256').update(buffer).digest('hex'),
     source: entry.source,
+    format,
   });
 }
 

@@ -8,12 +8,14 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
+  ReferenceLine,
 } from 'recharts';
 import { useQuery } from '../hooks/useQuery';
 import {
   getReportingMonths,
   getCommandCenterKpis,
   getRevenueTrend,
+  getModelReadinessSummary,
 } from '../duckdb/queries';
 import { TopBar } from '../components/TopBar';
 import { KpiCard } from '../components/KpiCard';
@@ -30,7 +32,7 @@ import {
 } from '../lib/format';
 import { chart } from '../lib/theme';
 import { NAV, type PageId } from '../nav';
-import type { CommandCenterKpis } from '../types';
+import type { CommandCenterKpis, ModelReadinessSummary } from '../types';
 
 const ACCENT = chart.primary; // actual series — Atlas blue
 const INFO = chart.secondary; // forecast series — cyan
@@ -57,7 +59,11 @@ interface FocusCue {
 
 /** "Where to focus next" — the through-line that routes the CFO from the hub to
  *  the page that explains each pressure point. Driven by control + plan signals. */
-function buildFocusCues(k: CommandCenterKpis, hasActuals: boolean): FocusCue[] {
+function buildFocusCues(
+  k: CommandCenterKpis,
+  hasActuals: boolean,
+  readiness: ModelReadinessSummary | null,
+): FocusCue[] {
   const cues: FocusCue[] = [];
   if (hasActuals && k.budget_revenue > 0 && k.actual_revenue < k.budget_revenue) {
     cues.push({
@@ -99,6 +105,14 @@ function buildFocusCues(k: CommandCenterKpis, hasActuals: boolean): FocusCue[] {
       tone: 'warning',
     });
   }
+  if (readiness && readiness.blocked_months > 0) {
+    cues.push({
+      label: 'Model-blocking periods in the actuals feed',
+      detail: `${formatCount(readiness.blocked_months)} blocked month${readiness.blocked_months === 1 ? '' : 's'} · latest import-ready ${readiness.latest_excel_month_label ?? '-'}`,
+      page: 'model',
+      tone: 'warning',
+    });
+  }
   const rank: Record<StatusTone, number> = { adverse: 0, warning: 1, 'on-plan': 2, neutral: 3, favourable: 4 };
   return cues.sort((a, b) => rank[a.tone] - rank[b.tone]);
 }
@@ -106,6 +120,7 @@ function buildFocusCues(k: CommandCenterKpis, hasActuals: boolean): FocusCue[] {
 export function CfoCommandCenter({ onNavigate }: { onNavigate: (page: PageId) => void }) {
   const months = useQuery(getReportingMonths, []);
   const trend = useQuery(getRevenueTrend, []);
+  const readiness = useQuery(getModelReadinessSummary, []);
   const [selected, setSelected] = useState<string | null>(null);
 
   // Default to the latest CLOSED actuals month (financial actuals lag SaaS).
@@ -165,7 +180,11 @@ export function CfoCommandCenter({ onNavigate }: { onNavigate: (page: PageId) =>
     );
   }
 
-  const focusCues = buildFocusCues(k, hasActuals);
+  const focusCues = buildFocusCues(k, hasActuals, readiness.data ?? null);
+  const latestActualMonth = [...monthOptions].reverse().find((m) => m.has_actuals) ?? null;
+  const latestPlanMonth = monthOptions[monthOptions.length - 1] ?? null;
+  const r = readiness.data ?? null;
+  const readinessTone: StatusTone = !r ? 'neutral' : r.blocked_months > 0 ? 'warning' : 'favourable';
 
   return (
     <>
@@ -175,6 +194,8 @@ export function CfoCommandCenter({ onNavigate }: { onNavigate: (page: PageId) =>
         actions={
           <>
             <span className="scope-pill">Scope: Company Total</span>
+            <span className="scope-pill">Actuals to {latestActualMonth?.month_label ?? '-'}</span>
+            <span className="scope-pill">Plan to {latestPlanMonth?.month_label ?? '-'}</span>
             <select
               className="month-select"
               value={selected ?? ''}
@@ -197,6 +218,12 @@ export function CfoCommandCenter({ onNavigate }: { onNavigate: (page: PageId) =>
         domainsAffected={k.control_issue_domains}
         monthLabel={k.month_label}
       />
+
+      {/* Executive summary leads the page — the CFO reads before scanning. */}
+      <div className="narrative lead">
+        <h3>Executive summary · {k.month_label}</h3>
+        <p>{narrative}</p>
+      </div>
 
       {/* Row 1 — KPI spine. All values are reporting_scope = 'Company Total'. */}
       <div className="kpi-grid">
@@ -221,12 +248,6 @@ export function CfoCommandCenter({ onNavigate }: { onNavigate: (page: PageId) =>
           status={hasActuals ? { tone: varianceStatus(k.operating_result, k.budget_operating_result) } : { tone: 'neutral', label: 'Plan only' }}
         />
         <KpiCard
-          label="Operating Margin"
-          value={hasActuals ? formatPercent(k.operating_margin) : '—'}
-          sub="operating basis (no COGS split)"
-          status={hasActuals && k.operating_margin != null ? { tone: k.operating_margin >= 0 ? 'favourable' : 'adverse' } : { tone: 'neutral' }}
-        />
-        <KpiCard
           label="Active ARR"
           value={formatGbpCompact(k.active_arr)}
           sub={`run-rate · NRR ${formatPercent(k.nrr)}`}
@@ -240,13 +261,13 @@ export function CfoCommandCenter({ onNavigate }: { onNavigate: (page: PageId) =>
         />
       </div>
 
-      {/* Where to focus next — routing layer, directly after the KPI spine */}
+      {/* Where to focus next — the page's visual anchor and routing layer */}
       {focusCues.length > 0 && (
-        <div className="panel" style={{ marginBottom: 22, paddingBottom: 14 }}>
+        <div className="panel hero" style={{ marginBottom: 22, paddingBottom: 14 }}>
           <div className="panel-head">
             <div>
-              <h3>Where to focus next</h3>
-              <p className="panel-sub">Prioritised by control and plan signals · select to drill into the page that explains it</p>
+              <h3>Focus next</h3>
+              <p className="panel-sub">Ranked by control and plan signals · each row routes to the page that explains it</p>
             </div>
           </div>
           <div className="focus-list">
@@ -287,7 +308,7 @@ export function CfoCommandCenter({ onNavigate }: { onNavigate: (page: PageId) =>
                 tickFormatter={(v: number) => formatGbpCompact(v)}
               />
               <Tooltip
-                contentStyle={{ background: '#16213a', border: '1px solid #243150', borderRadius: 10, color: '#e8eef9' }}
+                contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }}
                 formatter={(v: number, name) => {
                   const labels: Record<string, string> = {
                     actual_revenue: 'Actual',
@@ -304,6 +325,14 @@ export function CfoCommandCenter({ onNavigate }: { onNavigate: (page: PageId) =>
                   ] ?? v)
                 }
               />
+              {latestActualMonth && (
+                <ReferenceLine
+                  x={latestActualMonth.month_label}
+                  stroke={AXIS}
+                  strokeDasharray="4 4"
+                  label={{ value: 'plan →', position: 'insideTopRight', fill: AXIS, fontSize: 10 }}
+                />
+              )}
               <Line type="monotone" dataKey="actual_revenue" stroke={ACCENT} strokeWidth={2.5} dot={false} connectNulls={false} />
               <Line type="monotone" dataKey="budget_revenue" stroke={AXIS} strokeWidth={1.5} strokeDasharray="5 4" dot={false} />
               <Line type="monotone" dataKey="forecast_revenue" stroke={INFO} strokeWidth={2} dot={false} />
@@ -367,13 +396,22 @@ export function CfoCommandCenter({ onNavigate }: { onNavigate: (page: PageId) =>
           to="control-tower"
           onNavigate={onNavigate}
         />
+        <DomainTile
+          title="Model Readiness"
+          primary={!r ? '—' : r.blocked_months > 0 ? `${formatCount(r.blocked_months)} blocked` : 'Ready'}
+          primaryLabel="Actuals feed for the CFO model"
+          secondary={
+            r
+              ? `${formatCount(r.excel_actual_months)} import-ready months to ${r.latest_excel_month_label ?? '-'} · ${formatCount(r.review_months)} usable with review`
+              : 'Loading model-serving feed'
+          }
+          source="mart_model_actuals_feed"
+          tone={readinessTone}
+          to="model"
+          onNavigate={onNavigate}
+        />
       </div>
 
-      {/* Executive narrative */}
-      <div className="narrative">
-        <h3>Executive Summary</h3>
-        <p>{narrative}</p>
-      </div>
     </>
   );
 }

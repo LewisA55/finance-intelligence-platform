@@ -28,6 +28,7 @@ const SOURCES: Record<PageId, string> = {
   revenue: 'mart_executive_cfo_command_center',
   'working-capital': 'executive mart + O2C/AP slices',
   workforce: 'mart_workforce_cost_control',
+  model: 'mart_model_actuals_feed + modelling marts',
   'control-tower': 'mart_executive_cfo_command_center',
   validation: 'dashboard data snapshot',
 };

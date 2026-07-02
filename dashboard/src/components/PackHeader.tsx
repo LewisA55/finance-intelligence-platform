@@ -32,7 +32,7 @@ export function PackHeader() {
       <div className="pack-meta" data-provenance-error={error?.message}>
         <span className="live">LIVE</span> · BUILT {dayUpper(data?.built_date ?? null)}
         <br />
-        AS OF {monthUpper(data?.latest_actuals_month ?? null)} · COMPANY TOTAL
+        FINANCE CLOSE {monthUpper(data?.latest_actuals_month ?? null)} · COMPANY TOTAL
       </div>
     </header>
   );

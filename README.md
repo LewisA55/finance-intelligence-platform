@@ -8,9 +8,12 @@
 Project Atlas is an end-to-end finance analytics engineering portfolio project for a
 fictional multinational SaaS company, Nexus Technologies.
 
-It generates synthetic enterprise source data, loads a local DuckDB warehouse, transforms
-and validates it through dbt, and publishes governed CFO-ready marts to a live browser
-dashboard.
+**Atlas turns fragmented finance operations data into a governed CFO model and
+intelligence portal.** It generates synthetic enterprise source data, loads a local DuckDB
+warehouse, transforms and validates it through dbt, and serves governed CFO-ready marts to
+three consumers from one contract: a live browser **CFO Intelligence Portal**, an Excel
+integrated three-statement/DCF model, and a Power BI export layer — with AI commentary
+planned against the same surfaces.
 
 The project uses synthetic data only. It is designed for portfolio and demonstration purposes, not for production financial reporting.
 
@@ -19,24 +22,48 @@ The project uses synthetic data only. It is designed for portfolio and demonstra
 [Gold semantic layer](docs/06_gold_semantic_layer.md) ·
 [Validation summary](docs/final_validation_summary.md)
 
-## Live Dashboard
+## CFO Intelligence Portal (Live)
 
 **https://lewisa55.github.io/finance-intelligence-platform/**
 
-A static, browser-based **CFO intelligence dashboard** built on the governed Gold marts. It
+A static, browser-based **CFO Intelligence Portal** built on the governed Gold marts. It
 runs entirely client-side — **React + Vite + DuckDB-WASM** query exported Gold Parquet slices
 directly in the browser (no backend, no server, self-hosted wasm), enforcing scope-safe
-Company-Total reads. Pages:
+Company-Total reads. The portal is organised around four connected experiences: the command
+center ("what happened, are we on plan?"), performance & quality diagnostics ("why, and can
+I trust the number?"), the CFO modelling layer ("can this data feed a real model?"), and the
+forecast & valuation workspace ("what happens next?"). Pages:
 
-- **CFO Command Center** — KPI spine, P&L summary, actual vs budget vs forecast, domain health tiles, and a "where to focus next" routing layer.
-- **SaaS Performance** — FYTD ARR movement bridge, product-family × segment mix, retention by segment, regional ARR.
-- **Financial Performance** — department × account variance vs budget and forecast.
-- **Revenue Recognition** — billed vs recognised, deferred-revenue rollforward, and a commercial-ARR-vs-accounting-revenue bridge.
-- **Working Capital** — AR collections (by region/segment, top customers) plus AP ageing and vendor exposure.
-- **Control Tower** — governed control exceptions by domain and dbt validation evidence.
-- **Data & Validation** — loaded tables, row counts, and reporting scopes (auditable provenance).
+- **CFO Command Center** — KPI spine, P&L summary, actual vs budget vs forecast, domain health tiles (including model readiness), and a ranked "where to focus next" routing layer.
+- **SaaS Performance** — full-history ARR/NRR (2018–present with FY toggle), FYTD ARR movement bridge, product-family × segment mix and trend, retention by segment.
+- **Financial Performance** — A/B/F trend, department × account variance, operating-result variance waterfall, and the bridge into the model-serving feed (FC_BASE_CASE explicit).
+- **Revenue Quality** — recognition history and forward schedule, deferred-revenue backlog burn-down and rollforward, billings-vs-recognised bridge, governance exceptions classified by model-readiness treatment.
+- **Working Capital** — cash conversion history, AR collections (by region/segment, top customers, concentration), AP ageing snapshot and trend, and working-capital model assumption hooks (collection %, DSO proxy).
+- **Workforce Capacity & Hiring Pressure** — payroll/FTE actuals vs plan with a clean actual/plan split, forward hiring pressure with salary exposure, department controls by readiness treatment.
+- **Forecast & Valuation** — the product anchor: governed actuals feed coverage, historical model drivers, opening balance sheet, readiness policy, and the Excel model workspace (download + handoff status).
+- **Control Tower** — control exceptions by domain classified as model-blocking / accepted limitation / monitor, exception trends, and dbt validation evidence.
+- **Data & Validation** — per-table row counts and coverage windows, manifest/freshness status, and the model-serving readiness summary.
 
 See [dashboard/README.md](dashboard/README.md) for architecture and how to run it locally.
+
+### Product architecture
+
+```mermaid
+flowchart LR
+    GEN["Synthetic source generators<br/>(billing, GL, HRIS, CRM, O2C)"] --> BRONZE["DuckDB Bronze<br/>raw ingestion"]
+    BRONZE --> SILVER["dbt Silver<br/>typed staging + controls"]
+    SILVER --> GOLD["dbt Gold<br/>semantic layer + executive marts"]
+    GOLD --> MODEL["CFO model-serving marts<br/>actuals feed · opening BS · readiness policy"]
+    MODEL --> PORTAL["React + DuckDB-WASM<br/>CFO Intelligence Portal"]
+    MODEL --> EXCEL["Excel integrated<br/>3-statement + DCF model"]
+    MODEL --> PBI["Power BI / export layer"]
+    MODEL -.-> AI["AI commentary<br/>(planned)"]
+```
+
+The model-serving marts are the **shared contract**: Excel, the React portal, Power BI and
+future AI commentary all consume the same governed actuals, opening balance sheet and
+readiness classifications — documented in
+[docs/12_cfo_modelling_layer.md](docs/12_cfo_modelling_layer.md).
 
 ### Visual Walkthrough
 

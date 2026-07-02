@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-01T19:33:15.347Z",
-  "gitCommit": "457e6608d8c23f8617308c0447be4aff5f395edc",
+  "generatedAt": "2026-07-01T21:47:21.939Z",
+  "gitCommit": "9d015d3f02e7d44d084819561fd8b6514839acc5",
   "files": [
     {
       "name": "mart_executive_cfo_command_center.parquet",
@@ -21,6 +21,27 @@
       "name": "mart_ap_working_capital_control.parquet",
       "bytes": 66866,
       "sha256": "ccdbdff9440279e645ee87ed137cba42736f807bbd2af830abb0a6547c68d374",
+      "source": "export",
+      "format": "parquet"
+    },
+    {
+      "name": "mart_model_actuals_feed.parquet",
+      "bytes": 29681,
+      "sha256": "1b72e16f2bd83aa29bfba12a15c2d69435910d8d35ad7f853a8c7f6a6552c8eb",
+      "source": "export",
+      "format": "parquet"
+    },
+    {
+      "name": "mart_opening_balance_sheet.parquet",
+      "bytes": 4550,
+      "sha256": "d9e0529eb75a55810bd9b917bda241e020c371b7b95831536f5525ac95a3cc65",
+      "source": "export",
+      "format": "parquet"
+    },
+    {
+      "name": "mart_model_readiness_controls.parquet",
+      "bytes": 3626,
+      "sha256": "9cf0a6826404903a28ee327e7137da3e0da40bbdb6cff2edf73084a34ce14f33",
       "source": "export",
       "format": "parquet"
     },

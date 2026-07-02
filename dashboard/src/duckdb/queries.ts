@@ -32,6 +32,10 @@ import type {
   WorkforceMonth,
   WorkforceDepartment,
   ControlHistoryMonth,
+  ModelReadinessSummary,
+  ModelActualsMonth,
+  OpeningBalanceSheet,
+  ModelReadinessControl,
 } from '../types';
 
 /** Build-level provenance for the committed dashboard snapshot. */
@@ -204,6 +208,177 @@ export async function getDataAsAt(): Promise<{
     where ${COMPANY_TOTAL}
   `);
   return rows[0];
+}
+
+/** CFO model-serving layer summary for Excel/readiness handoff. */
+export async function getModelReadinessSummary(): Promise<ModelReadinessSummary> {
+  const rows = await runQuery<ModelReadinessSummary>(`
+    with feed as (
+      select *
+      from mart_model_actuals_feed
+    ),
+    latest_excel as (
+      select *
+      from feed
+      where use_in_excel_actuals_flag
+      order by reporting_month_date desc
+      limit 1
+    ),
+    bs as (
+      select *
+      from mart_opening_balance_sheet
+      order by as_of_date desc
+      limit 1
+    )
+    select
+      count(*)::integer as total_months,
+      sum(case when feed.model_period_status = 'Actual' then 1 else 0 end)::integer as actual_months,
+      sum(case when feed.model_period_status = 'Scheduled' then 1 else 0 end)::integer as scheduled_months,
+      sum(case when feed.use_in_excel_actuals_flag then 1 else 0 end)::integer as excel_actual_months,
+      sum(case when feed.model_readiness_status = 'Ready' then 1 else 0 end)::integer as ready_months,
+      sum(case when feed.model_readiness_status = 'Usable with review' then 1 else 0 end)::integer as review_months,
+      sum(case when feed.model_readiness_status = 'Accepted limitation' then 1 else 0 end)::integer as accepted_limitation_months,
+      sum(case when feed.model_readiness_status = 'Blocked' then 1 else 0 end)::integer as blocked_months,
+      max(case when feed.use_in_excel_actuals_flag then feed.reporting_month_date end)::varchar as latest_excel_month_iso,
+      strftime(max(case when feed.use_in_excel_actuals_flag then feed.reporting_month_date end), '%b %Y') as latest_excel_month_label,
+      strftime(max(case when feed.model_period_status = 'Actual' then feed.reporting_month_date end), '%b %Y') as latest_actual_month_label,
+      strftime(max(case when feed.model_period_status = 'Scheduled' then feed.reporting_month_date end), '%b %Y') as latest_scheduled_month_label,
+      max(latest_excel.recognised_revenue_gbp)::double as latest_excel_revenue,
+      max(latest_excel.cash_collected_gbp)::double as latest_excel_cash_collected,
+      max(latest_excel.headline_arr_gbp)::double as latest_excel_arr,
+      max(bs.as_of_date)::varchar as opening_bs_date,
+      max(bs.cash_gbp)::double as opening_cash,
+      max(bs.deferred_revenue_gbp)::double as opening_deferred_revenue,
+      max(bs.debt_gbp)::double as opening_debt,
+      max(bs.total_assets_gbp)::double as opening_total_assets,
+      max(bs.total_liabilities_gbp)::double as opening_total_liabilities,
+      max(bs.total_equity_gbp)::double as opening_total_equity,
+      bool_or(bs.is_balanced) as opening_bs_balanced
+    from feed
+    cross join latest_excel
+    cross join bs
+  `);
+  return rows[0];
+}
+
+/** Monthly model-serving feed, scoped to the CFO modelling contract. */
+export async function getModelActualsFeed(): Promise<ModelActualsMonth[]> {
+  return runQuery<ModelActualsMonth>(`
+    select
+      reporting_month_date::varchar as month_iso,
+      strftime(reporting_month_date, '%b %Y') as month_label,
+      model_period_status as period_status,
+      model_readiness_status as readiness_status,
+      use_in_excel_actuals_flag as use_in_excel_actuals,
+      has_financial_actuals,
+      has_revenue_actuals,
+      has_o2c_actuals,
+      has_saas_actuals,
+      recognised_revenue_gbp::double as recognised_revenue,
+      billings_gbp::double as billings,
+      cash_collected_gbp::double as cash_collected,
+      closing_deferred_revenue_gbp::double as closing_deferred_revenue,
+      open_ar_gbp::double as open_ar,
+      open_ap_gbp::double as open_ap,
+      opex_gbp::double as opex,
+      operating_profit_gbp::double as operating_profit,
+      payroll_cost_gbp::double as payroll_cost,
+      active_fte::double as active_fte,
+      headline_arr_gbp::double as headline_arr,
+      nrr::double as nrr,
+      total_control_exception_count::integer as total_control_exceptions,
+      model_blocking_exception_count::integer as model_blocking_exceptions,
+      review_exception_count::integer as review_exceptions
+    from mart_model_actuals_feed
+    order by reporting_month_date
+  `);
+}
+
+/** Opening statutory balance sheet anchor for integrated modelling. */
+export async function getOpeningBalanceSheet(): Promise<OpeningBalanceSheet | null> {
+  const rows = await runQuery<OpeningBalanceSheet>(`
+    select
+      as_of_date::varchar as as_of_date,
+      cash_gbp::double as cash,
+      accounts_receivable_gbp::double as accounts_receivable,
+      prepaids_other_current_assets_gbp::double as prepaids_other_current_assets,
+      net_ppe_gbp::double as net_ppe,
+      total_current_assets_gbp::double as total_current_assets,
+      total_assets_gbp::double as total_assets,
+      accounts_payable_gbp::double as accounts_payable,
+      deferred_revenue_gbp::double as deferred_revenue,
+      debt_gbp::double as debt,
+      total_liabilities_gbp::double as total_liabilities,
+      share_capital_gbp::double as share_capital,
+      retained_earnings_gbp::double as retained_earnings,
+      total_equity_gbp::double as total_equity,
+      balance_check_variance_gbp::double as balance_check_variance,
+      is_balanced
+    from mart_opening_balance_sheet
+    order by as_of_date desc
+    limit 1
+  `);
+  return rows[0] ?? null;
+}
+
+/** Readiness policy mapping used to translate controls into model treatment. */
+export async function getModelReadinessControls(): Promise<ModelReadinessControl[]> {
+  return runQuery<ModelReadinessControl>(`
+    select
+      control_key,
+      control_domain,
+      control_name,
+      severity,
+      model_readiness_treatment as treatment,
+      model_blocking_flag as model_blocking,
+      accepted_limitation_flag as accepted_limitation,
+      recommended_treatment
+    from mart_model_readiness_controls
+    order by
+      case
+        when model_blocking_flag then 1
+        when model_readiness_treatment = 'Usable with review' then 2
+        when accepted_limitation_flag then 3
+        else 4
+      end,
+      control_domain,
+      control_key
+  `);
+}
+
+export interface TableEvidence {
+  table_name: string;
+  rows: number;
+  from_date: string | null;
+  to_date: string | null;
+}
+
+/** Reviewer-facing evidence per registered table: row count + coverage window.
+ *  The coverage column is auto-detected so the page never guesses schemas. */
+export async function getTableEvidence(): Promise<TableEvidence[]> {
+  const tables = await runQuery<{ table_name: string }>(`
+    select table_name
+    from information_schema.tables
+    where table_schema = 'main'
+    order by table_name
+  `);
+  const results: TableEvidence[] = [];
+  for (const { table_name } of tables) {
+    const cols = await runQuery<{ column_name: string }>(`
+      select column_name from information_schema.columns
+      where table_name = '${table_name}'
+    `);
+    const dateCol = ['reporting_month_date', 'month_iso', 'as_of_date', 'date_day'].find((c) =>
+      cols.some((x) => x.column_name === c),
+    );
+    const [row] = await runQuery<{ rows: number; from_date: string | null; to_date: string | null }>(
+      dateCol
+        ? `select count(*)::integer as rows, min(${dateCol})::varchar as from_date, max(${dateCol})::varchar as to_date from ${table_name}`
+        : `select count(*)::integer as rows, null as from_date, null as to_date from ${table_name}`,
+    );
+    results.push({ table_name, ...row });
+  }
+  return results;
 }
 
 /** SaaS KPI snapshot for the latest month with SaaS data (Company Total). */
@@ -498,6 +673,33 @@ export async function getApAgeing(): Promise<ApAgeing | null> {
   return rows[0] ?? null;
 }
 
+export interface ApAgeingMonth {
+  month_iso: string;
+  month_label: string;
+  current_amt: number;
+  d1_30: number;
+  d31_60: number;
+  d61_90: number;
+  d90_plus: number;
+}
+
+/** AP ageing bucket history by month (snapshot per reporting month). */
+export async function getApAgeingTrend(): Promise<ApAgeingMonth[]> {
+  return runQuery<ApAgeingMonth>(`
+    select
+      reporting_month_date::varchar                  as month_iso,
+      strftime(reporting_month_date, '%b %Y')        as month_label,
+      sum(current_open_amount_gbp)::double           as current_amt,
+      sum(one_to_thirty_overdue_gbp)::double         as d1_30,
+      sum(thirty_one_to_sixty_overdue_gbp)::double   as d31_60,
+      sum(sixty_one_to_ninety_overdue_gbp)::double   as d61_90,
+      sum(ninety_plus_overdue_gbp)::double           as d90_plus
+    from mart_ap_working_capital_control
+    group by 1, 2
+    order by 1
+  `);
+}
+
 /** Top customers by open AR at the latest month (curated slice). */
 export async function getTopArCustomers(limit = 12): Promise<ArCustomer[]> {
   return runQuery<ArCustomer>(`
@@ -667,7 +869,7 @@ export async function getSaasProductTrend(): Promise<SaasProductTrend[]> {
       sum(net_arr_delta_gbp)::double                                as net
     from dashboard_saas_product_trend
     group by 1, 2, 3
-    order by cast(month_iso as date), product_family
+    order by 1, 3
   `);
 }
 
@@ -688,7 +890,7 @@ export async function getSaasSegmentTrend(): Promise<SaasSegmentTrend[]> {
     from dashboard_saas_segment_trend
     where customer_segment in ('Enterprise', 'Mid-Market', 'SMB')
     group by 1, 2, 3
-    order by cast(month_iso as date), customer_segment
+    order by 1, 3
   `);
 }
 
@@ -735,7 +937,7 @@ export async function getCashConversionTrend(): Promise<CashConversionMonth[]> {
       sum(defective_invoice_count)::integer                         as defective_invoices
     from dashboard_cash_conversion
     group by 1, 2
-    order by cast(month_iso as date)
+    order by 1
   `);
 }
 
@@ -744,19 +946,24 @@ export async function getWorkforceTrend(): Promise<WorkforceMonth[]> {
     select
       month_iso::varchar                                            as month_iso,
       strftime(cast(month_iso as date), '%b %Y')                    as month_label,
-      case when cast(month_iso as date) > date '2026-06-01' then 'Plan' else 'Actual' end as period_type,
+      case
+        when cast(month_iso as date) <= date '2026-06-01' then 'Actual'
+        when cast(month_iso as date) <= date '2026-12-01' then 'Plan'
+        else 'Hiring plan'
+      end                                                           as period_type,
       sum(payroll_cost_gbp)::double                                 as payroll_cost,
       sum(active_headcount_count)::integer                          as active_headcount,
       sum(active_fte_count)::double                                 as active_fte,
       case when sum(active_fte_count) > 0
            then sum(payroll_cost_gbp) / sum(active_fte_count) end::double as payroll_per_fte,
       sum(ghost_headcount_count)::integer                           as ghost_headcount,
+      sum(status_active_mismatch_count)::integer                    as status_mismatches,
       sum(open_position_count)::integer                             as open_positions,
       sum(open_position_monthly_salary_exposure_gbp)::double        as open_position_monthly_exposure,
       sum(control_exception_count)::integer                         as control_exceptions
     from dashboard_workforce_capacity
-    group by 1, 2
-    order by cast(month_iso as date)
+    group by 1, 2, 3
+    order by 1
   `);
 }
 
@@ -767,6 +974,8 @@ export async function getWorkforceDepartments(monthIso: string): Promise<Workfor
       department,
       sum(payroll_cost_gbp)::double                                 as payroll_cost,
       sum(active_headcount_count)::integer                          as active_headcount,
+      sum(ghost_headcount_count)::integer                           as ghost_headcount,
+      sum(status_active_mismatch_count)::integer                    as status_mismatches,
       sum(open_position_count)::integer                             as open_positions,
       sum(control_exception_count)::integer                         as control_exceptions
     from dashboard_workforce_capacity
@@ -786,6 +995,6 @@ export async function getControlHistory(): Promise<ControlHistoryMonth[]> {
       sum(flagged_observation_count)::integer                       as flagged_observation_count
     from dashboard_control_history
     group by 1, 2, 3
-    order by cast(month_iso as date), domain
+    order by 1, 3
   `);
 }

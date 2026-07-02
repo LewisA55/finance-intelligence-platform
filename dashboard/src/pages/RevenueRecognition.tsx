@@ -39,7 +39,7 @@ export function RevenueRecognition() {
       `leaving ${formatGbp(k.closing_deferred)} of deferred revenue on the balance sheet. ` +
       `That backlog is scheduled to draw down to ${formatGbp(yearEndDeferred)} by year-end as already-billed revenue is earned. ` +
       `Commercial ARR is ${formatGbp(k.active_arr)}, but it is a live subscription run-rate rather than an accounting revenue measure and is not directly reconciled to this month's recognised revenue. ` +
-      `${k.revenue_governance_exceptions > 0 || k.deferred_exceptions > 0 ? `Governance flagged ${k.revenue_governance_exceptions} recognition and ${k.deferred_exceptions} deferred-control exceptions.` : 'No recognition or deferred-control exceptions were flagged.'}`
+      `${k.revenue_governance_exceptions > 0 || k.deferred_exceptions > 0 ? `Under the model-readiness policy, ${k.revenue_governance_exceptions} recognition governance exception${k.revenue_governance_exceptions === 1 ? '' : 's'} are usable with review, while ${k.deferred_exceptions} deferred-rollforward exception${k.deferred_exceptions === 1 ? '' : 's'} are model-blocking until cleared.` : 'No recognition or deferred-control exceptions were flagged.'}`
     );
   }, [k, trend.data]);
 
@@ -59,8 +59,8 @@ export function RevenueRecognition() {
   return (
     <>
       <TopBar
-        title="Revenue Recognition"
-        subtitle="Billed vs recognised revenue & deferred revenue control"
+        title="Revenue Quality"
+        subtitle="Can recognised revenue be trusted — and how fast does the deferred backlog earn out?"
         actions={
           <>
             <span className="scope-pill">Scope: Company Total</span>
@@ -81,7 +81,7 @@ export function RevenueRecognition() {
           label="Recognition Variance"
           value={formatGbpCompact(k.recognition_variance)}
           sub="actual less scheduled"
-          status={{ tone: Math.abs(k.recognition_variance) > 1 ? 'warning' : 'favourable', label: Math.abs(k.recognition_variance) > 1 ? 'Review' : 'Clean' }}
+          status={{ tone: Math.abs(k.recognition_variance) > 1 ? 'warning' : 'favourable', label: Math.abs(k.recognition_variance) > 1 ? 'Monitor' : 'Clean' }}
         />
         <KpiCard
           label="Closing Deferred"
@@ -99,7 +99,7 @@ export function RevenueRecognition() {
           label="Deferred Control"
           value={k.deferred_exceptions > 0 ? `${k.deferred_exceptions} flags` : 'Clean'}
           sub="rollforward continuity"
-          status={{ tone: k.deferred_exceptions > 0 ? 'warning' : 'favourable', label: k.deferred_exceptions > 0 ? 'Review' : 'Clean' }}
+          status={{ tone: k.deferred_exceptions > 0 ? 'adverse' : 'favourable', label: k.deferred_exceptions > 0 ? 'Blocking' : 'Clean' }}
         />
       </div>
 
@@ -153,64 +153,6 @@ export function RevenueRecognition() {
                 formatter={(v: number) => [formatGbp(v), 'Closing deferred']}
               />
               <Area type="monotone" dataKey="closing_deferred" stroke={chart.primary} strokeWidth={2} fill="url(#defLongFill)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </ChartCard>
-      </div>
-
-      <div className="panel-grid">
-        <ChartCard
-          title="Billed vs recognised revenue"
-          subtitle="Monthly (GBP) — bars billed · line recognised (actual) · dashed scheduled recognition"
-        >
-          <ResponsiveContainer width="100%" height={290}>
-            <ComposedChart data={trend.data ?? []} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-              <CartesianGrid stroke={GRID} vertical={false} />
-              <XAxis dataKey="month_label" stroke={AXIS} fontSize={11} tickLine={false} />
-              <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={56} tickFormatter={(v: number) => formatGbpCompact(v)} />
-              <Tooltip
-                cursor={{ fill: 'rgba(0,0,0,0.03)' }}
-                contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }}
-                formatter={(v: number, name) => {
-                  const labels: Record<string, string> = {
-                    billed: 'Billed',
-                    recognised_actual: 'Recognised (actual)',
-                    recognised_total: 'Recognised (incl. scheduled)',
-                  };
-                  return [formatGbp(v), labels[name as string] ?? name];
-                }}
-              />
-              <Legend
-                formatter={(v) =>
-                  ({ billed: 'Billed', recognised_actual: 'Recognised (actual)', recognised_total: 'Scheduled recognition' }[
-                    v as string
-                  ] ?? v)
-                }
-              />
-              <Bar dataKey="billed" fill={chart.budget} radius={[2, 2, 0, 0]} />
-              <Line type="monotone" dataKey="recognised_actual" stroke={chart.primary} strokeWidth={2.5} dot={false} connectNulls={false} />
-              <Line type="monotone" dataKey="recognised_total" stroke={chart.secondary} strokeWidth={1.5} strokeDasharray="5 4" dot={false} />
-            </ComposedChart>
-          </ResponsiveContainer>
-        </ChartCard>
-
-        <ChartCard title="Deferred revenue balance" subtitle="Closing deferred by month (GBP) — built then released as billed revenue is earned">
-          <ResponsiveContainer width="100%" height={290}>
-            <AreaChart data={trend.data ?? []} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-              <defs>
-                <linearGradient id="defFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={chart.primary} stopOpacity={0.25} />
-                  <stop offset="100%" stopColor={chart.primary} stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid stroke={GRID} vertical={false} />
-              <XAxis dataKey="month_label" stroke={AXIS} fontSize={11} tickLine={false} />
-              <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={56} tickFormatter={(v: number) => formatGbpCompact(v)} />
-              <Tooltip
-                contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }}
-                formatter={(v: number) => [formatGbp(v), 'Closing deferred']}
-              />
-              <Area type="monotone" dataKey="closing_deferred" stroke={chart.primary} strokeWidth={2} fill="url(#defFill)" />
             </AreaChart>
           </ResponsiveContainer>
         </ChartCard>

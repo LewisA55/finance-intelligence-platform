@@ -250,6 +250,7 @@ export function WorkforceCapacity() {
 
       <div className="panel-grid">
         <ChartCard
+          className="hero"
           title="Workforce cost and FTE"
           subtitle={`Actuals to ${lastActual?.month_label ?? '-'}; dashed plan to Dec 2026 — 2027 carries hiring pressure only`}
         >

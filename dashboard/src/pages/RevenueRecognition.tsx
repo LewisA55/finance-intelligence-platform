@@ -105,6 +105,7 @@ export function RevenueRecognition() {
 
       <div className="panel-grid">
         <ChartCard
+          className="hero"
           title="Recognition history and forward schedule"
           subtitle="Dec 2022-May 2027: actual recognition plus scheduled future recognition"
         >

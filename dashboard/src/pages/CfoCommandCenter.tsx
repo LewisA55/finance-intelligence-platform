@@ -234,7 +234,7 @@ export function CfoCommandCenter({ onNavigate }: { onNavigate: (page: PageId) =>
           delta={
             hasActuals
               ? {
-                  text: `${formatSignedPercent((k.actual_revenue - k.budget_revenue) / k.budget_revenue)} vs budget`,
+                  text: formatSignedPercent((k.actual_revenue - k.budget_revenue) / k.budget_revenue),
                   direction: k.actual_revenue >= k.budget_revenue ? 'up' : 'down',
                 }
               : undefined

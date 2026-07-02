@@ -117,13 +117,13 @@ a:focus-visible,
 /* ---------- Tabs (grouped by product section) ---------- */
 .tabs {
   display: flex;
-  gap: 22px;
+  gap: 14px;
   border-bottom: 1px solid var(--border);
   margin-bottom: 4px;
   overflow-x: auto;
 }
 .tab-group { display: flex; flex-direction: column; }
-.tab-group + .tab-group { border-left: 1px solid var(--border); padding-left: 22px; }
+.tab-group + .tab-group { border-left: 1px solid var(--border); padding-left: 14px; }
 .tab-group-label {
   font-family: var(--mono);
   font-size: 9px;
@@ -280,6 +280,7 @@ a:focus-visible,
   flex-wrap: wrap;
 }
 .delta { font-weight: 600; font-variant-numeric: tabular-nums; }
+.sub-sep { color: var(--text-faint); }
 .delta.up { color: var(--favourable); }
 .delta.down { color: var(--adverse); }
 .delta.flat { color: var(--text-faint); }
@@ -295,6 +296,7 @@ a:focus-visible,
   box-shadow: 0 1px 3px rgba(20, 20, 18, 0.05);
   margin-bottom: 14px;
 }
+.panel-grid > .panel.hero { margin-bottom: 0; }
 .panel.hero > .panel-head h3 { font-size: 15.5px; }
 .panel {
   background: var(--surface);

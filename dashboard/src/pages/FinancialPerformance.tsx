@@ -186,7 +186,7 @@ export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId
           delta={
             hasActuals
               ? {
-                  text: `${formatSignedPercent((s.revenue_actual - s.revenue_budget) / s.revenue_budget)} vs budget`,
+                  text: formatSignedPercent((s.revenue_actual - s.revenue_budget) / s.revenue_budget),
                   direction: s.revenue_actual >= s.revenue_budget ? 'up' : 'down',
                 }
               : undefined
@@ -200,7 +200,7 @@ export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId
           delta={
             hasActuals
               ? {
-                  text: `${formatSignedPercent((s.opex_actual - s.opex_budget) / s.opex_budget)} vs budget`,
+                  text: formatSignedPercent((s.opex_actual - s.opex_budget) / s.opex_budget),
                   direction: s.opex_actual <= s.opex_budget ? 'up' : 'down',
                 }
               : undefined
@@ -223,6 +223,7 @@ export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId
 
       <div className="panel-grid">
         <ChartCard
+          className="hero"
           title="Actual vs budget vs forecast"
           subtitle="Company-total revenue by month (GBP) · actuals stop at the last closed month"
         >

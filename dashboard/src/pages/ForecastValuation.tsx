@@ -163,9 +163,9 @@ export function ForecastValuation() {
         />
         <KpiCard
           label="Blocked periods"
-          value={formatCount(s.blocked_months)}
-          sub={`${formatPercent(s.blocked_months / readinessTotal)} of model-serving months`}
-          status={{ tone: s.blocked_months > 0 ? 'adverse' : 'favourable', label: s.blocked_months > 0 ? 'Blocked' : 'Clear' }}
+          value={`${formatCount(s.blocked_months)} of ${formatCount(readinessTotal)}`}
+          sub="excluded from the model baseline by policy"
+          status={{ tone: s.blocked_months > 0 ? 'adverse' : 'favourable', label: s.blocked_months > 0 ? 'Excluded' : 'Clear' }}
         />
       </div>
 
@@ -190,6 +190,7 @@ export function ForecastValuation() {
 
       <div className="panel-grid model-panel-grid">
         <ChartCard
+          className="hero"
           title="Actuals feed readiness"
           subtitle="Excel imports only periods marked by the warehouse contract"
           aside={`${formatCount(s.actual_months)} actual / ${formatCount(s.scheduled_months)} scheduled`}

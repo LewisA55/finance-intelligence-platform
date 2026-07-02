@@ -202,6 +202,7 @@ export function WorkingCapital({ onNavigate }: { onNavigate: (page: PageId) => v
 
       <div className="panel-grid">
         <ChartCard
+          className="hero"
           title="Cash conversion history"
           subtitle="Jan 2023-Jun 2026: billed, collected and open receivables"
         >

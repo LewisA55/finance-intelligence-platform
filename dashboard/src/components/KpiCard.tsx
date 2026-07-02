@@ -27,6 +27,7 @@ export function KpiCard({ label, value, sub, delta, status }: KpiCardProps) {
               {delta.text}
             </span>
           )}
+          {delta && sub && <span className="sub-sep" aria-hidden="true">·</span>}
           {sub && <span>{sub}</span>}
         </div>
       )}

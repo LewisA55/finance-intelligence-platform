@@ -17,11 +17,13 @@ import {
   getWorkingCapitalPosition,
   getArCollectionsTrend,
   getApAgeing,
+  getApAgeingTrend,
   getTopVendorsAp,
   getTopArCustomers,
   getArCollections,
   getCashConversionTrend,
 } from '../duckdb/queries';
+import type { PageId } from '../nav';
 import { TopBar } from '../components/TopBar';
 import { KpiCard } from '../components/KpiCard';
 import { ChartCard } from '../components/ChartCard';
@@ -36,16 +38,48 @@ const collectionRateDomain: [number, (max: number) => number] = [
   (max) => Math.max(1, Math.ceil(max * 20) / 20),
 ];
 
-export function WorkingCapital() {
+export function WorkingCapital({ onNavigate }: { onNavigate: (page: PageId) => void }) {
   const position = useQuery(getWorkingCapitalPosition, []);
   const trend = useQuery(getArCollectionsTrend, []);
   const ageing = useQuery(getApAgeing, []);
+  const ageingTrend = useQuery(getApAgeingTrend, []);
   const vendors = useQuery(getTopVendorsAp, []);
   const arCustomers = useQuery(getTopArCustomers, []);
   const arCollections = useQuery(getArCollections, []);
   const cashTrend = useQuery(getCashConversionTrend, []);
 
   const p = position.data;
+
+  // Model assumption hooks: the observable working-capital drivers the Excel
+  // model parameterises (collection %, AR intensity, DSO proxy).
+  const modelHooks = useMemo(() => {
+    const rows = (cashTrend.data ?? []).filter((r) => r.billed > 0);
+    if (!rows.length) return null;
+    const trailing12 = rows.slice(-12);
+    const latest = rows[rows.length - 1];
+    const t12Billed = trailing12.reduce((s, r) => s + r.billed, 0);
+    const t12Collected = trailing12.reduce((s, r) => s + r.collected, 0);
+    const t3 = rows.slice(-3);
+    const t3Billed = t3.reduce((s, r) => s + r.billed, 0);
+    return {
+      collectionPct: t12Billed > 0 ? t12Collected / t12Billed : null,
+      openArPctBillings: latest.billed > 0 ? latest.open_ar / latest.billed : null,
+      dsoDays: t3Billed > 0 ? latest.open_ar / (t3Billed / 90) : null,
+      latestLabel: latest.month_label,
+    };
+  }, [cashTrend.data]);
+
+  const arConcentration = useMemo(() => {
+    if (!p || p.open_ar <= 0) return null;
+    const top5 = (arCustomers.data ?? []).slice(0, 5).reduce((s, c) => s + c.open_ar, 0);
+    return top5 / p.open_ar;
+  }, [p, arCustomers.data]);
+
+  const apConcentration = useMemo(() => {
+    if (!p || p.overdue_ap <= 0) return null;
+    const top5 = (vendors.data ?? []).slice(0, 5).reduce((s, v) => s + v.overdue_ap, 0);
+    return top5 / p.overdue_ap;
+  }, [p, vendors.data]);
 
   // Collection rate (FYTD) = collected / billed, aggregated by region and segment.
   const collByDim = (key: 'region' | 'customer_segment', keep?: string[]) => {
@@ -102,7 +136,7 @@ export function WorkingCapital() {
   }, [p, vendors.data, ageing.data, arCustomers.data, collByRegion]);
 
   const anyError =
-    position.error || trend.error || ageing.error || vendors.error || arCustomers.error || arCollections.error || cashTrend.error;
+    position.error || trend.error || ageing.error || ageingTrend.error || vendors.error || arCustomers.error || arCollections.error || cashTrend.error;
   if (anyError) {
     return <div className="error-box"><strong>Could not load data.</strong><div>{anyError.message}</div></div>;
   }
@@ -122,7 +156,7 @@ export function WorkingCapital() {
     <>
       <TopBar
         title="Working Capital"
-        subtitle="Order-to-cash & accounts-payable position"
+        subtitle="How fast does billed revenue become cash — and where is it stuck?"
         actions={
           <>
             <span className="scope-pill">Scope: Company Total</span>
@@ -163,6 +197,8 @@ export function WorkingCapital() {
           status={{ tone: 'neutral', label: 'Monitor' }}
         />
       </div>
+
+      <h2 className="section-title">Cash conversion</h2>
 
       <div className="panel-grid">
         <ChartCard
@@ -219,6 +255,25 @@ export function WorkingCapital() {
         </ChartCard>
       </div>
 
+      <h2 className="section-title">Accounts receivable — collections</h2>
+
+      <div className="tile-grid" style={{ marginTop: 0, marginBottom: 14 }}>
+        <div className={`tile ${arConcentration != null && arConcentration > 0.25 ? 'tone-on-plan' : 'tone-neutral'}`}>
+          <div className="tile-title">Customer concentration</div>
+          <div className="tile-primary">{formatPercent(arConcentration)}</div>
+          <div className="tile-primary-label">of open AR sits with the top 5 customers</div>
+        </div>
+        <div className="tile tone-neutral">
+          <div className="tile-title">Weakest collection region</div>
+          <div className="tile-primary">
+            {collByRegion.length ? formatPercent(collByRegion[collByRegion.length - 1].rate) : '—'}
+          </div>
+          <div className="tile-primary-label">
+            {collByRegion.length ? `${collByRegion[collByRegion.length - 1].name} · FYTD collected / billed` : 'FYTD collected / billed'}
+          </div>
+        </div>
+      </div>
+
       <div className="panel-grid">
         <ChartCard
           title="AR exposure vs cash collected"
@@ -240,25 +295,28 @@ export function WorkingCapital() {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="AP ageing" subtitle={`Open payables by bucket · ${p.month_label}`}>
-          <ResponsiveContainer width="100%" height={290}>
-            <BarChart data={ageingData} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-              <CartesianGrid stroke={GRID} vertical={false} />
-              <XAxis dataKey="bucket" stroke={AXIS} fontSize={11} tickLine={false} />
-              <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={52} tickFormatter={(v: number) => formatGbpCompact(v)} />
-              <Tooltip
-                cursor={{ fill: 'rgba(0,0,0,0.03)' }}
-                contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }}
-                formatter={(v: number) => [formatGbp(v), 'Open payable']}
-              />
-              <Bar dataKey="amount" radius={[2, 2, 0, 0]}>
-                {ageingData.map((d) => (
-                  <Cell key={d.bucket} fill={bucketFill(d.tone)} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </ChartCard>
+        <div className="panel">
+          <div className="panel-head">
+            <div>
+              <h3>Model assumption hooks</h3>
+              <p className="panel-sub">Observable working-capital drivers the Excel model parameterises</p>
+            </div>
+          </div>
+          <ul className="kv">
+            <li><span>Cash collection % of billings (T12M)</span><strong>{formatPercent(modelHooks?.collectionPct ?? null)}</strong></li>
+            <li><span>Open AR % of billings ({modelHooks?.latestLabel ?? '-'})</span><strong>{formatPercent(modelHooks?.openArPctBillings ?? null)}</strong></li>
+            <li><span>DSO proxy (open AR / T3M daily billings)</span><strong>{modelHooks?.dsoDays == null ? '-' : `${Math.round(modelHooks.dsoDays)} days`}</strong></li>
+            <li><span>Top-5 customer share of open AR</span><strong>{formatPercent(arConcentration)}</strong></li>
+          </ul>
+          <p className="pnl-note">
+            These are the observed counterparts of the Excel drivers (cash collection %, open AR %
+            of billings). DPO hooks come from the AP mart below; supplier payment behaviour lives
+            in the model-serving feed.
+          </p>
+          <button type="button" className="drillthrough-link" onClick={() => onNavigate('model')}>
+            Open Forecast &amp; Valuation →
+          </button>
+        </div>
       </div>
 
       {/* Accounts receivable — collection performance */}
@@ -293,6 +351,9 @@ export function WorkingCapital() {
             <h3>Top customers by open AR</h3>
             <p className="panel-sub">{p.month_label} · open receivable exposure</p>
           </div>
+          <span className="panel-aside">
+            {arConcentration != null ? `Top 5 = ${formatPercent(arConcentration)} of open AR` : ''}
+          </span>
         </div>
         <div className="table-scroll">
         <table className="pnl">
@@ -325,12 +386,90 @@ export function WorkingCapital() {
         </p>
       </div>
 
+      <h2 className="section-title">Accounts payable</h2>
+
+      <div className="tile-grid" style={{ marginTop: 0, marginBottom: 14 }}>
+        <div className={`tile ${apConcentration != null && apConcentration > 0.5 ? 'tone-on-plan' : 'tone-neutral'}`}>
+          <div className="tile-title">Vendor concentration</div>
+          <div className="tile-primary">{formatPercent(apConcentration)}</div>
+          <div className="tile-primary-label">of overdue AP sits with the top 5 vendors</div>
+        </div>
+        <div className="tile tone-neutral">
+          <div className="tile-title">Aged overdue share</div>
+          <div className="tile-primary">
+            {ageing.data && ageing.data.open_ap > 0
+              ? formatPercent((ageing.data.d61_90 + ageing.data.d90_plus) / ageing.data.open_ap)
+              : '—'}
+          </div>
+          <div className="tile-primary-label">of open AP is 60+ days past due</div>
+        </div>
+      </div>
+
+      <div className="panel-grid">
+        <ChartCard title="AP ageing" subtitle={`Open payables by bucket · ${p.month_label}`}>
+          <ResponsiveContainer width="100%" height={290}>
+            <BarChart data={ageingData} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+              <CartesianGrid stroke={GRID} vertical={false} />
+              <XAxis dataKey="bucket" stroke={AXIS} fontSize={11} tickLine={false} />
+              <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={52} tickFormatter={(v: number) => formatGbpCompact(v)} />
+              <Tooltip
+                cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+                contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }}
+                formatter={(v: number) => [formatGbp(v), 'Open payable']}
+              />
+              <Bar dataKey="amount" radius={[2, 2, 0, 0]}>
+                {ageingData.map((d) => (
+                  <Cell key={d.bucket} fill={bucketFill(d.tone)} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard title="AP ageing trend" subtitle="Monthly bucket history — not just the latest snapshot">
+          <ResponsiveContainer width="100%" height={290}>
+            <BarChart data={ageingTrend.data ?? []} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+              <CartesianGrid stroke={GRID} vertical={false} />
+              <XAxis dataKey="month_label" stroke={AXIS} fontSize={11} tickLine={false} minTickGap={20} />
+              <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={52} tickFormatter={(v: number) => formatGbpCompact(v)} />
+              <Tooltip
+                cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+                contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }}
+                formatter={(v: number, name) => {
+                  const labels: Record<string, string> = {
+                    current_amt: 'Current',
+                    d1_30: '1-30',
+                    d31_60: '31-60',
+                    d61_90: '61-90',
+                    d90_plus: '90+',
+                  };
+                  return [formatGbp(v), labels[name as string] ?? name];
+                }}
+              />
+              <Legend
+                formatter={(v) =>
+                  ({ current_amt: 'Current', d1_30: '1-30', d31_60: '31-60', d61_90: '61-90', d90_plus: '90+' }[v as string] ?? v)
+                }
+              />
+              <Bar dataKey="current_amt" stackId="age" fill={chart.secondary} />
+              <Bar dataKey="d1_30" stackId="age" fill={chart.amber} />
+              <Bar dataKey="d31_60" stackId="age" fill="#c4954d" />
+              <Bar dataKey="d61_90" stackId="age" fill="#b05c46" />
+              <Bar dataKey="d90_plus" stackId="age" fill={chart.adverse} radius={[2, 2, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+
       <div className="panel" style={{ marginTop: 12, paddingBottom: 16 }}>
         <div className="panel-head">
           <div>
             <h3>Top vendors by overdue AP</h3>
             <p className="panel-sub">{p.month_label} · open vs overdue payable · days past due</p>
           </div>
+          <span className="panel-aside">
+            {apConcentration != null ? `Top 5 = ${formatPercent(apConcentration)} of overdue AP` : ''}
+          </span>
         </div>
         <div className="table-scroll">
         <table className="pnl">

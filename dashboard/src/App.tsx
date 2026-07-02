@@ -7,6 +7,7 @@ import { FinancialPerformance } from './pages/FinancialPerformance';
 import { RevenueRecognition } from './pages/RevenueRecognition';
 import { WorkingCapital } from './pages/WorkingCapital';
 import { WorkforceCapacity } from './pages/WorkforceCapacity';
+import { ForecastValuation } from './pages/ForecastValuation';
 import { ControlTower } from './pages/ControlTower';
 import { Validation } from './pages/Validation';
 
@@ -36,11 +37,12 @@ export default function App() {
     <Layout current={page} onNavigate={navigate}>
       {page === 'command-center' && <CfoCommandCenter onNavigate={navigate} />}
       {page === 'saas' && <SaaSPerformance />}
-      {page === 'financial' && <FinancialPerformance />}
+      {page === 'financial' && <FinancialPerformance onNavigate={navigate} />}
       {page === 'revenue' && <RevenueRecognition />}
-      {page === 'working-capital' && <WorkingCapital />}
+      {page === 'working-capital' && <WorkingCapital onNavigate={navigate} />}
       {page === 'workforce' && <WorkforceCapacity />}
-      {page === 'control-tower' && <ControlTower />}
+      {page === 'model' && <ForecastValuation />}
+      {page === 'control-tower' && <ControlTower onNavigate={navigate} />}
       {page === 'validation' && <Validation />}
     </Layout>
   );

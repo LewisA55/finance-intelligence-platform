@@ -5,12 +5,14 @@ interface ChartCardProps {
   subtitle?: string;
   /** Optional right-aligned slot (e.g. a legend note or source tag). */
   aside?: ReactNode;
+  /** Extra classes, e.g. "hero" for the page's primary diagnostic. */
+  className?: string;
   children: ReactNode;
 }
 
-export function ChartCard({ title, subtitle, aside, children }: ChartCardProps) {
+export function ChartCard({ title, subtitle, aside, className, children }: ChartCardProps) {
   return (
-    <div className="panel">
+    <div className={`panel${className ? ` ${className}` : ''}`}>
       <div className="panel-head">
         <div>
           <h3>{title}</h3>

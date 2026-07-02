@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -76,6 +76,13 @@ export function SaaSPerformance() {
   const segmentTrend = useQuery(getSaasSegmentTrend, []);
 
   const k = kpis.data;
+  const [historyWindow, setHistoryWindow] = useState<'full' | 'fy'>('full');
+
+  const historyRows = useMemo(() => {
+    const rows = longTrend.data ?? [];
+    if (historyWindow === 'full') return rows;
+    return rows.filter((r) => r.month_iso >= '2026-01-01');
+  }, [longTrend.data, historyWindow]);
 
   const walkSteps = useMemo<WalkStep[]>(() => {
     const w = walk.data;
@@ -220,7 +227,7 @@ export function SaaSPerformance() {
     <>
       <TopBar
         title="SaaS Performance"
-        subtitle="ARR movement, retention, product & segment mix"
+        subtitle="Is the growth engine compounding — and where is ARR leaking?"
         actions={
           <>
             <span className="scope-pill">Scope: Company Total</span>
@@ -238,13 +245,61 @@ export function SaaSPerformance() {
         <KpiCard label="Logo Churn" value={formatPercent(k.logo_churn)} sub={`${formatCount(k.churned_customers)} churned`} status={{ tone: k.logo_churn != null && k.logo_churn <= 0.05 ? 'favourable' : 'neutral' }} />
       </div>
 
+      {/* The growth engine: how ARR moved — the page's primary diagnostic */}
+      <ChartCard
+        className="hero"
+        title="Growth engine · FYTD ARR movement"
+        subtitle="Where ARR was won and lost: new, expansion and price against contraction, churn and pause (GBP)"
+      >
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={walkSteps} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+            <CartesianGrid stroke={GRID} vertical={false} />
+            <XAxis dataKey="name" stroke={AXIS} fontSize={11} tickLine={false} />
+            <YAxis
+              stroke={AXIS}
+              fontSize={11}
+              tickLine={false}
+              width={56}
+              tickFormatter={(v: number) => formatGbpCompact(v)}
+              domain={[(min: number) => Math.max(0, min - 2_000_000), (max: number) => max + 2_000_000]}
+            />
+            <Tooltip
+              cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+              contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }}
+              formatter={(_v: number, name, props) => {
+                if (name === 'base') return [null, null] as unknown as [string, string];
+                const step = props.payload as WalkStep;
+                return [formatGbp(step.amount), step.name];
+              }}
+            />
+            <Bar dataKey="base" stackId="walk" fill="transparent" />
+            <Bar dataKey="value" stackId="walk" radius={[2, 2, 0, 0]}>
+              {walkSteps.map((s) => (
+                <Cell key={s.name} fill={stepFill(s.kind)} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+        <p className="pnl-note">
+          <strong>Active ARR</strong> ({formatGbp(k.active_arr)}) is the live-subscription run-rate shown in the KPI.
+          The bridge uses <strong>event-led ending ARR</strong> ({formatGbp(walk.data.closing)}) for waterfall continuity;
+          paused/churned balances are excluded from active ARR, so the two differ slightly by design.
+        </p>
+      </ChartCard>
+
       <div className="panel-grid">
         <ChartCard
           title="SaaS run-rate history"
-          subtitle="Full exported history, Jan 2018-Jun 2026: active ARR with NRR overlay"
+          subtitle={historyWindow === 'full' ? 'Full exported history, Jan 2018-Jun 2026: active ARR with NRR overlay' : 'FY 2026 to date: active ARR with NRR overlay'}
+          aside={
+            <div className="seg-toggle" role="group" aria-label="History window">
+              <button type="button" className={`seg-btn${historyWindow === 'full' ? ' active' : ''}`} onClick={() => setHistoryWindow('full')}>2018-now</button>
+              <button type="button" className={`seg-btn${historyWindow === 'fy' ? ' active' : ''}`} onClick={() => setHistoryWindow('fy')}>FY 2026</button>
+            </div>
+          }
         >
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={longTrend.data ?? []} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+            <LineChart data={historyRows} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
               <CartesianGrid stroke={GRID} vertical={false} />
               <XAxis dataKey="month_label" stroke={AXIS} fontSize={11} tickLine={false} minTickGap={24} />
               <YAxis yAxisId="money" stroke={AXIS} fontSize={11} tickLine={false} width={56} tickFormatter={(v: number) => formatGbpCompact(v)} />
@@ -304,47 +359,6 @@ export function SaaSPerformance() {
         </ResponsiveContainer>
       </ChartCard>
 
-      {/* FYTD ARR movement bridge */}
-      <ChartCard
-        title="FYTD ARR movement bridge"
-        subtitle="Opening to closing event-led ARR across the SaaS period (GBP) — bars show increase / decrease, not plan variance"
-      >
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={walkSteps} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-            <CartesianGrid stroke={GRID} vertical={false} />
-            <XAxis dataKey="name" stroke={AXIS} fontSize={11} tickLine={false} />
-            <YAxis
-              stroke={AXIS}
-              fontSize={11}
-              tickLine={false}
-              width={56}
-              tickFormatter={(v: number) => formatGbpCompact(v)}
-              domain={[(min: number) => Math.max(0, min - 2_000_000), (max: number) => max + 2_000_000]}
-            />
-            <Tooltip
-              cursor={{ fill: 'rgba(0,0,0,0.03)' }}
-              contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }}
-              formatter={(_v: number, name, props) => {
-                if (name === 'base') return [null, null] as unknown as [string, string];
-                const step = props.payload as WalkStep;
-                return [formatGbp(step.amount), step.name];
-              }}
-            />
-            <Bar dataKey="base" stackId="walk" fill="transparent" />
-            <Bar dataKey="value" stackId="walk" radius={[2, 2, 0, 0]}>
-              {walkSteps.map((s) => (
-                <Cell key={s.name} fill={stepFill(s.kind)} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-        <p className="pnl-note">
-          <strong>Active ARR</strong> ({formatGbp(k.active_arr)}) is the live-subscription run-rate shown in the KPI.
-          The bridge uses <strong>event-led ending ARR</strong> ({formatGbp(walk.data.closing)}) for waterfall continuity;
-          paused/churned balances are excluded from active ARR, so the two differ slightly by design.
-        </p>
-      </ChartCard>
-
       {/* Product & segment depth */}
       <div className="panel-grid" style={{ marginTop: 12 }}>
         <ChartCard title="Active ARR by product & segment" subtitle={`As at ${k.month_label} — stacked by customer segment (GBP)`}>
@@ -402,6 +416,7 @@ export function SaaSPerformance() {
               <th>NRR</th>
               <th>GRR</th>
               <th>Logo retention</th>
+              <th>Logo churn</th>
               <th>Churned</th>
               <th className="row-label">Status</th>
             </tr>
@@ -418,6 +433,7 @@ export function SaaSPerformance() {
                   <td>{formatPercent(nrr)}</td>
                   <td>{formatPercent(grr)}</td>
                   <td>{formatPercent(logo)}</td>
+                  <td>{logo == null ? '-' : formatPercent(1 - logo)}</td>
                   <td>{formatCount(s.churned_customers)}</td>
                   <td className="row-label"><StatusPill tone={nrrTone(nrr)} /></td>
                 </tr>

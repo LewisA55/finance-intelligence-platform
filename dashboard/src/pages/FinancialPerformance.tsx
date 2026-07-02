@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ResponsiveContainer,
   BarChart,
+  LineChart,
+  Line,
+  Legend,
   Bar,
   Cell,
   XAxis,
@@ -16,6 +19,8 @@ import {
   getFinancialSummary,
   getDepartmentVariance,
   getTopAccountVariances,
+  getRevenueTrend,
+  getModelActualsFeed,
 } from '../duckdb/queries';
 import { TopBar } from '../components/TopBar';
 import { KpiCard } from '../components/KpiCard';
@@ -23,6 +28,7 @@ import { ChartCard } from '../components/ChartCard';
 import { StatusPill, type StatusTone } from '../components/StatusPill';
 import { chart } from '../lib/theme';
 import { formatGbp, formatGbpCompact, formatSignedPercent } from '../lib/format';
+import type { PageId } from '../nav';
 
 const GRID = chart.grid;
 const AXIS = chart.axis;
@@ -31,9 +37,16 @@ function favTone(favourable: boolean): StatusTone {
   return favourable ? 'favourable' : 'adverse';
 }
 
-export function FinancialPerformance() {
+type ClassFilter = 'All' | 'Revenue' | 'Expense';
+type FavFilter = 'All' | 'Favourable' | 'Adverse';
+
+export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId) => void }) {
   const months = useQuery(getReportingMonths, []);
+  const trend = useQuery(getRevenueTrend, []);
+  const feed = useQuery(getModelActualsFeed, []);
   const [selected, setSelected] = useState<string | null>(null);
+  const [classFilter, setClassFilter] = useState<ClassFilter>('All');
+  const [favFilter, setFavFilter] = useState<FavFilter>('All');
 
   useEffect(() => {
     if (selected || !months.data || months.data.length === 0) return;
@@ -89,7 +102,33 @@ export function FinancialPerformance() {
     );
   }, [s, hasActuals, monthLabel, topVar.data]);
 
-  const anyError = months.error || summary.error || deptVar.error || topVar.error;
+  // Operating-result variance waterfall: revenue variance, then each
+  // department's opex contribution (over-budget spend reduces the result).
+  const waterfall = useMemo(() => {
+    if (!s) return [];
+    const items = [
+      { name: 'Revenue', delta: s.revenue_actual - s.revenue_budget },
+      ...(deptVar.data ?? []).map((d) => ({ name: d.department, delta: -d.variance })),
+    ];
+    let cumulative = 0;
+    const rows = items.map((it) => {
+      const base = it.delta >= 0 ? cumulative : cumulative + it.delta;
+      cumulative += it.delta;
+      return { name: it.name, base, size: Math.abs(it.delta), delta: it.delta, total: false };
+    });
+    rows.push({
+      name: 'Operating result',
+      base: Math.min(0, cumulative),
+      size: Math.abs(cumulative),
+      delta: cumulative,
+      total: true,
+    });
+    return rows;
+  }, [s, deptVar.data]);
+
+  const feedRow = feed.data?.find((r) => r.month_iso === selected) ?? null;
+
+  const anyError = months.error || summary.error || deptVar.error || topVar.error || trend.error || feed.error;
   if (anyError) {
     return <div className="error-box"><strong>Could not load data.</strong><div>{anyError.message}</div></div>;
   }
@@ -107,14 +146,21 @@ export function FinancialPerformance() {
     variance: d.variance,
   }));
 
+  const filteredVariances = (topVar.data ?? []).filter(
+    (r) =>
+      (classFilter === 'All' || r.account_class === classFilter) &&
+      (favFilter === 'All' || r.favourability === favFilter),
+  );
+
   return (
     <>
       <TopBar
         title="Financial Performance"
-        subtitle="Actual vs budget vs forecast — department & account variance"
+        subtitle="Why did the result move against plan — and which departments drove it?"
         actions={
           <>
             <span className="scope-pill">Scope: Company Total</span>
+            <span className="scope-pill">Forecast: FC_BASE_CASE</span>
             <select
               className="month-select"
               value={selected ?? ''}
@@ -177,6 +223,83 @@ export function FinancialPerformance() {
 
       <div className="panel-grid">
         <ChartCard
+          title="Actual vs budget vs forecast"
+          subtitle="Company-total revenue by month (GBP) · actuals stop at the last closed month"
+        >
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={trend.data ?? []} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+              <CartesianGrid stroke={GRID} vertical={false} />
+              <XAxis dataKey="month_label" stroke={AXIS} fontSize={11} tickLine={false} minTickGap={18} />
+              <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={56} tickFormatter={(v: number) => formatGbpCompact(v)} />
+              <Tooltip
+                contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }}
+                formatter={(v: number, name) => {
+                  const labels: Record<string, string> = {
+                    actual_revenue: 'Actual',
+                    budget_revenue: 'Budget',
+                    forecast_revenue: 'Forecast',
+                  };
+                  return [formatGbp(v), labels[name as string] ?? name];
+                }}
+              />
+              <Legend
+                formatter={(v) =>
+                  ({ actual_revenue: 'Actual', budget_revenue: 'Budget', forecast_revenue: 'Forecast' }[v as string] ?? v)
+                }
+              />
+              {(() => {
+                const lastActual = [...(months.data ?? [])].reverse().find((m) => m.has_actuals);
+                return lastActual ? (
+                  <ReferenceLine
+                    x={lastActual.month_label}
+                    stroke={AXIS}
+                    strokeDasharray="4 4"
+                    label={{ value: 'plan →', position: 'insideTopRight', fill: AXIS, fontSize: 10 }}
+                  />
+                ) : null;
+              })()}
+              <Line type="monotone" dataKey="actual_revenue" stroke={chart.primary} strokeWidth={2.5} dot={false} connectNulls={false} />
+              <Line type="monotone" dataKey="budget_revenue" stroke={AXIS} strokeWidth={1.5} strokeDasharray="5 4" dot={false} />
+              <Line type="monotone" dataKey="forecast_revenue" stroke={chart.secondary} strokeWidth={2} dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <div className="panel">
+          <div className="panel-head">
+            <div>
+              <h3>Model feed bridge</h3>
+              <p className="panel-sub">How {monthLabel} lands in <code>mart_model_actuals_feed</code></p>
+            </div>
+            {feedRow && (
+              <StatusPill
+                tone={feedRow.readiness_status === 'Ready' ? 'favourable' : feedRow.readiness_status === 'Blocked' ? 'adverse' : feedRow.readiness_status === 'Usable with review' ? 'warning' : 'neutral'}
+                label={feedRow.readiness_status}
+              />
+            )}
+          </div>
+          {feedRow ? (
+            <ul className="kv">
+              <li><span>Feed recognised revenue</span><strong>{formatGbp(feedRow.recognised_revenue)}</strong></li>
+              <li><span>Feed operating expenses</span><strong>{formatGbp(feedRow.opex)}</strong></li>
+              <li><span>Feed operating profit</span><strong>{formatGbp(feedRow.operating_profit)}</strong></li>
+              <li><span>Excel import</span><strong>{feedRow.use_in_excel_actuals ? 'Included' : 'Excluded'}</strong></li>
+            </ul>
+          ) : (
+            <p className="pnl-note">This month is outside the model-serving feed window.</p>
+          )}
+          <p className="pnl-note">
+            The same governed actuals feed the CFO model — recognised revenue here is the
+            accounting basis, not commercial ARR.
+          </p>
+          <button type="button" className="drillthrough-link" onClick={() => onNavigate('model')}>
+            Open Forecast &amp; Valuation →
+          </button>
+        </div>
+      </div>
+
+      <div className="panel-grid">
+        <ChartCard
           title="Operating expense variance vs budget by department"
           subtitle="Favourable = under budget (green) · adverse = over budget (burgundy)"
         >
@@ -228,11 +351,71 @@ export function FinancialPerformance() {
         </ChartCard>
       </div>
 
+      {hasActuals && waterfall.length > 1 && (
+        <ChartCard
+          title="Operating result variance waterfall"
+          subtitle={`${monthLabel} · revenue variance and department opex contributions to the operating-result variance vs budget`}
+        >
+          <ResponsiveContainer width="100%" height={Math.max(220, waterfall.length * 34)}>
+            <BarChart data={waterfall} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
+              <CartesianGrid stroke={GRID} horizontal={false} />
+              <XAxis type="number" stroke={AXIS} fontSize={11} tickLine={false} tickFormatter={(v: number) => formatGbpCompact(v)} />
+              <YAxis type="category" dataKey="name" stroke={AXIS} fontSize={11} tickLine={false} width={130} />
+              <Tooltip
+                cursor={{ fill: 'rgba(0,0,0,0.03)' }}
+                contentStyle={{ background: '#ffffff', border: '1px solid #d6d3cb', borderRadius: 8, color: '#1a1a1a' }}
+                formatter={(v: number, name: string, entry) => {
+                  if (name === 'base') return ['', ''];
+                  const delta = (entry?.payload as { delta: number } | undefined)?.delta ?? v;
+                  return [`${delta > 0 ? '+' : ''}${formatGbp(delta)}`, 'Contribution'];
+                }}
+              />
+              <ReferenceLine x={0} stroke="#d6d3cb" />
+              <Bar dataKey="base" stackId="wf" fill="transparent" />
+              <Bar dataKey="size" stackId="wf" radius={[0, 2, 2, 0]}>
+                {waterfall.map((w) => (
+                  <Cell
+                    key={w.name}
+                    fill={w.total ? chart.primary : w.delta >= 0 ? chart.favourable : chart.adverse}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      )}
+
       <div className="panel" style={{ marginTop: 12, paddingBottom: 16 }}>
         <div className="panel-head">
           <div>
             <h3>Largest variances · department × account</h3>
             <p className="panel-sub">{monthLabel} · actual vs budget · FC_BASE_CASE</p>
+          </div>
+          <div className="seg-toggle-group">
+            <div className="seg-toggle" role="group" aria-label="Account class filter">
+              {(['All', 'Revenue', 'Expense'] as const).map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  className={`seg-btn${classFilter === c ? ' active' : ''}`}
+                  onClick={() => setClassFilter(c)}
+                >
+                  {c === 'Expense' ? 'Opex' : c}
+                </button>
+              ))}
+            </div>
+            <div className="seg-toggle" role="group" aria-label="Favourability filter">
+              {(['All', 'Favourable', 'Adverse'] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  className={`seg-btn${favFilter === f ? ' active' : ''}`}
+                  onClick={() => setFavFilter(f)}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
         <div className="table-scroll">
@@ -248,7 +431,7 @@ export function FinancialPerformance() {
             </tr>
           </thead>
           <tbody>
-            {(topVar.data ?? []).map((r) => (
+            {filteredVariances.map((r) => (
               <tr key={`${r.department}-${r.account}`}>
                 <td className="row-label">{r.department}</td>
                 <td className="row-label">{r.account}</td>

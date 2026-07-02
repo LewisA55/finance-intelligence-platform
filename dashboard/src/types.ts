@@ -359,12 +359,13 @@ export interface CashConversionMonth {
 export interface WorkforceMonth {
   month_iso: string;
   month_label: string;
-  period_type: 'Actual' | 'Plan';
+  period_type: 'Actual' | 'Plan' | 'Hiring plan';
   payroll_cost: number;
   active_headcount: number;
   active_fte: number;
   payroll_per_fte: number | null;
   ghost_headcount: number;
+  status_mismatches: number;
   open_positions: number;
   open_position_monthly_exposure: number;
   control_exceptions: number;
@@ -374,6 +375,8 @@ export interface WorkforceDepartment {
   department: string;
   payroll_cost: number;
   active_headcount: number;
+  ghost_headcount: number;
+  status_mismatches: number;
   open_positions: number;
   control_exceptions: number;
 }
@@ -384,4 +387,87 @@ export interface ControlHistoryMonth {
   domain: string;
   exception_count: number;
   flagged_observation_count: number;
+}
+
+export interface ModelReadinessSummary {
+  total_months: number;
+  actual_months: number;
+  scheduled_months: number;
+  excel_actual_months: number;
+  ready_months: number;
+  review_months: number;
+  accepted_limitation_months: number;
+  blocked_months: number;
+  latest_excel_month_iso: string | null;
+  latest_excel_month_label: string | null;
+  latest_actual_month_label: string | null;
+  latest_scheduled_month_label: string | null;
+  latest_excel_revenue: number | null;
+  latest_excel_cash_collected: number | null;
+  latest_excel_arr: number | null;
+  opening_bs_date: string;
+  opening_cash: number;
+  opening_deferred_revenue: number;
+  opening_debt: number;
+  opening_total_assets: number;
+  opening_total_liabilities: number;
+  opening_total_equity: number;
+  opening_bs_balanced: boolean;
+}
+
+export interface ModelActualsMonth {
+  month_iso: string;
+  month_label: string;
+  period_status: 'Actual' | 'Scheduled';
+  readiness_status: 'Ready' | 'Usable with review' | 'Blocked' | 'Accepted limitation';
+  use_in_excel_actuals: boolean;
+  has_financial_actuals: boolean;
+  has_revenue_actuals: boolean;
+  has_o2c_actuals: boolean;
+  has_saas_actuals: boolean;
+  recognised_revenue: number;
+  billings: number;
+  cash_collected: number;
+  closing_deferred_revenue: number;
+  open_ar: number;
+  open_ap: number;
+  opex: number;
+  operating_profit: number;
+  payroll_cost: number;
+  active_fte: number;
+  headline_arr: number;
+  nrr: number | null;
+  total_control_exceptions: number;
+  model_blocking_exceptions: number;
+  review_exceptions: number;
+}
+
+export interface OpeningBalanceSheet {
+  as_of_date: string;
+  cash: number;
+  accounts_receivable: number;
+  prepaids_other_current_assets: number;
+  net_ppe: number;
+  total_current_assets: number;
+  total_assets: number;
+  accounts_payable: number;
+  deferred_revenue: number;
+  debt: number;
+  total_liabilities: number;
+  share_capital: number;
+  retained_earnings: number;
+  total_equity: number;
+  balance_check_variance: number;
+  is_balanced: boolean;
+}
+
+export interface ModelReadinessControl {
+  control_key: string;
+  control_domain: string;
+  control_name: string;
+  severity: 'High' | 'Medium' | 'Low';
+  treatment: 'Model Blocking' | 'Usable with review' | 'Accepted Limitation' | 'Monitor';
+  model_blocking: boolean;
+  accepted_limitation: boolean;
+  recommended_treatment: string;
 }

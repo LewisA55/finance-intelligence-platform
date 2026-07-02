@@ -106,3 +106,8 @@ dashboard/vite.config.d.ts
 # site is reproducible and deployable. Re-include it despite the global *.parquet ignore.
 !dashboard/public/data/
 !dashboard/public/data/*.parquet
+
+# The portal publishes the Excel model workbook for download. Re-include it
+# despite the global *.xlsx ignore (analysis working copies stay untracked).
+!dashboard/public/model/
+!dashboard/public/model/*.xlsx

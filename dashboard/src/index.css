@@ -351,6 +351,33 @@ a:focus-visible,
 .fav { color: var(--favourable); }
 .adv { color: var(--adverse); }
 
+/* Revenue Quality has exactly six summary cards; keep them as a stable 3 x 2 block. */
+.saas-kpi-grid,
+.revenue-kpi-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.revenue-detail-grid {
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+}
+.revenue-recon-panel {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 16px;
+}
+.revenue-recon-panel .table-scroll .pnl {
+  min-width: 0;
+}
+.revenue-recon-panel .pnl td {
+  padding: 11px 2px;
+}
+.revenue-recon-panel .pnl-note {
+  margin-top: auto;
+  padding-top: 12px;
+  line-height: 1.5;
+  border-top: 1px solid var(--border);
+}
+
 /* Revenue vs plan stat block */
 .rev-stat { display: flex; flex-direction: column; padding: 2px 0 6px; }
 .rev-row {

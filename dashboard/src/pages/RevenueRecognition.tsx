@@ -69,7 +69,7 @@ export function RevenueRecognition() {
         }
       />
 
-      <div className="kpi-grid">
+      <div className="kpi-grid revenue-kpi-grid">
         <KpiCard label="Billed Revenue" value={formatGbpCompact(k.billed)} sub={`${k.month_label} · monthly`} />
         <KpiCard
           label="Recognised Revenue"
@@ -159,8 +159,8 @@ export function RevenueRecognition() {
         </ChartCard>
       </div>
 
-      <div className="panel-grid" style={{ marginTop: 12 }}>
-        <div className="panel" style={{ paddingBottom: 16 }}>
+      <div className="panel-grid revenue-detail-grid">
+        <div className="panel revenue-recon-panel">
           <div className="panel-head">
             <div>
               <h3>Deferred revenue rollforward</h3>
@@ -179,7 +179,7 @@ export function RevenueRecognition() {
           </div>
         </div>
 
-        <div className="panel" style={{ paddingBottom: 16 }}>
+        <div className="panel revenue-recon-panel">
           <div className="panel-head">
             <div>
               <h3>Commercial vs accounting</h3>

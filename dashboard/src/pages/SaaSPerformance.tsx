@@ -236,7 +236,7 @@ export function SaaSPerformance() {
         }
       />
 
-      <div className="kpi-grid">
+      <div className="kpi-grid saas-kpi-grid">
         <KpiCard label="Active ARR" value={formatGbpCompact(k.active_arr)} sub={`${formatGbpCompact(k.active_mrr)} MRR`} />
         <KpiCard label="Net New ARR" value={`${k.net_arr_delta >= 0 ? '+' : ''}${formatGbpCompact(k.net_arr_delta)}`} sub="latest month" status={{ tone: k.net_arr_delta >= 0 ? 'favourable' : 'adverse' }} />
         <KpiCard label="Net Revenue Retention" value={formatPercent(k.nrr)} sub="excl. new business" status={{ tone: nrrTone(k.nrr) }} />

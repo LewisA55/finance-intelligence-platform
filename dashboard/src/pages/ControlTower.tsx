@@ -74,6 +74,21 @@ export function ControlTower({ onNavigate }: { onNavigate: (page: PageId) => voi
     return Array.from(byMonth.values()).sort((a, b) => String(a.month_iso).localeCompare(String(b.month_iso)));
   }, [history.data]);
 
+  // Raw exception counts are incomparable across domains; give each a
+  // denominator: months affected out of months tracked.
+  const domainRates = useMemo(() => {
+    const rates = new Map<string, { affected: number; tracked: number }>();
+    for (const row of history.data ?? []) {
+      // The register aggregates both SaaS histories into one domain row.
+      const key = row.domain.startsWith('SaaS') ? 'SaaS' : row.domain;
+      const entry = rates.get(key) ?? { affected: 0, tracked: 0 };
+      entry.tracked += 1;
+      if (row.exception_count > 0) entry.affected += 1;
+      rates.set(key, entry);
+    }
+    return rates;
+  }, [history.data]);
+
   const domainColours: Record<string, string> = {
     'Financial Performance': chart.primary,
     'Order-to-Cash': chart.secondary,
@@ -237,7 +252,8 @@ export function ControlTower({ onNavigate }: { onNavigate: (page: PageId) => voi
             <tr>
               <th className="row-label">Domain</th>
               <th className="row-label">Treatment</th>
-              <th>Exception periods</th>
+              <th>Observations</th>
+              <th>Months affected</th>
               <th className="row-label">What this means for model use</th>
               <th className="row-label">Drill into</th>
             </tr>
@@ -256,6 +272,13 @@ export function ControlTower({ onNavigate }: { onNavigate: (page: PageId) => voi
                   />
                 </td>
                 <td className={d.flag && d.worst?.treatment === 'Model Blocking' ? 'adv' : ''}>{formatCount(d.exceptions)}</td>
+                <td>
+                  {(() => {
+                    const rate = domainRates.get(d.name);
+                    if (!rate || rate.tracked === 0) return '—';
+                    return `${formatCount(rate.affected)} of ${formatCount(rate.tracked)} (${Math.round((rate.affected / rate.tracked) * 100)}%)`;
+                  })()}
+                </td>
                 <td className="row-label">
                   {d.flag
                     ? d.worst?.recommended_treatment ?? 'Review the observations before relying on this domain.'

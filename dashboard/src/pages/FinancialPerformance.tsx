@@ -17,7 +17,6 @@ import { useQuery } from '../hooks/useQuery';
 import {
   getReportingMonths,
   getFinancialSummary,
-  getDepartmentVariance,
   getTopAccountVariances,
   getRevenueTrend,
   getModelActualsFeed,
@@ -27,7 +26,8 @@ import { KpiCard } from '../components/KpiCard';
 import { ChartCard } from '../components/ChartCard';
 import { StatusPill, type StatusTone } from '../components/StatusPill';
 import { chart } from '../lib/theme';
-import { formatGbp, formatGbpCompact, formatSignedPercent } from '../lib/format';
+import { formatGbp, formatGbpCompact, formatSignedPercent, formatCount } from '../lib/format';
+import { isSuspectedIncompleteCapture, SOURCE_COMPLETENESS } from '../lib/presentation';
 import type { PageId } from '../nav';
 
 const GRID = chart.grid;
@@ -39,6 +39,7 @@ function favTone(favourable: boolean): StatusTone {
 
 type ClassFilter = 'All' | 'Revenue' | 'Expense';
 type FavFilter = 'All' | 'Favourable' | 'Adverse';
+type Basis = 'Presented' | 'As-found';
 
 export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId) => void }) {
   const months = useQuery(getReportingMonths, []);
@@ -47,6 +48,7 @@ export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId
   const [selected, setSelected] = useState<string | null>(null);
   const [classFilter, setClassFilter] = useState<ClassFilter>('All');
   const [favFilter, setFavFilter] = useState<FavFilter>('All');
+  const [basis, setBasis] = useState<Basis>('Presented');
 
   useEffect(() => {
     if (selected || !months.data || months.data.length === 0) return;
@@ -62,12 +64,10 @@ export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId
     () => (selected ? getFinancialSummary(selected) : Promise.resolve(null)),
     [selected],
   );
-  const deptVar = useQuery(
-    () => (selected ? getDepartmentVariance(selected) : Promise.resolve([])),
-    [selected],
-  );
-  const topVar = useQuery(
-    () => (selected ? getTopAccountVariances(selected) : Promise.resolve([])),
+  // Full department × account grain so the presentation basis is applied
+  // client-side and consistently across the chart, waterfall and table.
+  const accounts = useQuery(
+    () => (selected ? getTopAccountVariances(selected, 500) : Promise.resolve([])),
     [selected],
   );
 
@@ -80,35 +80,63 @@ export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId
   const budgetOperatingResult = s ? s.revenue_budget - s.opex_budget : 0;
   const operatingVariance = operatingResult - budgetOperatingResult;
 
+  // Presentation basis: quarantine lines whose favourable variance is more
+  // plausibly missing source capture than genuine underspend. As-found stays
+  // one toggle away; excluded lines are disclosed, not hidden.
+  const { presentedRows, excludedRows } = useMemo(() => {
+    const rows = accounts.data ?? [];
+    return {
+      presentedRows: rows.filter((r) => !isSuspectedIncompleteCapture(r)),
+      excludedRows: rows.filter((r) => isSuspectedIncompleteCapture(r)),
+    };
+  }, [accounts.data]);
+
+  const presentedDeptVariance = useMemo(() => {
+    const byDept = new Map<string, number>();
+    for (const r of presentedRows) {
+      if (r.account_class !== 'Expense') continue;
+      byDept.set(r.department, (byDept.get(r.department) ?? 0) + r.variance);
+    }
+    return Array.from(byDept.entries())
+      .map(([department, variance]) => ({ department, variance }))
+      .sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance));
+  }, [presentedRows]);
+
   const narrative = useMemo(() => {
     if (!s) return '';
     if (!hasActuals) {
       return `${monthLabel} is a plan-only period — no financial actuals are recognised yet. Budget revenue is ${formatGbp(s.revenue_budget)} against budgeted operating expenses of ${formatGbp(s.opex_budget)}.`;
     }
-    const rows = topVar.data ?? [];
-    const adverse = rows
+    const adverse = presentedRows
       .filter((r) => r.favourability === 'Adverse')
       .sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance))[0];
-    const favourable = rows
+    const favourable = presentedRows
       .filter((r) => r.favourability === 'Favourable')
       .sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance))[0];
     const revVar = s.revenue_actual - s.revenue_budget;
+    const mixClause =
+      adverse?.account_class === 'Revenue' && favourable?.account_class === 'Revenue'
+        ? `The story is revenue mix vs plan: ${adverse.account} is behind budget while ${favourable.account} runs ahead of it. `
+        : `The largest favourable line is ${favourable ? `${favourable.department} — ${favourable.account}` : 'n/a'}; ${adverse ? `the main adverse line is ${adverse.department} — ${adverse.account}. ` : 'no adverse lines were flagged. '}`;
+    const exclusionClause = excludedRows.length
+      ? `${formatCount(excludedRows.length)} expense line${excludedRows.length === 1 ? '' : 's'} (${formatGbpCompact(excludedRows.reduce((sum, r) => sum + r.budget, 0))} of budget) are excluded from this presented view pending source completeness — see Control Tower. `
+      : '';
     return (
       `For ${monthLabel}, revenue of ${formatGbp(s.revenue_actual)} is ${formatSignedPercent(revVar / s.revenue_budget)} vs budget, ` +
-      `with operating expenses of ${formatGbp(s.opex_actual)} (${formatSignedPercent((s.opex_actual - s.opex_budget) / s.opex_budget)} vs budget). ` +
-      `The largest favourable line is ${favourable ? `${favourable.department} — ${favourable.account}` : 'n/a'}; ` +
-      `${adverse ? `the main adverse line is ${adverse.department} — ${adverse.account}.` : 'no adverse lines were flagged.'} ` +
+      `with captured operating expenses of ${formatGbp(s.opex_actual)} (${formatSignedPercent((s.opex_actual - s.opex_budget) / s.opex_budget)} vs budget). ` +
+      mixClause +
+      exclusionClause +
       `All figures are FC_BASE_CASE on a governed Company-Total basis.`
     );
-  }, [s, hasActuals, monthLabel, topVar.data]);
+  }, [s, hasActuals, monthLabel, presentedRows, excludedRows]);
 
-  // Operating-result variance waterfall: revenue variance, then each
-  // department's opex contribution (over-budget spend reduces the result).
+  // Operating-result variance waterfall on the presented basis: revenue
+  // variance, then each department's presented opex contribution.
   const waterfall = useMemo(() => {
     if (!s) return [];
     const items = [
       { name: 'Revenue', delta: s.revenue_actual - s.revenue_budget },
-      ...(deptVar.data ?? []).map((d) => ({ name: d.department, delta: -d.variance })),
+      ...presentedDeptVariance.map((d) => ({ name: d.department, delta: -d.variance })),
     ];
     let cumulative = 0;
     const rows = items.map((it) => {
@@ -117,18 +145,18 @@ export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId
       return { name: it.name, base, size: Math.abs(it.delta), delta: it.delta, total: false };
     });
     rows.push({
-      name: 'Operating result',
+      name: 'Operating result (presented)',
       base: Math.min(0, cumulative),
       size: Math.abs(cumulative),
       delta: cumulative,
       total: true,
     });
     return rows;
-  }, [s, deptVar.data]);
+  }, [s, presentedDeptVariance]);
 
   const feedRow = feed.data?.find((r) => r.month_iso === selected) ?? null;
 
-  const anyError = months.error || summary.error || deptVar.error || topVar.error || trend.error || feed.error;
+  const anyError = months.error || summary.error || accounts.error || trend.error || feed.error;
   if (anyError) {
     return <div className="error-box"><strong>Could not load data.</strong><div>{anyError.message}</div></div>;
   }
@@ -141,16 +169,16 @@ export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId
     );
   }
 
-  const deptChartData = (deptVar.data ?? []).map((d) => ({
-    department: d.department,
-    variance: d.variance,
-  }));
+  const deptChartData = presentedDeptVariance;
 
-  const filteredVariances = (topVar.data ?? []).filter(
-    (r) =>
-      (classFilter === 'All' || r.account_class === classFilter) &&
-      (favFilter === 'All' || r.favourability === favFilter),
-  );
+  const basisRows = basis === 'Presented' ? presentedRows : (accounts.data ?? []);
+  const filteredVariances = basisRows
+    .filter(
+      (r) =>
+        (classFilter === 'All' || r.account_class === classFilter) &&
+        (favFilter === 'All' || r.favourability === favFilter),
+    )
+    .slice(0, 12);
 
   return (
     <>
@@ -205,7 +233,13 @@ export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId
                 }
               : undefined
           }
-          status={hasActuals ? { tone: favTone(s.opex_actual <= s.opex_budget) } : { tone: 'neutral', label: 'Plan only' }}
+          status={
+            hasActuals
+              ? excludedRows.length > 0
+                ? { tone: 'neutral', label: 'Partial capture' }
+                : { tone: favTone(s.opex_actual <= s.opex_budget) }
+              : { tone: 'neutral', label: 'Plan only' }
+          }
         />
         <KpiCard
           label="Operating Result"
@@ -302,7 +336,7 @@ export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId
       <div className="panel-grid">
         <ChartCard
           title="Operating expense variance vs budget by department"
-          subtitle="Favourable = under budget (green) · adverse = over budget (burgundy)"
+          subtitle="Presented basis — lines pending source completeness excluded · favourable = under budget (green)"
         >
           <ResponsiveContainer width="100%" height={300}>
             <BarChart
@@ -355,7 +389,7 @@ export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId
       {hasActuals && waterfall.length > 1 && (
         <ChartCard
           title="Operating result variance waterfall"
-          subtitle={`${monthLabel} · revenue variance and department opex contributions to the operating-result variance vs budget`}
+          subtitle={`${monthLabel} · presented basis · revenue variance and department opex contributions vs budget`}
         >
           <ResponsiveContainer width="100%" height={Math.max(220, waterfall.length * 34)}>
             <BarChart data={waterfall} layout="vertical" margin={{ top: 8, right: 16, left: 8, bottom: 0 }}>
@@ -393,6 +427,18 @@ export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId
             <p className="panel-sub">{monthLabel} · actual vs budget · FC_BASE_CASE</p>
           </div>
           <div className="seg-toggle-group">
+            <div className="seg-toggle" role="group" aria-label="Presentation basis">
+              {(['Presented', 'As-found'] as const).map((b) => (
+                <button
+                  key={b}
+                  type="button"
+                  className={`seg-btn${basis === b ? ' active' : ''}`}
+                  onClick={() => setBasis(b)}
+                >
+                  {b}
+                </button>
+              ))}
+            </div>
             <div className="seg-toggle" role="group" aria-label="Account class filter">
               {(['All', 'Revenue', 'Expense'] as const).map((c) => (
                 <button
@@ -442,8 +488,12 @@ export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId
                   {r.variance > 0 ? '+' : ''}{formatGbp(r.variance)}
                 </td>
                 <td className="row-label">
-                  {r.favourability && (
-                    <StatusPill tone={r.favourability === 'Favourable' ? 'favourable' : 'adverse'} label={r.favourability} />
+                  {isSuspectedIncompleteCapture(r) ? (
+                    <StatusPill tone="neutral" label="Excluded" />
+                  ) : (
+                    r.favourability && (
+                      <StatusPill tone={r.favourability === 'Favourable' ? 'favourable' : 'adverse'} label={r.favourability} />
+                    )
                   )}
                 </td>
               </tr>
@@ -451,6 +501,13 @@ export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId
           </tbody>
         </table>
         </div>
+        {excludedRows.length > 0 && (
+          <p className="pnl-note">
+            {basis === 'Presented'
+              ? `${formatCount(excludedRows.length)} expense line${excludedRows.length === 1 ? '' : 's'} (${formatGbpCompact(excludedRows.reduce((sum, r) => sum + r.budget, 0))} budget) excluded pending source completeness — material budgets with under ${Math.round(SOURCE_COMPLETENESS.captureRatio * 100)}% captured actuals read as missing capture, not underspend. Switch to As-found to inspect them, or review the domain in the Control Tower.`
+              : `As-found basis: lines marked Excluded fail the source-completeness rule and are omitted from the presented charts, waterfall and commentary.`}
+          </p>
+        )}
       </div>
 
       <div className="narrative">

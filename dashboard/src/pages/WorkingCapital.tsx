@@ -103,6 +103,19 @@ export function WorkingCapital({ onNavigate }: { onNavigate: (page: PageId) => v
     [arCollections.data],
   );
 
+  // AP payable records only exist from an onboarding date: clip the empty
+  // leading months so absent source coverage does not present as "zero AP".
+  const apCoverage = useMemo(() => {
+    const rows = ageingTrend.data ?? [];
+    const total = (r: (typeof rows)[number]) => r.current_amt + r.d1_30 + r.d31_60 + r.d61_90 + r.d90_plus;
+    const firstIdx = rows.findIndex((r) => total(r) > 0);
+    return {
+      rows: firstIdx < 0 ? rows : rows.slice(firstIdx),
+      coverageStart: firstIdx < 0 ? null : rows[firstIdx].month_label,
+      clippedMonths: Math.max(0, firstIdx),
+    };
+  }, [ageingTrend.data]);
+
   const ageingData = useMemo(() => {
     const a = ageing.data;
     if (!a) return [];
@@ -169,7 +182,7 @@ export function WorkingCapital({ onNavigate }: { onNavigate: (page: PageId) => v
         <KpiCard
           label="Open AR Exposure"
           value={formatGbpCompact(p.open_ar)}
-          sub={`collection rate ${formatPercent(p.collection_rate)}`}
+          sub={`collection rate ${formatPercent(p.collection_rate)} · timing lag, not credit loss`}
           status={{ tone: 'neutral', label: 'Monitor' }}
         />
         <KpiCard
@@ -427,9 +440,12 @@ export function WorkingCapital({ onNavigate }: { onNavigate: (page: PageId) => v
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="AP ageing trend" subtitle="Monthly bucket history — not just the latest snapshot">
+        <ChartCard
+          title="AP ageing trend"
+          subtitle={`Monthly bucket history${apCoverage.coverageStart ? ` — payable source coverage begins ${apCoverage.coverageStart}` : ''}`}
+        >
           <ResponsiveContainer width="100%" height={290}>
-            <BarChart data={ageingTrend.data ?? []} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+            <BarChart data={apCoverage.rows} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
               <CartesianGrid stroke={GRID} vertical={false} />
               <XAxis dataKey="month_label" stroke={AXIS} fontSize={11} tickLine={false} minTickGap={20} />
               <YAxis stroke={AXIS} fontSize={11} tickLine={false} width={52} tickFormatter={(v: number) => formatGbpCompact(v)} />
@@ -459,6 +475,13 @@ export function WorkingCapital({ onNavigate }: { onNavigate: (page: PageId) => v
               <Bar dataKey="d90_plus" stackId="age" fill={chart.adverse} radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
+          {apCoverage.clippedMonths > 0 && (
+            <p className="pnl-note">
+              {formatCount(apCoverage.clippedMonths)} earlier month{apCoverage.clippedMonths === 1 ? '' : 's'} carry no
+              payable source records — an accepted source limitation, not zero liability — and are
+              excluded from this presented view.
+            </p>
+          )}
         </ChartCard>
       </div>
 

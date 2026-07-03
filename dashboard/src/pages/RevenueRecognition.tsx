@@ -19,6 +19,7 @@ import { KpiCard } from '../components/KpiCard';
 import { ChartCard } from '../components/ChartCard';
 import { chart } from '../lib/theme';
 import { formatGbp, formatGbpCompact } from '../lib/format';
+import { exceedsMateriality } from '../lib/presentation';
 
 const GRID = chart.grid;
 const AXIS = chart.axis;
@@ -80,8 +81,15 @@ export function RevenueRecognition() {
         <KpiCard
           label="Recognition Variance"
           value={formatGbpCompact(k.recognition_variance)}
-          sub="actual less scheduled"
-          status={{ tone: Math.abs(k.recognition_variance) > 1 ? 'warning' : 'favourable', label: Math.abs(k.recognition_variance) > 1 ? 'Monitor' : 'Clean' }}
+          sub={
+            exceedsMateriality(k.recognition_variance, k.recognised_actual)
+              ? 'actual less scheduled · exceeds materiality (£50K / 0.5%)'
+              : 'actual less scheduled · within materiality'
+          }
+          status={{
+            tone: exceedsMateriality(k.recognition_variance, k.recognised_actual) ? 'warning' : 'favourable',
+            label: exceedsMateriality(k.recognition_variance, k.recognised_actual) ? 'Monitor' : 'Immaterial',
+          }}
         />
         <KpiCard
           label="Closing Deferred"

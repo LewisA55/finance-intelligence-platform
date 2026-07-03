@@ -235,6 +235,8 @@ export async function getModelReadinessSummary(): Promise<ModelReadinessSummary>
       sum(case when feed.model_period_status = 'Actual' then 1 else 0 end)::integer as actual_months,
       sum(case when feed.model_period_status = 'Scheduled' then 1 else 0 end)::integer as scheduled_months,
       sum(case when feed.use_in_excel_actuals_flag then 1 else 0 end)::integer as excel_actual_months,
+      sum(case when feed.model_period_status = 'Actual' and feed.has_revenue_actuals and feed.has_o2c_actuals then 1 else 0 end)::integer as operating_actual_months,
+      strftime(max(case when feed.model_period_status = 'Actual' and feed.has_revenue_actuals and feed.has_o2c_actuals then feed.reporting_month_date end), '%b %Y') as latest_operating_month_label,
       sum(case when feed.model_readiness_status = 'Ready' then 1 else 0 end)::integer as ready_months,
       sum(case when feed.model_readiness_status = 'Usable with review' then 1 else 0 end)::integer as review_months,
       sum(case when feed.model_readiness_status = 'Accepted limitation' then 1 else 0 end)::integer as accepted_limitation_months,

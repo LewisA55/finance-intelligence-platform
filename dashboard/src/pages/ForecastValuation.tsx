@@ -141,10 +141,16 @@ export function ForecastValuation() {
 
       <div className="kpi-grid">
         <KpiCard
-          label="Excel actual periods"
+          label="Operating actuals"
+          value={formatCount(s.operating_actual_months)}
+          sub={`months to ${s.latest_operating_month_label ?? '-'} · workbook v0.21 import basis`}
+          status={{ tone: 'favourable', label: 'History' }}
+        />
+        <KpiCard
+          label="Import-ready (strict)"
           value={formatCount(s.excel_actual_months)}
-          sub={`${s.latest_excel_month_label ?? 'No month'} latest import-ready period`}
-          status={{ tone: s.excel_actual_months > 0 ? 'favourable' : 'adverse', label: 'Model feed' }}
+          sub={`GL-closed months to ${s.latest_excel_month_label ?? '-'} · no blocking controls`}
+          status={{ tone: s.excel_actual_months > 0 ? 'favourable' : 'adverse', label: 'Contract' }}
         />
         <KpiCard
           label="Latest model revenue"
@@ -234,7 +240,13 @@ export function ForecastValuation() {
             <li><span>NRR</span><strong>{formatPercent(latestExcel?.nrr)}</strong></li>
           </ul>
           <p className="pnl-note">
-            Excel should filter the feed to <code>use_in_excel_actuals_flag = true</code>.
+            <strong>Two actuals bases, by design.</strong> Workbook v0.21 imported the
+            {' '}{formatCount(s.operating_actual_months)}-month operating-actuals history
+            (recognition, O2C and payroll). The strict import contract
+            (<code>use_in_excel_actuals_flag</code>) additionally requires GL-closed financial
+            actuals and no model-blocking controls, which currently yields
+            {' '}{formatCount(s.excel_actual_months)} months. The next workbook version
+            re-imports under the strict flag.
           </p>
         </div>
       </div>
@@ -350,12 +362,13 @@ export function ForecastValuation() {
           <ul className="kv">
             <li><span>Workbook</span><strong>{MODEL_WORKBOOK.name}</strong></li>
             <li><span>Scenarios</span><strong>{MODEL_WORKBOOK.scenarios}</strong></li>
-            <li><span>Actuals through</span><strong>{s.latest_excel_month_label ?? '-'}</strong></li>
+            <li><span>Operating actuals through</span><strong>{s.latest_operating_month_label ?? '-'}</strong></li>
+            <li><span>Strict import-ready through</span><strong>{s.latest_excel_month_label ?? '-'}</strong></li>
           </ul>
           <div className="handoff-steps">
             <div className="handoff-step tone-favourable">
               <span className="handoff-name">Actuals feed</span>
-              <span className="handoff-state">{formatCount(s.excel_actual_months)} import-ready months</span>
+              <span className="handoff-state">{formatCount(s.operating_actual_months)} operating months · {formatCount(s.excel_actual_months)} strict import-ready</span>
             </div>
             <div className={`handoff-step ${bs.is_balanced ? 'tone-favourable' : 'tone-adverse'}`}>
               <span className="handoff-name">Opening balance sheet</span>
@@ -373,6 +386,12 @@ export function ForecastValuation() {
           <a className="model-download" href={MODEL_WORKBOOK.file} download>
             Download Excel model ({MODEL_WORKBOOK.version})
           </a>
+          <p className="pnl-note">
+            The downloadable workbook is a synthetic distressed-case model used to demonstrate
+            governed model integration. Valuation outputs are illustrative work-in-progress —
+            path-to-profitability drivers are not yet modelled — and are intentionally not an
+            investment recommendation.
+          </p>
         </div>
       </div>
 

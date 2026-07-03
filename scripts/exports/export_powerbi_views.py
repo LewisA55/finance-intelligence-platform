@@ -17,6 +17,11 @@ POWERBI_TABLES = [
     "gold.mart_opening_balance_sheet",
     "gold.mart_model_readiness_controls",
 
+    # Presentation basis (management view over as-found telemetry)
+    "gold.mart_cfo_presented_financials",
+    "gold.mart_cfo_presented_operating_metrics",
+    "gold.mart_cfo_metric_readiness",
+
     # Supporting marts / drilldown surfaces
     "gold.mart_financial_performance",
     "gold.mart_saas_arr_movement",
@@ -43,6 +48,9 @@ EXPORT_ORDER_BY = {
     "gold.mart_model_actuals_feed": "reporting_month_date",
     "gold.mart_opening_balance_sheet": "as_of_date",
     "gold.mart_model_readiness_controls": "control_domain, control_key",
+    "gold.mart_cfo_presented_financials": "posting_period, department_id, account_code",
+    "gold.mart_cfo_presented_operating_metrics": "reporting_month_date, metric_code",
+    "gold.mart_cfo_metric_readiness": "metric_code",
 }
 
 

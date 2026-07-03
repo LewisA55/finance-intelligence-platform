@@ -24,6 +24,7 @@ The realised reporting layer is the live **React + DuckDB-WASM CFO dashboard** â
 | [10_ai_commentary_roadmap.md](10_ai_commentary_roadmap.md) | Planned Atlas Intelligence Portal and AI commentary layer. |
 | [11_known_limitations.md](11_known_limitations.md) | Accepted caveats, current limitations, and roadmap boundaries. |
 | [12_cfo_modelling_layer.md](12_cfo_modelling_layer.md) | CFO model-serving marts for Excel, React, Power BI, and AI commentary. |
+| [13_presentation_basis.md](13_presentation_basis.md) | Presented-basis marts: management view over as-found audit telemetry, policy-as-code. |
 | [final_validation_summary.md](final_validation_summary.md) | Locked dbt warehouse validation artifact. |
 
 ## Current Warehouse Milestone

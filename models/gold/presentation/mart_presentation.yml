@@ -1,0 +1,135 @@
+version: 2
+
+seeds:
+  - name: presentation_policy
+    description: >
+      Presentation-basis policy register: the rules that decide what audit
+      telemetry is safe to present in CFO-facing views. Policy-as-code — the
+      same keys are referenced by the presented-basis marts and surfaced to
+      reviewers, mirroring the model_readiness_controls pattern.
+    columns:
+      - name: policy_key
+        tests:
+          - not_null
+          - unique
+      - name: treatment
+        tests: [not_null]
+      - name: disclosure_template
+        tests: [not_null]
+
+models:
+  - name: mart_cfo_presented_financials
+    description: >
+      Management presentation layer over mart_financial_performance
+      (FC_BASE_CASE): every department x account line carries both the
+      as-found value (audit telemetry included) and the presented value,
+      with the exclusion flag, adjustment, policy key and disclosure that
+      connect them. Expense lines failing the source-completeness policy are
+      excluded from presentation and disclosed, never hidden.
+    columns:
+      - name: financial_performance_hk
+        tests:
+          - not_null
+          - unique
+      - name: posting_period
+        tests: [not_null]
+      - name: account_class
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Revenue', 'Expense']
+      - name: as_found_actual_gbp
+        tests: [not_null]
+      - name: excluded_from_presentation_flag
+        tests: [not_null]
+      - name: adjustment_amount_gbp
+        tests: [not_null]
+      - name: presentation_basis_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Presented', 'Excluded - source completeness']
+      - name: policy_key
+        tests: [not_null]
+
+  - name: mart_cfo_presented_operating_metrics
+    description: >
+      Presented-basis operating metrics in long format: one row per reporting
+      month x metric for the Company Total ACTUALS scenario, carrying the
+      as-found feed value, the presented value (clipped, proxied or disclosed
+      per the presentation policy), the adjustment between them, and the
+      disclosure text. GL opex/operating profit ahead of close are presented
+      on the operational proxy basis (payroll + AP spend) — the same basis
+      the Excel workbook models.
+    columns:
+      - name: presented_metric_hk
+        tests:
+          - not_null
+          - unique
+      - name: reporting_month_date
+        tests: [not_null]
+      - name: metric_code
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - recognised_revenue
+                  - billings
+                  - cash_collected
+                  - cash_collection_rate
+                  - headline_arr
+                  - nrr
+                  - opex
+                  - operating_profit
+                  - payroll_cost
+                  - active_fte
+      - name: unit
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['GBP', 'ratio', 'count']
+      - name: as_found_value
+        tests: [not_null]
+      - name: excluded_from_presentation_flag
+        tests: [not_null]
+      - name: presentation_basis_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Presented'
+                  - 'Presented with disclosure'
+                  - 'Presented - partial capture'
+                  - 'Presented - operational proxy'
+                  - 'Clipped - partial period'
+
+  - name: mart_cfo_metric_readiness
+    description: >
+      Metric-level presentation readiness registry: one row per CFO metric
+      summarising how much of its history presents cleanly, its true signal
+      coverage window (coalesced zeros are not coverage), what was excluded
+      or disclosed, and under which policy keys. The reviewer-facing answer
+      to "can this number be shown?".
+    columns:
+      - name: metric_code
+        tests:
+          - not_null
+          - unique
+      - name: months_total
+        tests: [not_null]
+      - name: months_presented
+        tests: [not_null]
+      - name: presentation_basis_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values:
+                  - 'Presented'
+                  - 'Presented with disclosure'
+                  - 'Presented with exclusions'

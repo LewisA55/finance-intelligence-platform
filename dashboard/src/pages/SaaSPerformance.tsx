@@ -32,6 +32,7 @@ import { ChartCard } from '../components/ChartCard';
 import { StatusPill, type StatusTone } from '../components/StatusPill';
 import { chart } from '../lib/theme';
 import { formatGbp, formatGbpCompact, formatPercent, formatCount } from '../lib/format';
+import { clipTrailingPartial } from '../lib/presentation';
 
 const GRID = chart.grid;
 const AXIS = chart.axis;
@@ -79,7 +80,9 @@ export function SaaSPerformance() {
   const [historyWindow, setHistoryWindow] = useState<'full' | 'fy'>('full');
 
   const historyRows = useMemo(() => {
-    const rows = longTrend.data ?? [];
+    // Presentation basis: clip trailing partial-month artifacts so the series
+    // ends at the last complete month instead of a boundary cliff.
+    const rows = clipTrailingPartial(longTrend.data ?? [], (r) => r.active_arr);
     if (historyWindow === 'full') return rows;
     return rows.filter((r) => r.month_iso >= '2026-01-01');
   }, [longTrend.data, historyWindow]);
@@ -242,7 +245,23 @@ export function SaaSPerformance() {
         <KpiCard label="Net Revenue Retention" value={formatPercent(k.nrr)} sub="excl. new business" status={{ tone: nrrTone(k.nrr) }} />
         <KpiCard label="Gross Revenue Retention" value={formatPercent(k.grr)} status={{ tone: k.grr != null && k.grr >= 0.9 ? 'favourable' : 'on-plan' }} />
         <KpiCard label="Logo Retention" value={formatPercent(k.logo_retention)} sub={`${formatCount(k.ending_customers)} customers`} status={{ tone: k.logo_retention != null && k.logo_retention >= 0.9 ? 'favourable' : 'on-plan' }} />
-        <KpiCard label="Logo Churn" value={formatPercent(k.logo_churn)} sub={`${formatCount(k.churned_customers)} churned`} status={{ tone: k.logo_churn != null && k.logo_churn <= 0.05 ? 'favourable' : 'neutral' }} />
+        <KpiCard
+          label="ARR Lost (FYTD)"
+          value={formatGbpCompact(walk.data.churn + walk.data.contraction + walk.data.pause)}
+          sub={`churn ${formatGbpCompact(walk.data.churn)} · pause ${formatGbpCompact(walk.data.pause)}`}
+          status={{
+            tone:
+              walk.data.churn + walk.data.contraction + walk.data.pause >
+              walk.data.new_business + walk.data.expansion
+                ? 'adverse'
+                : 'neutral',
+            label:
+              walk.data.churn + walk.data.contraction + walk.data.pause >
+              walk.data.new_business + walk.data.expansion
+                ? 'Exceeds new ARR'
+                : 'Covered',
+          }}
+        />
       </div>
 
       {/* The growth engine: how ARR moved — the page's primary diagnostic */}

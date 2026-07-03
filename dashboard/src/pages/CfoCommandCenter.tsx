@@ -180,7 +180,11 @@ export function CfoCommandCenter({ onNavigate }: { onNavigate: (page: PageId) =>
     );
   }
 
-  const focusCues = buildFocusCues(k, hasActuals, readiness.data ?? null);
+  // Presentation rule: the routing layer surfaces the top three actions; the
+  // rest are standing governance signals, not this month's news.
+  const allCues = buildFocusCues(k, hasActuals, readiness.data ?? null);
+  const focusCues = allCues.slice(0, 3);
+  const backgroundCues = allCues.slice(3);
   const latestActualMonth = [...monthOptions].reverse().find((m) => m.has_actuals) ?? null;
   const latestPlanMonth = monthOptions[monthOptions.length - 1] ?? null;
   const r = readiness.data ?? null;
@@ -284,6 +288,15 @@ export function CfoCommandCenter({ onNavigate }: { onNavigate: (page: PageId) =>
               </button>
             ))}
           </div>
+          {backgroundCues.length > 0 && (
+            <p className="pnl-note">
+              {formatCount(backgroundCues.length)} standing governance signal{backgroundCues.length === 1 ? '' : 's'} (
+              {backgroundCues.map((c) => c.label.toLowerCase()).join('; ')}) tracked in the{' '}
+              <button type="button" className="focus-inline-link" onClick={() => onNavigate('control-tower')}>
+                Control Tower →
+              </button>
+            </p>
+          )}
         </div>
       )}
 

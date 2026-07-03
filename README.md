@@ -17,10 +17,22 @@ planned against the same surfaces.
 
 The project uses synthetic data only. It is designed for portfolio and demonstration purposes, not for production financial reporting.
 
+**Nexus is deliberately imperfect.** The synthetic company is generated as a SaaS business
+under operating pressure — revenue behind plan, ARR leakage, lagging cash conversion,
+control defects, and a loss-making P&L — *on purpose*, so the governance layer has real
+problems to catch, classify, and disclose. If a number looks uncomfortable, that is the
+demo working, not the generator failing.
+
 **Start here:** [Live dashboard](https://lewisa55.github.io/finance-intelligence-platform/) ·
 [Architecture](docs/02_architecture.md) ·
 [Gold semantic layer](docs/06_gold_semantic_layer.md) ·
 [Validation summary](docs/final_validation_summary.md)
+
+### Reviewing in 90 seconds
+
+1. Open the [CFO Command Center](https://lewisa55.github.io/finance-intelligence-platform/#/command-center) — read the executive summary, then the ranked **Focus next** list.
+2. Follow the top cue (revenue behind plan) into [Financial Performance](https://lewisa55.github.io/finance-intelligence-platform/#/financial) — the variance waterfall shows which departments drove it, and the model-feed bridge shows how the month lands in the modelling contract.
+3. Finish on [Forecast & Valuation](https://lewisa55.github.io/finance-intelligence-platform/#/model) — the platform's differentiator: a governed actuals feed, per-domain coverage, a readiness policy that blocks unreliable periods, and the Excel model the warehouse serves.
 
 ## CFO Intelligence Portal (Live)
 
@@ -78,6 +90,10 @@ The live dashboard is the canonical interactive walkthrough.
 | Working capital and collections | Governed control evidence |
 | --- | --- |
 | [![Working Capital](docs/img/working-capital.png)](https://lewisa55.github.io/finance-intelligence-platform/#/working-capital) | [![Control Tower](docs/img/control-tower.png)](https://lewisa55.github.io/finance-intelligence-platform/#/control-tower) |
+
+The modelling anchor — the governed actuals feed, readiness policy and Excel workspace:
+
+[![Forecast & Valuation](docs/img/forecast-valuation.png)](https://lewisa55.github.io/finance-intelligence-platform/#/model)
 
 ## Why It Was Built
 

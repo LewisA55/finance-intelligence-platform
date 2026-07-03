@@ -15,7 +15,8 @@
     "manifest-data": "node scripts/data-manifest.mjs",
     "validate-data": "node scripts/validate-data.mjs",
     "screenshots": "node scripts/capture-screenshots.mjs",
-    "check": "npm run validate-data && npm run build"
+    "check": "npm run validate-data && npm run build",
+    "test:smoke": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
     "@duckdb/duckdb-wasm": "^1.29.0",
@@ -27,6 +28,7 @@
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^6.0.3",
+    "playwright": "^1.61.1",
     "playwright-core": "^1.61.1",
     "typescript": "^5.5.4",
     "vite": "^8.1.2"

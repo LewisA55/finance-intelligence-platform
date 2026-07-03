@@ -71,7 +71,7 @@ async function waitForDashboard(page) {
   try {
     await page.waitForFunction(() => {
       const meta = document.querySelector('.pack-meta')?.textContent ?? '';
-      return meta.includes('BUILT') && !meta.includes('—');
+      return meta.includes('SNAPSHOT') && !meta.includes('—');
     }, { timeout: 15_000 });
   } catch {
     const error = await page
@@ -127,6 +127,7 @@ try {
     'Collection rate by region',
   );
   await capturePage(page, 'control-tower', 'control-tower.png');
+  await capturePage(page, 'model', 'forecast-valuation.png');
 
   await browser.close();
 } finally {

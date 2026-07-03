@@ -17,7 +17,7 @@ import { useQuery } from '../hooks/useQuery';
 import {
   getReportingMonths,
   getFinancialSummary,
-  getTopAccountVariances,
+  getPresentedFinancials,
   getRevenueTrend,
   getModelActualsFeed,
 } from '../duckdb/queries';
@@ -27,7 +27,6 @@ import { ChartCard } from '../components/ChartCard';
 import { StatusPill, type StatusTone } from '../components/StatusPill';
 import { chart } from '../lib/theme';
 import { formatGbp, formatGbpCompact, formatSignedPercent, formatCount } from '../lib/format';
-import { isSuspectedIncompleteCapture, SOURCE_COMPLETENESS } from '../lib/presentation';
 import type { PageId } from '../nav';
 
 const GRID = chart.grid;
@@ -64,10 +63,11 @@ export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId
     () => (selected ? getFinancialSummary(selected) : Promise.resolve(null)),
     [selected],
   );
-  // Full department × account grain so the presentation basis is applied
-  // client-side and consistently across the chart, waterfall and table.
+  // Full department × account grain on the warehouse presentation basis:
+  // the exclusion flag and disclosure come from mart_cfo_presented_financials,
+  // not a client-side rule.
   const accounts = useQuery(
-    () => (selected ? getTopAccountVariances(selected, 500) : Promise.resolve([])),
+    () => (selected ? getPresentedFinancials(selected) : Promise.resolve([])),
     [selected],
   );
 
@@ -80,14 +80,12 @@ export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId
   const budgetOperatingResult = s ? s.revenue_budget - s.opex_budget : 0;
   const operatingVariance = operatingResult - budgetOperatingResult;
 
-  // Presentation basis: quarantine lines whose favourable variance is more
-  // plausibly missing source capture than genuine underspend. As-found stays
-  // one toggle away; excluded lines are disclosed, not hidden.
+  // As-found stays one toggle away; excluded lines are disclosed, not hidden.
   const { presentedRows, excludedRows } = useMemo(() => {
     const rows = accounts.data ?? [];
     return {
-      presentedRows: rows.filter((r) => !isSuspectedIncompleteCapture(r)),
-      excludedRows: rows.filter((r) => isSuspectedIncompleteCapture(r)),
+      presentedRows: rows.filter((r) => !r.excluded),
+      excludedRows: rows.filter((r) => r.excluded),
     };
   }, [accounts.data]);
 
@@ -488,7 +486,7 @@ export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId
                   {r.variance > 0 ? '+' : ''}{formatGbp(r.variance)}
                 </td>
                 <td className="row-label">
-                  {isSuspectedIncompleteCapture(r) ? (
+                  {r.excluded ? (
                     <StatusPill tone="neutral" label="Excluded" />
                   ) : (
                     r.favourability && (
@@ -504,8 +502,8 @@ export function FinancialPerformance({ onNavigate }: { onNavigate: (page: PageId
         {excludedRows.length > 0 && (
           <p className="pnl-note">
             {basis === 'Presented'
-              ? `${formatCount(excludedRows.length)} expense line${excludedRows.length === 1 ? '' : 's'} (${formatGbpCompact(excludedRows.reduce((sum, r) => sum + r.budget, 0))} budget) excluded pending source completeness — material budgets with under ${Math.round(SOURCE_COMPLETENESS.captureRatio * 100)}% captured actuals read as missing capture, not underspend. Switch to As-found to inspect them, or review the domain in the Control Tower.`
-              : `As-found basis: lines marked Excluded fail the source-completeness rule and are omitted from the presented charts, waterfall and commentary.`}
+              ? `${formatCount(excludedRows.length)} expense line${excludedRows.length === 1 ? '' : 's'} (${formatGbpCompact(excludedRows.reduce((sum, r) => sum + r.budget, 0))} budget) excluded by the warehouse presentation policy — ${excludedRows[0]?.disclosure_text ?? 'excluded pending source completeness.'} Switch to As-found to inspect them, or review the domain in the Control Tower.`
+              : `As-found basis: lines marked Excluded fail the source-completeness policy (mart_cfo_presented_financials) and are omitted from the presented charts, waterfall and commentary.`}
           </p>
         )}
       </div>

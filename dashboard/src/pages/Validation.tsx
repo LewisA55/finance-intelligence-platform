@@ -5,6 +5,7 @@ import {
   getModelReadinessSummary,
   getModelReadinessControls,
   getTableEvidence,
+  getMetricReadiness,
 } from '../duckdb/queries';
 import { TopBar } from '../components/TopBar';
 import { StatusPill } from '../components/StatusPill';
@@ -22,7 +23,9 @@ export function Validation() {
   const readiness = useQuery(getModelReadinessSummary, []);
   const controls = useQuery(getModelReadinessControls, []);
   const evidence = useQuery(getTableEvidence, []);
-  const anyError = error || manifest.error || readiness.error || controls.error || evidence.error;
+  const metricReadiness = useQuery(getMetricReadiness, []);
+  const anyError =
+    error || manifest.error || readiness.error || controls.error || evidence.error || metricReadiness.error;
 
   const manifestByName = new Map(
     (manifest.data?.files ?? []).map((f) => [f.name.replace(/\.(parquet|csv)$/, ''), f]),
@@ -117,6 +120,61 @@ export function Validation() {
                 ))}
               </ul>
             </div>
+          </div>
+
+          <div className="panel" style={{ marginTop: 12, paddingBottom: 16 }}>
+            <div className="panel-head">
+              <div>
+                <h3>Metric presentation readiness</h3>
+                <p className="panel-sub">
+                  Per-metric registry from <code>mart_cfo_metric_readiness</code>: signal coverage,
+                  exclusions and the presentation policy each metric sits under
+                </p>
+              </div>
+            </div>
+            <div className="table-scroll">
+              <table className="pnl">
+                <thead>
+                  <tr>
+                    <th className="row-label">Metric</th>
+                    <th>Unit</th>
+                    <th className="row-label">Signal coverage</th>
+                    <th>Presented</th>
+                    <th>Excluded</th>
+                    <th className="row-label">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(metricReadiness.data ?? []).map((m) => (
+                    <tr key={m.metric_code}>
+                      <td className="row-label">{m.metric_name}</td>
+                      <td>{m.unit}</td>
+                      <td className="row-label">
+                        {m.coverage_from ? `${m.coverage_from} → ${m.coverage_to}` : '—'}
+                      </td>
+                      <td>{formatCount(m.months_presented)} of {formatCount(m.months_total)}</td>
+                      <td className={m.months_excluded > 0 ? 'adv' : ''}>{formatCount(m.months_excluded)}</td>
+                      <td className="row-label">
+                        <StatusPill
+                          tone={
+                            m.presentation_basis_status === 'Presented'
+                              ? 'favourable'
+                              : m.presentation_basis_status === 'Presented with exclusions'
+                                ? 'warning'
+                                : 'neutral'
+                          }
+                          label={m.presentation_basis_status.replace('Presented with ', '+ ')}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="pnl-note">
+              Presented values differ from as-found values only under the committed presentation
+              policy (<code>presentation_policy</code> seed) — every adjustment is disclosed.
+            </p>
           </div>
 
           <div className="panel" style={{ marginTop: 12, paddingBottom: 16 }}>

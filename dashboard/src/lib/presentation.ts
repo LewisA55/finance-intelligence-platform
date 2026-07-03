@@ -1,35 +1,16 @@
-import type { AccountVariance } from '../types';
-
 /**
- * Presentation-basis guardrails.
+ * Presentation-basis guardrails (client-side residue).
  *
- * The warehouse deliberately retains as-found audit telemetry (synthetic
- * defects included) so the control layer has something to catch. These rules
- * decide what is safe to PRESENT in CFO-facing views, the same way management
- * accounts sit on an adjusted basis above the raw ledger. Excluded items are
- * disclosed, never hidden.
+ * The source of truth for presentation policy is the warehouse: the
+ * `presentation_policy` seed and the `mart_cfo_presented_*` marts (see
+ * docs/13_presentation_basis.md). Financial Performance consumes the mart
+ * flags directly; the source-completeness rule that used to live here now
+ * exists only in the warehouse. What remains are the rules for surfaces the
+ * marts do not yet cover: trailing clips on curated CSV slices and
+ * materiality checks on measures served by the executive mart. Keep the
+ * constants aligned with the seed; retire each helper as its surface moves
+ * to a presented mart.
  */
-
-export const SOURCE_COMPLETENESS = {
-  /** Budgets below this are too small to distinguish underspend from noise. */
-  budgetFloorGbp: 100_000,
-  /** Actuals below this share of budget read as missing capture, not thrift. */
-  captureRatio: 0.2,
-};
-
-/**
- * Expense lines whose "favourable" variance is more plausibly missing source
- * capture than genuine underspend: a material budget with almost no actuals.
- * These belong in the governance lane, not a variance leaderboard.
- */
-export function isSuspectedIncompleteCapture(row: AccountVariance): boolean {
-  return (
-    row.account_class === 'Expense' &&
-    row.favourability === 'Favourable' &&
-    row.budget >= SOURCE_COMPLETENESS.budgetFloorGbp &&
-    row.actual < SOURCE_COMPLETENESS.captureRatio * row.budget
-  );
-}
 
 /**
  * Materiality: a variance is only presentation-worthy when it exceeds the

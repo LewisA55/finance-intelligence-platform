@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-07-01T21:47:21.939Z",
-  "gitCommit": "9d015d3f02e7d44d084819561fd8b6514839acc5",
+  "generatedAt": "2026-07-03T22:35:43.282Z",
+  "gitCommit": "c0fd2207d418d5677d9f57f86b03b79c1d88be95",
   "files": [
     {
       "name": "mart_executive_cfo_command_center.parquet",
@@ -42,6 +42,27 @@
       "name": "mart_model_readiness_controls.parquet",
       "bytes": 3626,
       "sha256": "9cf0a6826404903a28ee327e7137da3e0da40bbdb6cff2edf73084a34ce14f33",
+      "source": "export",
+      "format": "parquet"
+    },
+    {
+      "name": "mart_cfo_presented_financials.parquet",
+      "bytes": 66546,
+      "sha256": "4119f3a53988f9371b444b8ce70a4f83525de2ad33b13c9557ec1885900faff4",
+      "source": "export",
+      "format": "parquet"
+    },
+    {
+      "name": "mart_cfo_presented_operating_metrics.parquet",
+      "bytes": 31143,
+      "sha256": "fc1eb4971d4c074f3bbf17fe7ed01ee9a9c88f77973184c56f3655d6d171681a",
+      "source": "export",
+      "format": "parquet"
+    },
+    {
+      "name": "mart_cfo_metric_readiness.parquet",
+      "bytes": 3507,
+      "sha256": "aec7399fca117fa0bc024bd93279da41c9cb35a884e3c2d8ad4400efcda3b481",
       "source": "export",
       "format": "parquet"
     },

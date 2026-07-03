@@ -796,6 +796,79 @@ export async function getDepartmentVariance(
   `);
 }
 
+export interface PresentedAccountVariance {
+  department: string;
+  account: string;
+  account_class: string;
+  actual: number;
+  budget: number;
+  variance: number;
+  favourability: string | null;
+  excluded: boolean;
+  presentation_basis_status: string;
+  disclosure_text: string | null;
+}
+
+/** Department × account lines on the warehouse presentation basis: as-found
+ *  values plus the governed exclusion flag and disclosure, replacing the
+ *  client-side source-completeness rule. */
+export async function getPresentedFinancials(monthIso: string): Promise<PresentedAccountVariance[]> {
+  assertMonthIso(monthIso);
+  return runQuery<PresentedAccountVariance>(`
+    select
+      coalesce(d.department_name, fp.department_id)         as department,
+      fp.account_name                                       as account,
+      fp.account_class                                      as account_class,
+      fp.as_found_actual_gbp::double                        as actual,
+      fp.budget_amount_gbp::double                          as budget,
+      fp.as_found_variance_gbp::double                      as variance,
+      fp.as_found_favourability                             as favourability,
+      fp.excluded_from_presentation_flag                    as excluded,
+      fp.presentation_basis_status                          as presentation_basis_status,
+      fp.disclosure_text                                    as disclosure_text
+    from mart_cfo_presented_financials as fp
+    left join dim_department as d on fp.department_hk = d.department_hk
+    where fp.posting_period = date '${monthIso}'
+    order by abs(fp.as_found_variance_gbp) desc
+  `);
+}
+
+export interface MetricReadiness {
+  metric_code: string;
+  metric_name: string;
+  unit: string;
+  months_total: number;
+  months_presented: number;
+  months_with_signal: number;
+  months_excluded: number;
+  months_with_disclosure: number;
+  coverage_from: string | null;
+  coverage_to: string | null;
+  policy_keys: string | null;
+  presentation_basis_status: string;
+}
+
+/** Metric-level presentation readiness registry (reviewer surface). */
+export async function getMetricReadiness(): Promise<MetricReadiness[]> {
+  return runQuery<MetricReadiness>(`
+    select
+      metric_code,
+      metric_name,
+      unit,
+      months_total::integer                                 as months_total,
+      months_presented::integer                             as months_presented,
+      months_with_signal::integer                           as months_with_signal,
+      months_excluded::integer                              as months_excluded,
+      months_with_disclosure::integer                       as months_with_disclosure,
+      strftime(coverage_from, '%b %Y')                      as coverage_from,
+      strftime(coverage_to, '%b %Y')                        as coverage_to,
+      policy_keys,
+      presentation_basis_status
+    from mart_cfo_metric_readiness
+    order by metric_code
+  `);
+}
+
 /** Largest department × account variances vs budget for one month. */
 export async function getTopAccountVariances(
   monthIso: string,

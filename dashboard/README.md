@@ -13,26 +13,14 @@ application backend and no runtime CDN dependency.
 
 ## Pages
 
-Grouped as Overview / Performance / Operations / Modelling / Governance:
-
-- **CFO Command Center**: executive summary, KPI spine, ranked "Focus next" routing,
-  P&L summary, plan variance, domain health tiles including model readiness.
-- **SaaS Performance**: the ARR growth-engine bridge, full-history run-rate,
-  product/segment mix and trend, retention by segment.
-- **Financial Performance**: actual vs budget vs forecast, operating-result variance
-  waterfall by department, and the bridge into the model-serving feed (FC_BASE_CASE).
-- **Revenue Quality**: recognition history and forward schedule, deferred backlog
-  burn-down and rollforward, governance exceptions by readiness treatment.
-- **Working Capital**: cash conversion history, AR collections and concentration,
-  AP ageing snapshot and trend, working-capital model assumption hooks.
-- **Workforce Capacity & Hiring Pressure**: payroll/FTE actuals vs plan, forward
-  hiring pressure with salary exposure, department controls by readiness treatment.
-- **Forecast & Valuation**: the modelling anchor — governed actuals feed and coverage,
-  historical model drivers, opening balance sheet, readiness policy, Excel workspace.
-- **Control Tower**: readiness cockpit (blocking / review / accepted / monitor),
-  exception trends by domain, and locked dbt validation evidence.
-- **Data & Validation**: per-table row counts and coverage windows, manifest status,
-  and the model-serving readiness summary.
+- **CFO Command Center**: executive KPIs, P&L summary, plan variance, control status,
+  and prioritised drill-through cues.
+- **Financial Performance**: actual, budget and forecast analysis by department and account.
+- **SaaS Performance**: ARR movement, product/segment mix, retention and regional exposure.
+- **Revenue Recognition**: billing, earned revenue, deferred revenue and accounting controls.
+- **Working Capital**: AR collections, customer exposure, AP ageing and vendor exposure.
+- **Control Tower**: exception-period observations and locked dbt validation evidence.
+- **Data & Validation**: loaded views, reporting scopes and snapshot provenance.
 
 ## Stack
 

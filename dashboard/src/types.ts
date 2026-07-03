@@ -394,8 +394,6 @@ export interface ModelReadinessSummary {
   actual_months: number;
   scheduled_months: number;
   excel_actual_months: number;
-  operating_actual_months: number;
-  latest_operating_month_label: string | null;
   ready_months: number;
   review_months: number;
   accepted_limitation_months: number;

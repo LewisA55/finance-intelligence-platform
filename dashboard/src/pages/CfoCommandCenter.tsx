@@ -402,7 +402,7 @@ export function CfoCommandCenter({ onNavigate }: { onNavigate: (page: PageId) =>
           primaryLabel="Actuals feed for the CFO model"
           secondary={
             r
-              ? `${formatCount(r.excel_actual_months)} import-ready months to ${r.latest_excel_month_label ?? '-'} · ${formatCount(r.review_months)} usable with review`
+              ? `${formatCount(r.operating_actual_months)} operating months · ${formatCount(r.excel_actual_months)} strict import-ready to ${r.latest_excel_month_label ?? '-'}`
               : 'Loading model-serving feed'
           }
           source="mart_model_actuals_feed"

@@ -93,7 +93,15 @@ models:
               arguments:
                 values: ['GBP', 'ratio', 'count']
       - name: as_found_value
-        tests: [not_null]
+        description: >
+          Raw feed value. Flows and counts are always populated; ratio metrics
+          (cash collection rate, NRR) are legitimately null while their
+          denominator does not yet exist (no billings before Jan 2023, no
+          retention basis in the first SaaS month).
+        tests:
+          - not_null:
+              config:
+                where: "unit != 'ratio'"
       - name: excluded_from_presentation_flag
         tests: [not_null]
       - name: presentation_basis_status

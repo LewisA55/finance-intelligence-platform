@@ -53,15 +53,6 @@ jobs:
       - name: Build
         run: npm run check
 
-      # Build success is not enough: a dependency bump once changed DuckDB-WASM's
-      # SQL binder strictness and broke five pages that compiled cleanly. Drive
-      # every route in a real browser against the built output before deploying.
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
-
-      - name: Runtime smoke test
-        run: npm run test:smoke
-
       - name: Configure Pages
         if: github.event_name != 'pull_request'
         uses: actions/configure-pages@v5

@@ -8,14 +8,15 @@ Latest successful full build:
 
 | Metric | Result |
 | --- | ---: |
-| Table models | 37 |
-| View models | 30 |
-| Data tests | 2,946 |
-| PASS | 3,013 |
+| Table models | 43 |
+| View models | 32 |
+| Data tests | 3,044 |
+| PASS | 3,044 |
+| SUCCESS | 76 |
 | WARN | 0 |
 | ERROR | 0 |
 | SKIP | 0 |
-| Runtime | 323.70 seconds |
+| Runtime | 327.24 seconds |
 
 ## Test Organisation
 

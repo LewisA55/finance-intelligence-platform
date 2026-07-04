@@ -14,7 +14,7 @@ All data is fictional and generated for portfolio/demo use. It should not be int
 | Power BI CFO reporting pack | Superseded by the live dashboard (plan retained as reference) |
 | Atlas Intelligence Portal | Planned |
 | AI commentary layer | Planned (dashboard narratives are currently deterministic) |
-| Portfolio screenshots | Pending visual-evidence pass from the live dashboard |
+| Portfolio screenshots | Committed under `docs/img`; refresh with `npm run screenshots` after visible dashboard changes |
 
 ## Accepted Finance And Modelling Caveats
 
@@ -51,7 +51,6 @@ Some marts expose both GBP and local-currency measures. GBP is the governed cons
 
 ## Future Enhancements
 
-- Add dashboard screenshots and a reporting walkthrough.
 - Add dbt lineage artifact screenshots or generated docs output.
 - Replace the period-weighted segment-retention view with a true opening-to-closing FYTD
   cohort if that reporting requirement is introduced.

@@ -31,9 +31,9 @@ scattered constants:
 | `operational_opex_proxy` | Ahead of GL close, opex is presented on the operational proxy (payroll + AP spend) — the same basis the Excel workbook models. |
 | `workforce_ghost_disclosure` | Payroll includes HRIS ghost-flagged records: an accepted limitation, disclosed. |
 
-The React portal applies the same rules client-side
-(`dashboard/src/lib/presentation.ts`) until it consumes these marts directly;
-the seed is the source of truth for both.
+The React portal consumes these presented marts directly for CFO-facing views.
+As-found values remain available one click away for governance review; the seed
+is the source of truth for the disclosed presentation policy.
 
 ## Gold presentation surfaces
 
@@ -60,5 +60,6 @@ the seed is the source of truth for both.
 - The generator still produces *constant* defect rates. Making defects
   episodic (a migration spike that gets remediated, a bug that gets fixed) is
   the planned Phase 10 — it turns control telemetry into narrative.
-- The portal still computes presentation rules client-side; switching its
-  queries to these marts removes the duplicated rule set.
+- The portal should continue expanding the same pattern across new pages:
+  presented basis by default, as-found basis inspectable, and every adjustment
+  tied back to a policy key and disclosure.

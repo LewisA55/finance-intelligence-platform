@@ -14,6 +14,7 @@ POWERBI_TABLES = [
     # Executive reporting surface
     "gold.mart_executive_cfo_command_center",
     "gold.mart_model_actuals_feed",
+    "gold.mart_model_actuals_feed_excel",
     "gold.mart_opening_balance_sheet",
     "gold.mart_model_readiness_controls",
 
@@ -46,6 +47,7 @@ POWERBI_TABLES = [
 
 EXPORT_ORDER_BY = {
     "gold.mart_model_actuals_feed": "reporting_month_date",
+    "gold.mart_model_actuals_feed_excel": "reporting_month_date",
     "gold.mart_opening_balance_sheet": "as_of_date",
     "gold.mart_model_readiness_controls": "control_domain, control_key",
     "gold.mart_cfo_presented_financials": "posting_period, department_id, account_code",

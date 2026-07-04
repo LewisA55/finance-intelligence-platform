@@ -1,6 +1,91 @@
 version: 2
 
 models:
+  - name: mart_model_actuals_feed_excel
+    description: >
+      Excel-ready actuals feed: a thin wrapper over mart_model_actuals_feed
+      (Company Total / ACTUALS / is_actual_period) that replaces the
+      workbook's own 16-query Power Query layer. Columns are aliased to the
+      workbook's existing tbl_model_feed_final names; opex/operating-profit/
+      margin apply the presented-basis operational proxy ahead of GL close;
+      the 6 status columns are governed from mart_model_readiness_controls'
+      named control lists rather than bespoke Excel-side checks.
+    columns:
+      - name: reporting_month_date
+        tests:
+          - not_null
+          - unique
+      - name: billings_gbp
+        description: >
+          Revenue-waterfall billing basis (billings entering deferred
+          revenue), matching the workbook's historical convention — NOT O2C
+          invoiced billings. The gap between the two bases is disclosed in
+          revenue_vs_o2c_billings_variance_gbp.
+        tests: [not_null]
+      - name: recognised_revenue_actual_gbp
+        tests: [not_null]
+      - name: actual_operating_expense_gbp
+        description: >
+          Presented-basis operating expense. For GL-closed months (Q1 2026)
+          this is the closed ledger's expense total. For all other months it
+          is the operational proxy: payroll cost plus AP invoice spend —
+          included: salaries, employer taxes, benefits, bonus accruals,
+          vendor/AP operating spend; excluded: depreciation & amortisation,
+          interest, tax, and any accrual the GL would post at close. The
+          proxy equals the GL total to the penny in every month where both
+          exist. Same policy as operational_opex_proxy in the
+          presentation_policy seed.
+        tests: [not_null]
+      - name: actual_operating_profit_gbp
+        description: >
+          Recognised revenue minus actual_operating_expense_gbp — always the
+          recognised-revenue basis (the model's income-statement revenue
+          line), never the GL revenue line, so the series is internally
+          consistent across the GL-close boundary.
+        tests: [not_null]
+      - name: ap_control_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['OK', 'Control Exception']
+      - name: deferred_revenue_model_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['OK', 'Check']
+      - name: saas_arr_control_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['OK', 'Control Exception']
+      - name: saas_retention_control_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['OK', 'Control Exception']
+      - name: workforce_control_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['OK', 'Control Exception']
+      - name: arr_bridge_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['OK', 'Source Definition Difference']
+      - name: revenue_vs_o2c_billings_status
+        tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['OK', 'Minor Variance', 'Definition Difference']
+
   - name: mart_model_actuals_feed
     description: >
       CFO model-serving mart at one row per reporting month and Company Total

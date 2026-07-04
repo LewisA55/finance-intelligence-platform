@@ -16,8 +16,13 @@ anchors, and readiness classifications that can serve the same consumers:
 | Model | Purpose |
 | --- | --- |
 | `mart_model_actuals_feed` | Canonical Company-Total monthly feed for revenue, billings, cash collection, deferred revenue, AR/AP, payroll, ARR/retention, and model-readiness status. |
+| `mart_model_actuals_feed_excel` | Excel-ready wrapper over the above: old-compatible column names, presented-basis opex/profit ahead of GL close, and governed control-status columns — replaces the workbook's own 16-query Power Query layer. |
 | `mart_opening_balance_sheet` | Synthetic opening statutory balance sheet anchor for the integrated three-statement model. |
 | `mart_model_readiness_controls` | Classification layer that translates noisy source/control observations into modelling treatment: model blocking, accepted limitation, or monitor. |
+
+Presentation-basis surfaces (`mart_cfo_presented_financials`, `mart_cfo_presented_operating_metrics`,
+`mart_cfo_metric_readiness`) are documented separately in
+[docs/13_presentation_basis.md](13_presentation_basis.md).
 
 ## Design Principles
 
@@ -89,8 +94,22 @@ materially unreliable recognised-revenue baseline.
 - `has_saas_actuals`
 - `use_in_excel_actuals_flag`
 
-Excel v1.0 should import rows where `use_in_excel_actuals_flag = true` for its
-historical actuals/trend basis. The flag requires an actual period, complete
-core financial/O2C/revenue actuals, and no model-blocking controls. Scheduled
-rows and partial operational histories remain in the feed for React, Power BI,
-and forward-looking model-readiness views.
+**Two actuals bases exist, by design, not by accident.** `use_in_excel_actuals_flag = true`
+is the *strict* import contract — it additionally requires GL-closed financial actuals and no
+model-blocking controls, which currently yields only 3 months (Jan–Mar 2026, the closed
+quarter). The Excel workbook instead imports the broader *operating actuals* basis
+(`has_revenue_actuals and has_o2c_actuals`, 42 months, Jan 2023–Jun 2026) via
+`mart_model_actuals_feed_excel`, with opex/operating-profit computed on the presented basis
+(payroll + AP spend proxy) ahead of GL close. The portal's Forecast & Valuation page discloses
+both bases explicitly rather than picking one silently. Scheduled rows and partial operational
+histories remain in the base feed for React, Power BI, and forward-looking model-readiness
+views.
+
+## Excel Model v0.3
+
+The workbook was rebuilt from the v0.21 prototype into a decision-grade three-statement model:
+a real balance sheet (PP&E, debt and tax schedules feeding a balance check that holds at zero
+every month), a cash flow statement where cash is computed rather than plugged, a corrected
+margin-glide-path assumption set (replacing a flat opex-growth assumption that produced a
+permanently negative EV), and a populated `12_Outputs` scenario contract. See
+`analysis/model_v0.3_build_spec.md` for the full schedule design and build order.

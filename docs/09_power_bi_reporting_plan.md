@@ -36,5 +36,5 @@ without redefining core finance logic.
 ## Visual Evidence
 
 The delivered React/DuckDB-WASM reporting layer is available through the live dashboard.
-Static portfolio screenshots remain a documentation follow-up; they are no longer blocked
-on a future reporting build.
+Static portfolio screenshots are committed under `docs/img` and are refreshed from
+the dashboard workspace with `npm run screenshots` after visible UI changes.

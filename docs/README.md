@@ -29,18 +29,20 @@ The realised reporting layer is the live **React + DuckDB-WASM CFO dashboard** â
 
 ## Current Warehouse Milestone
 
-The full dbt warehouse milestone is complete and locked:
+The governed warehouse, presentation-basis marts, model-serving layer, and live
+React dashboard are complete for the current portfolio milestone:
 
 | Metric | Result |
 | --- | ---: |
-| Table models | 37 |
-| View models | 30 |
-| Data tests | 2,946 |
-| PASS | 3,013 |
+| Table models | 43 |
+| View models | 32 |
+| Data tests | 3,044 |
+| PASS | 3,044 |
+| SUCCESS | 76 |
 | WARN | 0 |
 | ERROR | 0 |
 | SKIP | 0 |
-| Runtime | 323.70 seconds |
+| Runtime | 327.24 seconds |
 
 ## Completed Phases
 
@@ -51,12 +53,20 @@ The full dbt warehouse milestone is complete and locked:
 | Phase 5 | Complete | dbt Silver staging and control layer. |
 | Phase 6 | Complete | dbt Gold semantic layer. |
 | Phase 7 | Complete | Executive CFO Command Center mart. |
-| Phase 8 | Live | React + DuckDB-WASM CFO intelligence dashboard (7 pages, deployed to GitHub Pages). |
+| Phase 8 | Live | CFO modelling layer: governed actuals feed, opening balance sheet, readiness controls, and Excel handoff. |
+| Phase 9 | Live | Presentation-basis marts and React + DuckDB-WASM CFO intelligence dashboard, deployed to GitHub Pages. |
+
+## Visual Walkthrough
+
+The committed screenshots in [docs/img](img/) mirror the live dashboard route
+walkthrough in the root README: Command Center, SaaS Performance, Revenue
+Quality, Working Capital, Control Tower, and Forecast & Valuation. Refresh them
+from the dashboard workspace with `npm run screenshots` after visible UI
+changes.
 
 ## Planned Future Work
 
 - Atlas Intelligence Portal (grounded AI commentary over validated mart outputs).
-- Portfolio screenshots from the live dashboard.
 
 The Power BI CFO pack is superseded by the live React/DuckDB-WASM dashboard; the
 [Power BI plan](09_power_bi_reporting_plan.md) is retained as an alternative reference.

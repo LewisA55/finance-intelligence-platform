@@ -38,23 +38,26 @@ The project is built around realistic enterprise finance challenges:
 | dbt Gold conformed dimensions and facts | Complete |
 | Domain Gold marts | Complete |
 | Executive CFO Command Center mart | Complete |
+| CFO model-serving marts and Excel handoff | Complete |
+| Presentation-basis CFO marts | Complete |
 | CFO dashboard (React + DuckDB-WASM) | Live |
 | Atlas Intelligence Portal / AI commentary | Planned |
 
 ## Final Warehouse Milestone
 
-The locked full dbt warehouse build completed with:
+The latest successful full dbt warehouse build completed with:
 
 | Metric | Result |
 | --- | ---: |
-| Table models | 37 |
-| View models | 30 |
-| Data tests | 2,946 |
-| PASS | 3,013 |
+| Table models | 43 |
+| View models | 32 |
+| Data tests | 3,044 |
+| PASS | 3,044 |
+| SUCCESS | 76 |
 | WARN | 0 |
 | ERROR | 0 |
 | SKIP | 0 |
-| Runtime | 323.70 seconds |
+| Runtime | 327.24 seconds |
 
 ## Finance Semantics
 

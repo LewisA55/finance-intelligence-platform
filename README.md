@@ -111,7 +111,8 @@ Project Atlas solves this by building a governed local finance warehouse with cl
 
 ## Current Status
 
-The dbt warehouse milestone is complete and locked.
+The governed warehouse, presentation-basis marts, model-serving layer, and live
+React dashboard are complete for the current portfolio milestone.
 
 | Area | Status |
 | --- | --- |
@@ -120,6 +121,8 @@ The dbt warehouse milestone is complete and locked.
 | dbt Silver staging and controls | Complete |
 | dbt Gold semantic layer | Complete |
 | Executive CFO Command Center mart | Complete |
+| CFO presentation-basis marts | Complete |
+| CFO model-serving marts and Excel handoff | Complete |
 | CFO intelligence dashboard (React + DuckDB-WASM) | Live |
 | Atlas Intelligence Portal / AI commentary | Planned |
 
@@ -129,14 +132,15 @@ Latest successful full build:
 
 | Metric | Result |
 | --- | ---: |
-| Table models | 37 |
-| View models | 30 |
-| Data tests | 2,946 |
-| PASS | 3,013 |
+| Table models | 43 |
+| View models | 32 |
+| Data tests | 3,044 |
+| PASS | 3,044 |
+| SUCCESS | 76 |
 | WARN | 0 |
 | ERROR | 0 |
 | SKIP | 0 |
-| Runtime | 323.70 seconds |
+| Runtime | 327.24 seconds |
 
 ## Tech Stack
 

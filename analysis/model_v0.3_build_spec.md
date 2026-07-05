@@ -38,11 +38,57 @@ phase:
    position reflects everything the proxy P&L does not capture (funding, capitalisation,
    statutory adjustments — none of which the platform models). Any reviewer who sums the
    history against the anchor will find an ~£87m gap within minutes; disclose it before they
-   do. Required disclosures: a note row directly beneath Retained Earnings on `08_Forecast_BS`
+   do. The retained-earnings rule, stated as three lines:
+
+   - Retained earnings opening balance = the 31 Dec 2025 statutory anchor (£5,172,593.20)
+   - Retained earnings movement = modelled net income from Jan 2026 onward only
+   - Jan 2023 – Dec 2025 operating history is calibration evidence only — it never touches equity
+
+   Required disclosures: a note row directly beneath Retained Earnings on `08_Forecast_BS`
    ("Anchor equity is statutory; pre-anchor P&L is an operational proxy — bases deliberately
-   unreconciled, see 01_Model_Map"), and a fuller paragraph in `01_Model_Map`. Retained
-   earnings roll forward from the anchor using modelled Net Income **from Jan 2026 only**;
-   pre-anchor history never touches equity.
+   unreconciled, see 01_Model_Map"), and the fuller basis paragraph in `01_Model_Map`.
+
+### Mechanical regime enforcement (build this before any schedule)
+
+The regimes are enforced by machinery, not discipline. Three named control cells in
+`02_Control` are the single source of truth for every date boundary in the workbook (and
+they feed the `12_Outputs` technical fields directly):
+
+| Named cell | Value | Feeds |
+| --- | --- | --- |
+| `anchor_date` | 2025-12-31 | opening balance sheet date, `data_as_of_date` basis |
+| `actuals_cutoff` | 2026-06-30 | `actuals_cutoff_date` in 12_Outputs, bridge end |
+| `forecast_start` | 2026-07-01 | `forecast_start_date` in 12_Outputs, forecast regime |
+
+Every monthly model sheet (`05_Monthly_Model`, `07_Forecast_IS`, `08_Forecast_BS`,
+`09_Forecast_CFS`) carries a three-row regime block under the existing Period/Period-Type
+header rows, each cell a formula off the period date and the named cells — never typed
+per column:
+
+```
+period_regime               = IF(X$4 > actuals_cutoff, "Forecast",
+                               IF(X$4 > anchor_date, "Modelled Actual (bridge)",
+                                "Actual - pre-anchor"))
+is_integrated_model_period  = X$4 > anchor_date          → TRUE from Jan 2026
+is_forecast_period          = X$4 >= forecast_start      → TRUE from Jul 2026
+```
+
+Formula conventions keyed to the flags (row references assume the flags land in rows 6–7;
+adjust to wherever the block is inserted):
+
+- Every balance-sheet and CFS formula wraps as `=IF(X$6, <calculation>, "n/a")` — the
+  integrated-period flag, not a string compare, decides whether a statement exists.
+- Every check row (balance check, cash reconciliation, rollforward/continuity checks) wraps
+  the same way: `"n/a"` pre-anchor, a number from Jan 2026.
+- Schedule logic that differs between bridge and forecast (e.g. actual vs assumption-driven
+  revenue) keys on `is_forecast_period`.
+- The existing `Period Type` row ("Actual"/"Forecast") stays for backward compatibility with
+  the current `05`/`07` formulas, but all **new** logic keys on the flag rows.
+
+`01_Model_Map` (currently an empty sheet) becomes the model's front door: the regime table
+above, the three control dates, the sheet map, and the retained-earnings basis paragraph —
+the "42 months of operating evidence, 6 months of actual integrated bridge, 42 months of
+forecast" story in one place.
 
 ---
 
@@ -158,7 +204,9 @@ Net Income                    = Profit Before Tax - Tax Expense
 Historical (Actual) columns: D&A, Interest Expense and Tax Expense are `0` for history (the
 opening BS anchor already nets these effects into retained earnings up to Dec 2025; the
 schedules only run forward from the forecast start) — so historical EBIT/PBT/Net Income equal
-historical Operating Profit. Use the same `IF($X$5="Actual",...,<schedule ref>)` pattern
+historical Operating Profit. Key the switch on the regime flags (`=IF(X$6, <schedule ref>, 0)`
+for the D&A/interest/tax rows — integrated periods use the schedules, pre-anchor months are 0
+on the IS since these lines only exist from Jan 2026), consistent with the `IF($X$5="Actual",...)` pattern
 already used throughout `05_Monthly_Model`.
 
 **Check**: for every historical month, Net Income = Operating Profit (D&A/Interest/Tax are 0).
@@ -354,7 +402,8 @@ Balance Check                 = Total Assets - (Total Liabilities + Total Equity
 
 **Pre-anchor columns (Jan 2023 – Dec 2025): every balance-sheet line renders "n/a" (blank),
 never zero, and the Balance Check row reads "n/a"** — use the period-regime header in row 5
-to drive this (`IF(X$5="Actual — pre-anchor","n/a",...)`). A zero would claim a balance
+to drive this (`=IF(X$6, <calculation>, "n/a")` off the `is_integrated_model_period` flag —
+see the mechanical regime enforcement section). A zero would claim a balance
 sheet exists and balances; a blank says truthfully that none exists before the anchor.
 
 Add the retained-earnings basis note row directly beneath Retained Earnings (see consequence
@@ -527,7 +576,7 @@ without breaking anything downstream.
 
 ```
 model_version | output_schema_version | data_as_of_date | actuals_cutoff_date | forecast_start_date | scenario_code | metric_code | reporting_period | metric_value | unit | model_readiness_status | balance_check_status
-v0.3          | 1                     | <02_Control!B17>| 2026-06-30          | 2026-07-01          | BASE          | enterprise_value        | 2029-12 | ... | GBP   | <from feed summary> | <PASS if max abs balance check = 0>
+v0.3          | 1                     | <anchor_date +1d>| <actuals_cutoff>    | <forecast_start>    | BASE          | enterprise_value        | 2029-12 | ... | GBP   | <from feed summary> | <PASS if max abs balance check = 0>
 v0.3          | 1                     | ...             | ...                 | ...                 | BASE          | equity_value            | 2029-12 | ... | GBP   | ...                 | ...
 ```
 
@@ -586,7 +635,8 @@ and `ending MRR − headline/12` respectively).
 ## Full build-order checklist
 
 - [ ] Phase 1: actuals feed migrated, `11_Audit_Checks` unchanged and passing
-- [ ] Phase 2: assumptions added/recalibrated, iterative calculation enabled
+- [ ] Regime machinery: `anchor_date`/`actuals_cutoff`/`forecast_start` named cells in `02_Control`; period_regime + is_integrated_model_period + is_forecast_period flag rows on every monthly sheet, formula-driven from the named cells
+- [ ] Phase 2: assumptions added/recalibrated; iterative calculation left OFF (circularity solved algebraically, Phase 5)
 - [ ] Phase 3: IS extended to Net Income, historical months unaffected
 - [ ] Phase 4: PP&E schedule, rollforward check = 0
 - [ ] Phase 5: debt schedule, continuity check = 0 **in all three scenarios**, facility doesn't vanish on day one, no iterative calculation required

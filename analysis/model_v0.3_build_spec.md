@@ -15,13 +15,34 @@ period-type header row of every statement sheet:**
 
 | Regime | Months | Basis |
 | --- | --- | --- |
-| `Actual` | Jan 2023 – Jun 2026 | Governed actuals feed (Phase 1) — income statement and working-capital lines only |
+| `Actual — pre-anchor` | Jan 2023 – Dec 2025 | Governed actuals feed (Phase 1): **income statement and working-capital lines only.** No balance sheet or cash flow statement exists before the anchor — those columns render blank/"n/a" (never zero), and the balance/cash checks read "n/a". |
 | `Modelled Actual (bridge)` | Jan 2026 – Jun 2026 | Balance-sheet rollforward from the 31 Dec 2025 opening anchor: actual IS/working-capital movements + modelled PP&E/debt/tax movements (Phase 6a) |
 | `Forecast` | Jul 2026 – Dec 2029 | Full assumption-driven schedules |
 
-The bridge regime exists because the opening balance sheet is dated **31 Dec 2025** while
-actuals run to **30 Jun 2026** — the six months in between need an explicit, disclosed
-treatment (Phase 6a) so the balance sheet never silently mixes actual and forecast bases.
+Two hard consequences of the anchor date, stated up front because both shape every later
+phase:
+
+1. **The integrated (balancing) three-statement region spans 1 Jan 2026 → Dec 2029 only.**
+   The 31 Dec 2025 anchor is the earliest possible balance-sheet date — there are no
+   cash/PP&E/debt/equity positions before it and no way to construct them. Pre-anchor months
+   are calibration history and IS/working-capital display, and must never be presented as if
+   the model balances there. The bridge (Phase 6a) then carries the anchor forward across the
+   six months where actuals and the balance sheet overlap, so the forecast opens from a
+   derived 30 Jun 2026 position rather than teleporting the December anchor forward.
+
+2. **Anchor retained earnings deliberately do not reconcile to the pre-anchor P&L history —
+   and the model must say so.** Cumulative proxy operating result Jan 2023 – Dec 2025 is
+   **−£82.2m**, while the anchor carries retained earnings of **+£5.17m**. This is not an
+   error: the historical series is an *operational proxy* (recognised revenue less
+   payroll + AP spend), while the anchor is a *synthetic statutory* snapshot whose equity
+   position reflects everything the proxy P&L does not capture (funding, capitalisation,
+   statutory adjustments — none of which the platform models). Any reviewer who sums the
+   history against the anchor will find an ~£87m gap within minutes; disclose it before they
+   do. Required disclosures: a note row directly beneath Retained Earnings on `08_Forecast_BS`
+   ("Anchor equity is statutory; pre-anchor P&L is an operational proxy — bases deliberately
+   unreconciled, see 01_Model_Map"), and a fuller paragraph in `01_Model_Map`. Retained
+   earnings roll forward from the anchor using modelled Net Income **from Jan 2026 only**;
+   pre-anchor history never touches equity.
 
 ---
 
@@ -328,8 +349,17 @@ Equity
   Retained Earnings            = <prior month Retained Earnings> + <Phase 3 Net Income, this month>; first bridge month (Jan 2026) base = £5,172,593.20 (mart_opening_balance_sheet.retained_earnings_gbp)
   Total Equity                 = Share Capital + Retained Earnings
 
-Balance Check                 = Total Assets - (Total Liabilities + Total Equity)   [must = 0 every month]
+Balance Check                 = Total Assets - (Total Liabilities + Total Equity)   [must = 0 every month from Jan 2026]
 ```
+
+**Pre-anchor columns (Jan 2023 – Dec 2025): every balance-sheet line renders "n/a" (blank),
+never zero, and the Balance Check row reads "n/a"** — use the period-regime header in row 5
+to drive this (`IF(X$5="Actual — pre-anchor","n/a",...)`). A zero would claim a balance
+sheet exists and balances; a blank says truthfully that none exists before the anchor.
+
+Add the retained-earnings basis note row directly beneath Retained Earnings (see consequence
+2 in the period-regime section): anchor equity is statutory, pre-anchor P&L is an operational
+proxy, bases deliberately unreconciled.
 
 This is the headline new check the old workbook never had. It will only hold if Phases 3-8 are
 internally consistent — treat any nonzero Balance Check as a signal to recheck the schedule
@@ -374,8 +404,14 @@ inflow) — this is the one place a sign error silently breaks the balance check
 away, so double check each delta's direction against a single month by hand before filling
 right.
 
-**Check**: `Cash Reconciliation Check` = 0 every month — this is what makes Phase 7's `Cash`
-line legitimate (computed here, never a plug).
+**Pre-anchor columns (Jan 2023 – Dec 2025): the CFS does not exist — render "n/a" for every
+line**, same header-driven pattern as the balance sheet. The statement begins Jan 2026, where
+Opening Cash = the £28.0m anchor. (The old workbook's "cash bridge" ran from Jan 2023 off an
+assumed £10m opening cash — that series was never anchored to anything and is retired
+entirely; do not carry it forward.)
+
+**Check**: `Cash Reconciliation Check` = 0 every month from Jan 2026 — this is what makes
+Phase 7's `Cash` line legitimate (computed here, never a plug).
 
 ---
 
@@ -556,7 +592,8 @@ and `ending MRR − headline/12` respectively).
 - [ ] Phase 5: debt schedule, continuity check = 0 **in all three scenarios**, facility doesn't vanish on day one, no iterative calculation required
 - [ ] Phase 6: tax schedule, rollforward check = 0, no tax while losses shelter profit
 - [ ] Phase 6a: H1 2026 bridge — balance check holds Jan–Jun 2026, bridge cash lands plausibly from the £28m anchor
-- [ ] Phase 7: balance sheet, **balance check = 0 every month** (bridge + forecast)
+- [ ] Phase 7: balance sheet, **balance check = 0 every month from Jan 2026**; pre-anchor columns read "n/a", not zero; retained-earnings basis note present
+- [ ] Phase 8: CFS begins Jan 2026 from the £28m anchor; pre-anchor columns "n/a"; old £10m unanchored cash bridge retired
 - [ ] Phase 8: cash flow statement, cash reconciliation check = 0 every month
 - [ ] Phase 9: DCF re-run, EV positive and plausible, FCF sign check reads correctly
 - [ ] Phase 10: outputs contract populated for all three scenarios
